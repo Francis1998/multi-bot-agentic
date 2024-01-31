@@ -1,10 +1,10 @@
-# Troubleshooting Oda
+# Troubleshooting Orchestrator
 
-*multi-bot-agentic — 2025-12-11*
+*multi-bot-agentic — 2024-01-31*
 
 ## Overview
 
-This guide covers troubleshooting ODA for the `multi-bot-agentic` project.
+This guide covers troubleshooting orchestrator for the `multi-bot-agentic` project.
 
 ## Prerequisites
 
@@ -27,12 +27,12 @@ python -m multi_bot_agentic --help
 
 ## Common Scenarios
 
-### Scenario 1: Basic Oda Usage
+### Scenario 1: Basic Orchestrator Usage
 
 ```python
-from multi_bot_agentic import Oda
+from multi_bot_agentic import Orchestrator
 
-client = Oda(config)
+client = Orchestrator(config)
 result = client.run()
 print(result)
 ```
