@@ -1,6 +1,6 @@
 .PHONY: help install dev-install test lint format type-check clean docker-build
 
-# multi-bot-agentic Makefile  —  updated 2024-07-30
+# multi-bot-agentic Makefile  —  updated 2024-09-22
 
 help:  ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?##' $(MAKEFILE_LIST) | \
@@ -35,10 +35,10 @@ clean:  ## Remove build artifacts
 	rm -rf .pytest_cache htmlcov .coverage dist build *.egg-info
 
 docker-build:  ## Build Docker image
-	docker build -t Francis1998/multi-bot-agentic:0.4.1 .
+	docker build -t Francis1998/multi-bot-agentic:0.9.13 .
 
 docker-run:  ## Run Docker container
-	docker run --env-file .env Francis1998/multi-bot-agentic:0.4.1
+	docker run --env-file .env Francis1998/multi-bot-agentic:0.9.13
 
 bump-patch:  ## Bump patch version
 	bump2version patch
