@@ -1,6 +1,6 @@
 # multi-bot-agentic
 
-![License](https://img.shields.io/badge/license-MIT-green) ![CI](https://github.com/Francis1998/{repo}/actions/workflows/ci.yml/badge.svg) ![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen) ![CI](https://github.com/Francis1998/{repo}/actions/workflows/ci.yml/badge.svg) ![License](https://img.shields.io/badge/license-MIT-green)
 
 > Multi-Agent Orchestration — powered by modern Python async architecture.
 
@@ -36,4 +36,4 @@ python -m multi_bot_agentic --help
 
 MIT © [Francis1998](https://github.com/Francis1998)
 
-*Last updated: 2024-11-05*
+*Last updated: 2024-12-12*
