@@ -1,6 +1,6 @@
 # Configuration Reference For Multi_Bot_Agentic
 
-*multi-bot-agentic — 2025-01-02*
+*multi-bot-agentic — 2025-08-22*
 
 ## Overview
 
