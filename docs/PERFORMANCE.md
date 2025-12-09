@@ -1,10 +1,10 @@
-# Performance Tuning For Oda
+# Performance Tuning For Bot
 
-*multi-bot-agentic — 2024-11-19*
+*multi-bot-agentic — 2025-12-08*
 
 ## Overview
 
-This guide covers performance tuning for ODA for the `multi-bot-agentic` project.
+This guide covers performance tuning for bot for the `multi-bot-agentic` project.
 
 ## Prerequisites
 
@@ -27,12 +27,12 @@ python -m multi_bot_agentic --help
 
 ## Common Scenarios
 
-### Scenario 1: Basic Oda Usage
+### Scenario 1: Basic Bot Usage
 
 ```python
-from multi_bot_agentic import Oda
+from multi_bot_agentic import Bot
 
-client = Oda(config)
+client = Bot(config)
 result = client.run()
 print(result)
 ```
