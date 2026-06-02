@@ -3,12 +3,12 @@
 All notable changes to **multi-bot-agentic** are documented here.
 Follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [v0.9.15] — 2026-05-18
+## [v0.6.9] — 2026-06-02
 
 ### Added
 - Extended bot module with improved error handling
 - Added structured logging for ODA operations
-- New unit tests covering edge cases in safety pipeline
+- New unit tests covering edge cases in rationale pipeline
 
 ### Changed
 - Refactored retry logic to use exponential backoff with jitter
@@ -19,7 +19,7 @@ Follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Resolved race condition in async bot handler
 - Fixed incorrect ODA timeout calculation
 
-## [v0.1.0] — 2026-04-20
+## [v0.1.0] — 2026-04-21
 
 ### Added
 - Initial project scaffold with multi-agent orchestration core
