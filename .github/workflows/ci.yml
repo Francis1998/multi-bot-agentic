@@ -19,13 +19,5 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
-      - name: Ruff lint
-        run: ruff check .
-      - name: Ruff format
-        run: ruff format --check .
-      - name: Mypy
-        run: mypy src tests
-      - name: Pytest
-        run: pytest
-      - name: Demo smoke
-        run: multi-bot-agentic run --goal "Summarize this repo" --provider fake --max-steps 4 --event-log /tmp/multibot-ci.sqlite
+      - name: Verify
+        run: bash scripts/check.sh
