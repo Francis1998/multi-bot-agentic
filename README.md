@@ -52,6 +52,8 @@ Replay the durable event log:
 
 ```bash
 multi-bot-agentic replay --event-log data/runs.sqlite
+multi-bot-agentic replay --event-log data/runs.sqlite --format text
+multi-bot-agentic report --event-log data/runs.sqlite
 ```
 
 ## What This Showcases
@@ -63,6 +65,7 @@ multi-bot-agentic replay --event-log data/runs.sqlite
 - LLM adapters for OpenAI GPT, Claude Code CLI, Gemini, and Kimi/Moonshot.
 - Tool adapters with allowlisted execution, including deterministic checklist generation.
 - Safety controls for max steps, prompt bounds, cancellation, and timeouts.
+- Human-readable replay and run reports for inspecting durable rationale traces.
 - Production-minded layout: `src/`, `tests/`, `scripts/`, `migrations/`, `.github/workflows/`, env config, docs.
 
 ## Providers

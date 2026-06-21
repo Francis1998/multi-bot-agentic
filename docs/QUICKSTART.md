@@ -30,6 +30,9 @@ multi-bot-agentic run \
 
 ```bash
 multi-bot-agentic replay --event-log data/runs.sqlite
+multi-bot-agentic replay --event-log data/runs.sqlite --format text
+multi-bot-agentic replay --event-log data/runs.sqlite --event-type decision --format text
+multi-bot-agentic report --event-log data/runs.sqlite
 ```
 
 ## Run The Scripted Demo
