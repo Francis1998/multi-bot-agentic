@@ -77,9 +77,7 @@ def test_runner_recovers_after_tool_failure(tmp_path: Path) -> None:
 
             del timeout_seconds
             tool_results = [
-                observation
-                for observation in request.observations
-                if observation.source.startswith("tool:")
+                observation for observation in request.observations if observation.source.startswith("tool:")
             ]
             if not tool_results:
                 return ModelOutput(
