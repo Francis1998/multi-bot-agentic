@@ -61,7 +61,7 @@ multi-bot-agentic replay --event-log data/runs.sqlite
 - State-machine lifecycle: created, observing, deciding, acting, succeeded, failed, cancelled.
 - Durable sqlite event log with replay.
 - LLM adapters for OpenAI GPT, Claude Code CLI, Gemini, and Kimi/Moonshot.
-- Tool adapters with allowlisted execution.
+- Tool adapters with allowlisted execution, including deterministic checklist generation.
 - Safety controls for max steps, prompt bounds, cancellation, and timeouts.
 - Production-minded layout: `src/`, `tests/`, `scripts/`, `migrations/`, `.github/workflows/`, env config, docs.
 
@@ -76,6 +76,12 @@ multi-bot-agentic replay --event-log data/runs.sqlite
 | Kimi / Moonshot | `KimiAdapter` | `KIMI_API_KEY` |
 
 All adapters normalize output into `ModelOutput`. The runner consumes that output as an observation before the decision engine selects the next action.
+
+## Built-In Safe Tools
+
+- `checklist`: deterministic launch checklist generator used by the fake-provider demo.
+- `echo`: safe text echo for adapter tests.
+- `readonly_file`: root-contained read-only file reader.
 
 ## Repository Layout
 

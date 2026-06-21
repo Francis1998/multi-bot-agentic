@@ -31,6 +31,12 @@ def test_runner_succeeds_with_fake_provider(tmp_path: Path) -> None:
     assert result.answer.startswith("synthesized plan")
     assert EventType.DECISION.value in {event.event_type for event in events}
     assert EventType.ACTION_RESULT.value in {event.event_type for event in events}
+    tool_events = [
+        event
+        for event in events
+        if event.event_type == EventType.ACTION_RESULT.value and event.payload.get("kind") == "tool"
+    ]
+    assert tool_events[0].payload["tool"] == "checklist"
 
 
 def test_runner_cancels_before_action(tmp_path: Path) -> None:

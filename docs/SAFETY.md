@@ -24,6 +24,7 @@ Anything else becomes another observation and is handled deterministically. The 
 
 Tools implement `ToolAdapter`. The default registry includes:
 
+- `checklist`: deterministic launch checklist generator.
 - `echo`: safe deterministic echo tool for demos.
 - `readonly_file`: root-contained read-only file access.
 

@@ -21,13 +21,13 @@ def test_fake_adapter_emits_tool_then_done() -> None:
             goal="demo",
             observations=(
                 Observation(source="user", content="demo"),
-                Observation(source="tool:echo", content="demo"),
+                Observation(source="tool:checklist", content="- demo"),
             ),
         ),
         timeout_seconds=1.0,
     )
 
-    assert first.text.startswith("TOOL:echo:")
+    assert first.text.startswith("TOOL:checklist:")
     assert second.text.startswith("DONE:")
 
 

@@ -25,8 +25,8 @@ class FakeLLMAdapter:
         if not tool_results:
             return ModelOutput(
                 provider=self.provider_name,
-                text=f"TOOL:echo:{request.goal[:120]}",
-                raw={"timeout_seconds": timeout_seconds, "mode": "deterministic-tool-request"},
+                text=f"TOOL:checklist:{request.goal[:120]}",
+                raw={"timeout_seconds": timeout_seconds, "mode": "deterministic-checklist-request"},
             )
         return ModelOutput(
             provider=self.provider_name,
