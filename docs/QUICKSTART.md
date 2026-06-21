@@ -40,6 +40,14 @@ scripts/run_demo.sh
 
 The demo uses the fake provider and writes a replayable sqlite event log under `demo-output/`.
 
+## Regenerate The README GIF
+
+```bash
+python scripts/render_demo_gif.py
+```
+
+The renderer uses stdlib Python for pixel frames and `ffmpeg` to stitch them into `docs/demo.gif`.
+
 ## Try A Live Provider
 
 ```bash

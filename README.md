@@ -4,7 +4,7 @@
 
 It is built as a portfolio-quality recreation of the `multi-bot` product idea without depending on private infrastructure. The default path runs fully offline with a deterministic fake provider. Real adapters are included for OpenAI GPT, Claude Code CLI, Gemini, and Kimi/Moonshot.
 
-![multi-bot-agentic demo](docs/demo.svg)
+![multi-bot-agentic animated demo](docs/demo.gif)
 
 ## Why It Exists
 
@@ -106,3 +106,13 @@ scripts/run_demo.sh
 ```
 
 The CI workflow runs the same checks on Python 3.10, 3.11, and 3.12.
+
+## Visual Asset
+
+The README GIF is reproducible:
+
+```bash
+python scripts/render_demo_gif.py
+```
+
+The repo also keeps `docs/demo.svg` as a static architecture card.
