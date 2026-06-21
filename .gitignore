@@ -16,3 +16,4 @@ data/*.sqlite
 data/*.sqlite-shm
 data/*.sqlite-wal
 demo-output/
+uv.lock
