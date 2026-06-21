@@ -37,6 +37,21 @@ def test_decision_routes_tool_request() -> None:
     assert decision.payload == {"text": "hello"}
 
 
+def test_decision_finishes_on_final_step_with_pending_tool_result() -> None:
+    """On the final step a pending tool result finishes instead of re-calling the model."""
+
+    tool_observation = Observation(source="tool:checklist", content="checklist body")
+    decision = DeterministicDecisionEngine(provider_name="fake").decide(
+        observations=(Observation(source="user", content="goal"), tool_observation),
+        step=2,
+        policy=SafetyPolicy(max_steps=3),
+    )
+
+    assert decision.action == "finish"
+    assert decision.rationale.rule_id == "model.done-or-budget"
+    assert decision.payload == {"answer": "checklist body"}
+
+
 def test_decision_sends_tool_result_back_to_model() -> None:
     """Tool results are consumed by the provider before finishing."""
 
