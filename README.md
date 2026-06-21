@@ -238,16 +238,16 @@ GPT / Claude / Gemini / Kimi adapters, and safety controls (timeouts, bounded sc
 
 | Issue | Problem | Solution doc |
 |-------|---------|--------------|
-| #001 | Non-deterministic agent loops hard to debug | [doc](docs/use-cases/ISSUE-001-non-deterministic-agent-loops-.md) |
-| #002 | Long-running tasks need cancellation | [doc](docs/use-cases/ISSUE-002-long-running-tasks-need-cancel.md) |
-| #003 | Tool failures should not crash the run | [doc](docs/use-cases/ISSUE-003-tool-failures-should-not-crash.md) |
+| #001 | Non-deterministic agent loops hard to debug | [doc](docs/use-cases/ISSUE-001-non-deterministic-agent-loops-hard-to-de.md) |
+| #002 | Long-running tasks need cancellation | [doc](docs/use-cases/ISSUE-002-long-running-tasks-need-cancellation.md) |
+| #003 | Tool failures should not crash the run | [doc](docs/use-cases/ISSUE-003-tool-failures-should-not-crash-the-run.md) |
 
 Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 ## Agentic design
 
 - **Decision engine** — deterministic step selection with logged rationale
-- **State machine** — `pending → running → completed | failed | cancelled`
+- **State machine** — `created → observing → deciding → acting → succeeded | failed | cancelled`
 - **Event log** — SQLite/JSON audit trail for replay
 - **Tool adapters** — pluggable HTTP/LLM/retrieval integrations
 - **Safety** — timeouts, cancellation tokens, bounded clinical scope
