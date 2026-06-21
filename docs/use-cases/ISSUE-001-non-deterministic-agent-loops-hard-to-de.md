@@ -16,7 +16,7 @@ Observe-Decide-Act engine with seeded decisions and exported replay JSON.
 | Component | Role |
 |-----------|------|
 | Decision engine | Deterministic step selection with logged rationale |
-| State machine | Run lifecycle: `pending → running → completed/failed/cancelled` |
+| State machine | Run lifecycle: `created → observing → deciding → acting → succeeded/failed/cancelled` |
 | Event log | Durable SQLite/JSON audit trail for replay |
 | Tool adapters | Pluggable integrations (HTTP, LLM, retrieval) |
 | Safety layer | Timeouts, bounded scope, cancellation tokens |
