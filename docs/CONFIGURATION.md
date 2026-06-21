@@ -1,64 +1,62 @@
-# Configuration Reference For Multi_Bot_Agentic
+# Configuration
 
-*multi-bot-agentic — 2025-01-02*
-
-## Overview
-
-This guide covers configuration reference for multi_bot_agentic for the `multi-bot-agentic` project.
-
-## Prerequisites
-
-- Python 3.10+
-- Redis (if using distributed mode)
-- Environment variables configured (see `.env.example`)
-
-## Quick Start
+Configuration is read from CLI flags first, then environment variables. Copy `.env.example` when running real providers.
 
 ```bash
-# Install dependencies
-pip install -e ".[dev]"
-
-# Copy and configure environment
 cp .env.example .env
-
-# Run the multi_bot_agentic module
-python -m multi_bot_agentic --help
 ```
 
-## Common Scenarios
+## Providers
 
-### Scenario 1: Basic Event Usage
+- `fake`: deterministic provider used by tests and demos.
+- `openai`: calls the OpenAI chat completions API using `OPENAI_API_KEY`.
+- `claude_code`: invokes the local Claude Code CLI configured by `CLAUDE_CODE_COMMAND`.
+- `gemini`: calls the Gemini `generateContent` API using `GEMINI_API_KEY`.
+- `kimi`: calls the Moonshot/Kimi chat completions API using `KIMI_API_KEY`.
 
-```python
-from multi_bot_agentic import Event
+## Provider Commands
 
-client = Event(config)
-result = client.run()
-print(result)
+Fake:
+
+```bash
+multi-bot-agentic run --goal "Draft a launch checklist" --provider fake
 ```
 
-### Scenario 2: Advanced Configuration
+OpenAI GPT:
 
-```python
-from multi_bot_agentic.config import Settings
-
-settings = Settings(
-    max_retries=3,
-    timeout=30,
-    log_level="INFO",
-)
+```bash
+export OPENAI_API_KEY=...
+multi-bot-agentic run --goal "Draft a launch checklist" --provider openai
 ```
 
-## Troubleshooting
+Claude Code CLI:
 
-| Issue | Cause | Fix |
-|-------|-------|-----|
-| `ConnectionError` | API endpoint unreachable | Check `BASE_URL` in `.env` |
-| `TimeoutError` | Request took too long | Increase `timeout` setting |
-| `AuthError` | Invalid or expired token | Rotate API key |
+```bash
+export CLAUDE_CODE_COMMAND="claude"
+multi-bot-agentic run --goal "Draft a launch checklist" --provider claude_code
+```
 
-## See Also
+Gemini:
 
-- [README](../README.md)
-- [ARCHITECTURE](../ARCHITECTURE.md)
-- [API Reference](./API.md)
+```bash
+export GEMINI_API_KEY=...
+multi-bot-agentic run --goal "Draft a launch checklist" --provider gemini
+```
+
+Kimi / Moonshot:
+
+```bash
+export KIMI_API_KEY=...
+multi-bot-agentic run --goal "Draft a launch checklist" --provider kimi
+```
+
+## Safety Settings
+
+- `MULTIBOT_MAX_STEPS`: maximum Observe -> Decide -> Act iterations.
+- `MULTIBOT_TIMEOUT_SECONDS`: per-provider timeout budget.
+- `MULTIBOT_MAX_PROMPT_CHARS`: maximum accepted goal size.
+- `MULTIBOT_EVENT_LOG`: sqlite file used for durable events.
+
+## Notes
+
+The fake provider is the only provider exercised in CI. Live provider calls require credentials and are intentionally operator-triggered.
