@@ -228,3 +228,26 @@ The repo also keeps `docs/demo.svg` as a static architecture card.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+<!-- PORTFOLIO-USE-CASES -->
+
+## Production use cases
+
+Real issues this agent solves — deterministic ODA loop, rationale traces, durable event log,
+GPT / Claude / Gemini / Kimi adapters, and safety controls (timeouts, bounded scope, cancellation).
+
+| Issue | Problem | Solution doc |
+|-------|---------|--------------|
+| #001 | Non-deterministic agent loops hard to debug | [doc](docs/use-cases/ISSUE-001-non-deterministic-agent-loops-.md) |
+| #002 | Long-running tasks need cancellation | [doc](docs/use-cases/ISSUE-002-long-running-tasks-need-cancel.md) |
+| #003 | Tool failures should not crash the run | [doc](docs/use-cases/ISSUE-003-tool-failures-should-not-crash.md) |
+
+Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
+
+## Agentic design
+
+- **Decision engine** — deterministic step selection with logged rationale
+- **State machine** — `pending → running → completed | failed | cancelled`
+- **Event log** — SQLite/JSON audit trail for replay
+- **Tool adapters** — pluggable HTTP/LLM/retrieval integrations
+- **Safety** — timeouts, cancellation tokens, bounded clinical scope
