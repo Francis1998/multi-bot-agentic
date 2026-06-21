@@ -39,6 +39,31 @@ def test_runner_succeeds_with_fake_provider(tmp_path: Path) -> None:
     assert tool_events[0].payload["tool"] == "checklist"
 
 
+def test_runner_finishes_when_budget_hit_with_pending_tool_result(tmp_path: Path) -> None:
+    """A tool result pending on the final step must finish, not fail on budget.
+
+    With ``max_steps=3`` the fake provider's flow lands a tool result on the
+    last step. Previously the ``tool.result-needs-synthesis`` rule fired before
+    the budget check, the loop ran out, and the run failed with
+    "step budget exhausted". It should finish via ``model.done-or-budget``.
+    """
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        runner = AgentRunner(
+            provider=FakeLLMAdapter(),
+            event_log=log,
+            tools=build_default_tools(root=tmp_path),
+            safety_policy=SafetyPolicy(max_steps=3),
+        )
+        result = runner.run("Create an agent launch checklist", run_id="run-budget")
+    finally:
+        log.close()
+
+    assert result.state == RunState.SUCCEEDED
+    assert result.steps == 3
+
+
 def test_runner_cancels_before_action(tmp_path: Path) -> None:
     """A cancellation file transitions the run to cancelled."""
 

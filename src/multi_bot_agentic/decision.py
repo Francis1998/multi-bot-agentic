@@ -45,6 +45,19 @@ class DeterministicDecisionEngine:
             )
 
         latest_observation = observations[-1]
+        if step >= policy.max_steps - 1:
+            return Decision(
+                action="finish",
+                target=None,
+                payload={"answer": latest_observation.content.removeprefix("DONE:").strip()},
+                rationale=RationaleTrace(
+                    rule_id="model.done-or-budget",
+                    observations_used=(latest_observation.observation_id,),
+                    rejected_actions=("call_llm", "call_tool"),
+                    explanation="The step budget is exhausted, so the run finishes with the latest observation.",
+                ),
+            )
+
         if latest_observation.source.startswith("tool:"):
             return Decision(
                 action="call_llm",
@@ -86,7 +99,7 @@ class DeterministicDecisionEngine:
                 ),
             )
 
-        if latest_model_output.content.startswith("DONE:") or step >= policy.max_steps - 1:
+        if latest_model_output.content.startswith("DONE:"):
             return Decision(
                 action="finish",
                 target=None,
