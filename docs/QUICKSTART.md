@@ -31,3 +31,23 @@ multi-bot-agentic run \
 ```bash
 multi-bot-agentic replay --event-log data/runs.sqlite
 ```
+
+## Run The Scripted Demo
+
+```bash
+scripts/run_demo.sh
+```
+
+The demo uses the fake provider and writes a replayable sqlite event log under `demo-output/`.
+
+## Try A Live Provider
+
+```bash
+export OPENAI_API_KEY=...
+multi-bot-agentic run \
+  --goal "Return DONE: with a short release checklist" \
+  --provider openai \
+  --max-steps 4
+```
+
+Live providers are not required for tests or CI.

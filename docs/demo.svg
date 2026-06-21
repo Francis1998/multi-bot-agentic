@@ -1,0 +1,77 @@
+<svg width="960" height="520" viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">multi-bot-agentic demo</title>
+  <desc id="desc">Animated overview of Observe Decide Act, event log, safety policy, and provider adapters.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#07111f"/>
+      <stop offset="55%" stop-color="#0f2747"/>
+      <stop offset="100%" stop-color="#06101d"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#173b67"/>
+      <stop offset="100%" stop-color="#0b1b31"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="960" height="520" rx="28" fill="url(#bg)"/>
+  <text x="48" y="64" fill="#e0f2fe" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800">multi-bot-agentic</text>
+  <text x="50" y="94" fill="#93c5fd" font-family="Inter, Arial, sans-serif" font-size="15">Deterministic Observe -> Decide -> Act with replayable rationale traces</text>
+
+  <g transform="translate(54 145)">
+    <rect width="180" height="112" rx="22" fill="url(#card)" stroke="#60a5fa" stroke-opacity=".35"/>
+    <text x="28" y="45" fill="#bfdbfe" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">OBSERVE</text>
+    <text x="28" y="72" fill="#e0f2fe" font-family="Inter, Arial, sans-serif" font-size="13">goal + model output</text>
+  </g>
+
+  <g transform="translate(286 145)">
+    <rect width="180" height="112" rx="22" fill="url(#card)" stroke="#38bdf8" stroke-opacity=".45"/>
+    <text x="28" y="45" fill="#bfdbfe" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">DECIDE</text>
+    <text x="28" y="72" fill="#e0f2fe" font-family="Inter, Arial, sans-serif" font-size="13">rule + rationale</text>
+  </g>
+
+  <g transform="translate(518 145)">
+    <rect width="180" height="112" rx="22" fill="url(#card)" stroke="#22d3ee" stroke-opacity=".45"/>
+    <text x="28" y="45" fill="#bfdbfe" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">ACT</text>
+    <text x="28" y="72" fill="#e0f2fe" font-family="Inter, Arial, sans-serif" font-size="13">LLM or tool adapter</text>
+  </g>
+
+  <g transform="translate(750 145)">
+    <rect width="150" height="112" rx="22" fill="#082f49" stroke="#7dd3fc" stroke-opacity=".45"/>
+    <text x="24" y="45" fill="#bfdbfe" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="700">EVENT LOG</text>
+    <text x="24" y="72" fill="#e0f2fe" font-family="Inter, Arial, sans-serif" font-size="13">sqlite replay</text>
+  </g>
+
+  <path d="M234 201 H286" stroke="#7dd3fc" stroke-width="3" stroke-linecap="round"/>
+  <path d="M466 201 H518" stroke="#7dd3fc" stroke-width="3" stroke-linecap="round"/>
+  <path d="M698 201 H750" stroke="#7dd3fc" stroke-width="3" stroke-linecap="round"/>
+
+  <circle r="8" fill="#67e8f9" filter="url(#glow)">
+    <animateMotion dur="4s" repeatCount="indefinite" path="M54 201 H900"/>
+  </circle>
+
+  <g transform="translate(70 320)">
+    <rect width="820" height="120" rx="22" fill="#020617" fill-opacity=".58" stroke="#1d4ed8" stroke-opacity=".45"/>
+    <text x="28" y="38" fill="#93c5fd" font-family="Menlo, Consolas, monospace" font-size="14">seq=04 decision rule=model.requested-tool action=call_tool target=echo</text>
+    <text x="28" y="66" fill="#bae6fd" font-family="Menlo, Consolas, monospace" font-size="14">rationale: latest model output requested an allowlisted tool action</text>
+    <text x="28" y="94" fill="#e0f2fe" font-family="Menlo, Consolas, monospace" font-size="14">providers: fake | openai | claude_code | gemini | kimi</text>
+  </g>
+
+  <g transform="translate(70 470)">
+    <circle cx="0" cy="0" r="6" fill="#22c55e"/>
+    <text x="18" y="5" fill="#bbf7d0" font-family="Inter, Arial, sans-serif" font-size="14">bounded steps</text>
+    <circle cx="145" cy="0" r="6" fill="#22c55e"/>
+    <text x="163" y="5" fill="#bbf7d0" font-family="Inter, Arial, sans-serif" font-size="14">timeouts</text>
+    <circle cx="250" cy="0" r="6" fill="#22c55e"/>
+    <text x="268" y="5" fill="#bbf7d0" font-family="Inter, Arial, sans-serif" font-size="14">tool allowlist</text>
+    <circle cx="395" cy="0" r="6" fill="#22c55e"/>
+    <text x="413" y="5" fill="#bbf7d0" font-family="Inter, Arial, sans-serif" font-size="14">cancellation</text>
+    <circle cx="535" cy="0" r="6" fill="#22c55e"/>
+    <text x="553" y="5" fill="#bbf7d0" font-family="Inter, Arial, sans-serif" font-size="14">durable replay</text>
+  </g>
+</svg>
