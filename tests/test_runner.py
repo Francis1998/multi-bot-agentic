@@ -6,7 +6,7 @@ from pathlib import Path
 
 from multi_bot_agentic.event_log import SQLiteEventLog
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
-from multi_bot_agentic.models import EventType, RunState
+from multi_bot_agentic.models import EventType, ModelOutput, ModelRequest, RunState
 from multi_bot_agentic.runner import AgentRunner, build_default_tools
 from multi_bot_agentic.safety import SafetyPolicy
 
@@ -72,9 +72,7 @@ def test_runner_recovers_after_tool_failure(tmp_path: Path) -> None:
 
         provider_name = "fake"
 
-        def complete(self, request, timeout_seconds: float):
-            from multi_bot_agentic.models import ModelOutput
-
+        def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
             del timeout_seconds
             tool_results = [
                 observation for observation in request.observations if observation.source.startswith("tool:")
