@@ -204,14 +204,16 @@ docs/                    architecture, safety, config, quickstart, demo
 ## Verification
 
 ```bash
-ruff check .
-ruff format --check .
-mypy src tests
-pytest
-scripts/run_demo.sh
+scripts/check.sh
 ```
 
-The CI workflow runs the same checks on Python 3.10, 3.11, and 3.12.
+`scripts/check.sh` runs ruff, format check, mypy, pytest, and a fake-provider smoke run with replay/report. CI runs the same script on Python 3.10, 3.11, and 3.12.
+
+For a richer local demo:
+
+```bash
+scripts/run_demo.sh
+```
 
 ## Visual Asset
 
@@ -222,3 +224,7 @@ python scripts/render_demo_gif.py
 ```
 
 The repo also keeps `docs/demo.svg` as a static architecture card.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

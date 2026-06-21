@@ -9,6 +9,7 @@ description = "Deterministic multi-provider AI-agent orchestrator with Observe-D
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Chris Liu" }]
+license = { text = "MIT" }
 dependencies = []
 
 [project.optional-dependencies]

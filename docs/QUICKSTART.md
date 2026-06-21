@@ -11,10 +11,7 @@ python -m pip install -e ".[dev]"
 ## Verify
 
 ```bash
-ruff check .
-ruff format --check .
-mypy src tests
-pytest
+scripts/check.sh
 ```
 
 ## Run A Deterministic Demo
