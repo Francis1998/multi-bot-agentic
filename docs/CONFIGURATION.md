@@ -26,6 +26,7 @@ OpenAI GPT:
 
 ```bash
 export OPENAI_API_KEY=...
+export OPENAI_MODEL=gpt-5.5
 multi-bot-agentic run --goal "Draft a launch checklist" --provider openai
 ```
 
@@ -40,6 +41,7 @@ Gemini:
 
 ```bash
 export GEMINI_API_KEY=...
+export GEMINI_MODEL=gemini-2.5-flash
 multi-bot-agentic run --goal "Draft a launch checklist" --provider gemini
 ```
 
