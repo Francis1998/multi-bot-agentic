@@ -71,7 +71,7 @@ def build_llm_adapter(provider: str) -> LLMAdapter:
         api_key = _required_env("OPENAI_API_KEY")
         return OpenAIAdapter(
             api_key=api_key,
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            model=os.getenv("OPENAI_MODEL", "gpt-5.5"),
             base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1/chat/completions"),
         )
     if provider == "claude_code":
@@ -79,7 +79,7 @@ def build_llm_adapter(provider: str) -> LLMAdapter:
     if provider == "gemini":
         return GeminiAdapter(
             api_key=_required_env("GEMINI_API_KEY"),
-            model=os.getenv("GEMINI_MODEL", "gemini-1.5-flash"),
+            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
         )
     if provider == "kimi":
         return KimiAdapter(

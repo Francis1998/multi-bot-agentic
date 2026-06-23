@@ -2,10 +2,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+from multi_bot_agentic.config import build_llm_adapter
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
-from multi_bot_agentic.llm.gemini import _extract_gemini_text
-from multi_bot_agentic.llm.openai import _extract_openai_text
+from multi_bot_agentic.llm.gemini import GeminiAdapter, _extract_gemini_text
+from multi_bot_agentic.llm.openai import OpenAIAdapter, _extract_openai_text
 from multi_bot_agentic.models import ModelRequest, Observation
+
+if TYPE_CHECKING:
+    from _pytest.monkeypatch import MonkeyPatch
 
 
 def test_fake_adapter_emits_tool_then_done() -> None:
@@ -45,3 +51,27 @@ def test_gemini_parser_consumes_candidate_parts() -> None:
     text = _extract_gemini_text({"candidates": [{"content": {"parts": [{"text": "DONE:"}, {"text": " ok"}]}}]})
 
     assert text == "DONE:\n ok"
+
+
+def test_openai_adapter_default_uses_latest_gpt_stack(monkeypatch: MonkeyPatch) -> None:
+    """OpenAI adapter defaults should stay aligned with the current GPT stack."""
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy-key")
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+
+    adapter = build_llm_adapter("openai")
+
+    assert isinstance(adapter, OpenAIAdapter)
+    assert adapter.model == "gpt-5.5"
+
+
+def test_gemini_adapter_default_uses_latest_flash_stack(monkeypatch: MonkeyPatch) -> None:
+    """Gemini adapter defaults should stay aligned with the current Flash stack."""
+
+    monkeypatch.setenv("GEMINI_API_KEY", "dummy-key")
+    monkeypatch.delenv("GEMINI_MODEL", raising=False)
+
+    adapter = build_llm_adapter("gemini")
+
+    assert isinstance(adapter, GeminiAdapter)
+    assert adapter.model == "gemini-2.5-flash"
