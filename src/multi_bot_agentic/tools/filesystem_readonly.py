@@ -32,7 +32,7 @@ class ReadOnlyFileTool:
             Tool result containing file text or a denial message.
         """
 
-        raw_path = str(invocation.arguments.get("path", ""))
+        raw_path = str(invocation.arguments.get("path") or invocation.arguments.get("text", ""))
         candidate = (self.root / raw_path).resolve()
         if not candidate.is_relative_to(self.root):
             return ToolResult(
