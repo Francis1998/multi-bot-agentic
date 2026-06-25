@@ -106,7 +106,10 @@ def _required_env(name: str) -> str:
     value = os.getenv(name)
     if not value:
         raise ValueError(f"missing required environment variable: {name}")
-    return value
+    stripped_value = value.strip()
+    if not stripped_value:
+        raise ValueError(f"missing required environment variable: {name}")
+    return stripped_value
 
 
 def _optional_path(value: str | None) -> Path | None:
