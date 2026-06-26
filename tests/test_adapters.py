@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
+
 from multi_bot_agentic.config import build_llm_adapter
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.llm.gemini import GeminiAdapter, _extract_gemini_text
@@ -63,6 +65,15 @@ def test_openai_adapter_default_uses_latest_gpt_stack(monkeypatch: MonkeyPatch) 
 
     assert isinstance(adapter, OpenAIAdapter)
     assert adapter.model == "gpt-5.5"
+
+
+def test_required_provider_secret_rejects_blank_value(monkeypatch: MonkeyPatch) -> None:
+    """Provider construction should fail fast for blank secret values."""
+
+    monkeypatch.setenv("OPENAI_API_KEY", "   ")
+
+    with pytest.raises(ValueError, match="OPENAI_API_KEY"):
+        build_llm_adapter("openai")
 
 
 def test_gemini_adapter_default_uses_latest_flash_stack(monkeypatch: MonkeyPatch) -> None:
