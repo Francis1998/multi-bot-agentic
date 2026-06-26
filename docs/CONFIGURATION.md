@@ -58,6 +58,7 @@ multi-bot-agentic run --goal "Draft a launch checklist" --provider kimi
 - `MULTIBOT_TIMEOUT_SECONDS`: per-provider timeout budget.
 - `MULTIBOT_MAX_PROMPT_CHARS`: maximum accepted goal size.
 - `MULTIBOT_EVENT_LOG`: sqlite file used for durable events.
+- `MULTIBOT_CANCEL_FILE`: optional file path; if the file exists, the next decision cancels the run.
 
 ## Notes
 
