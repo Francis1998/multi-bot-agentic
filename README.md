@@ -250,4 +250,4 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 - **State machine** — `created → observing → deciding → acting → succeeded | failed | cancelled`
 - **Event log** — SQLite/JSON audit trail for replay
 - **Tool adapters** — pluggable HTTP/LLM/retrieval integrations
-- **Safety** — timeouts, cancellation tokens, bounded clinical scope
+- **Safety** — timeouts, cancellation tokens, bounded run scope
