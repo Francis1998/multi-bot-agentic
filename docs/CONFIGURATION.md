@@ -41,7 +41,7 @@ Gemini:
 
 ```bash
 export GEMINI_API_KEY=...
-export GEMINI_MODEL=gemini-2.5-flash
+export GEMINI_MODEL=gemini-3.5-flash
 multi-bot-agentic run --goal "Draft a launch checklist" --provider gemini
 ```
 
