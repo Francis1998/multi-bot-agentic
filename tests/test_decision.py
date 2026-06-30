@@ -37,6 +37,22 @@ def test_decision_routes_tool_request() -> None:
     assert decision.payload == {"text": "hello"}
 
 
+def test_decision_retries_model_after_malformed_tool_request() -> None:
+    """A malformed tool request asks the provider for a corrected action."""
+
+    model_observation = Observation(source="llm:fake", content="TOOL:echo")
+    decision = DeterministicDecisionEngine(provider_name="fake").decide(
+        observations=(Observation(source="user", content="goal"), model_observation),
+        step=1,
+        policy=SafetyPolicy(),
+    )
+
+    assert decision.action == "call_llm"
+    assert decision.target == "fake"
+    assert decision.payload == {"reason": "malformed tool request"}
+    assert decision.rationale.rule_id == "model.malformed-tool-request"
+
+
 def test_decision_finishes_on_final_step_with_pending_tool_result() -> None:
     """On the final step a pending tool result finishes instead of re-calling the model."""
 

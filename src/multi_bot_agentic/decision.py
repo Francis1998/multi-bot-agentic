@@ -86,7 +86,20 @@ class DeterministicDecisionEngine:
             )
 
         if latest_model_output.content.startswith("TOOL:"):
-            tool_name, text = _parse_tool_request(latest_model_output.content)
+            parsed_tool_request = _parse_tool_request(latest_model_output.content)
+            if parsed_tool_request is None:
+                return Decision(
+                    action="call_llm",
+                    target=self.provider_name,
+                    payload={"reason": "malformed tool request"},
+                    rationale=RationaleTrace(
+                        rule_id="model.malformed-tool-request",
+                        observations_used=(latest_model_output.observation_id,),
+                        rejected_actions=("finish", "call_tool"),
+                        explanation="The latest provider output requested a tool without a valid payload.",
+                    ),
+                )
+            tool_name, text = parsed_tool_request
             return Decision(
                 action="call_tool",
                 target=tool_name,
@@ -145,15 +158,23 @@ def _latest_observation_by_prefix(
     return None
 
 
-def _parse_tool_request(content: str) -> tuple[str, str]:
+def _parse_tool_request(content: str) -> tuple[str, str] | None:
     """Parse a `TOOL:name:payload` model output.
 
     Args:
         content: Model output text.
 
     Returns:
-        Tool name and payload text.
+        Tool name and payload text, or None when the directive is malformed.
     """
 
-    _, tool_name, text = content.split(":", maxsplit=2)
-    return tool_name.strip(), text.strip()
+    parts = content.split(":", maxsplit=2)
+    if len(parts) != 3:
+        return None
+
+    _, tool_name, text = parts
+    tool_name = tool_name.strip()
+    text = text.strip()
+    if not tool_name or not text:
+        return None
+    return tool_name, text
