@@ -100,6 +100,21 @@ class DeterministicDecisionEngine:
                     ),
                 )
             tool_name, text = parsed_tool_request
+            if tool_name not in policy.allowed_tools:
+                return Decision(
+                    action="call_llm",
+                    target=self.provider_name,
+                    payload={"reason": f"requested tool is not allowlisted: {tool_name}"},
+                    rationale=RationaleTrace(
+                        rule_id="model.disallowed-tool-request",
+                        observations_used=(latest_model_output.observation_id,),
+                        rejected_actions=("finish", "call_tool"),
+                        explanation=(
+                            "The provider requested a tool outside the safety allowlist, "
+                            "so the run asks for a corrected action instead of failing."
+                        ),
+                    ),
+                )
             return Decision(
                 action="call_tool",
                 target=tool_name,

@@ -57,6 +57,22 @@ def test_decision_routes_tool_request() -> None:
     assert decision.payload == {"text": "hello"}
 
 
+def test_decision_redirects_disallowed_tool_request_to_model() -> None:
+    """A tool request outside the allowlist redirects to the provider, not call_tool."""
+
+    model_observation = Observation(source="llm:fake", content="TOOL:shell:rm -rf /")
+    decision = DeterministicDecisionEngine(provider_name="fake").decide(
+        observations=(Observation(source="user", content="goal"), model_observation),
+        step=1,
+        policy=SafetyPolicy(allowed_tools=frozenset({"echo"})),
+    )
+
+    assert decision.action == "call_llm"
+    assert decision.target == "fake"
+    assert decision.rationale.rule_id == "model.disallowed-tool-request"
+    assert decision.payload == {"reason": "requested tool is not allowlisted: shell"}
+
+
 def test_decision_retries_model_after_malformed_tool_request() -> None:
     """A malformed tool request asks the provider for a corrected action."""
 
