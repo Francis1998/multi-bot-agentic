@@ -9,6 +9,7 @@ import pytest
 from multi_bot_agentic.config import build_llm_adapter
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.llm.gemini import GeminiAdapter, _extract_gemini_text
+from multi_bot_agentic.llm.kimi import KimiAdapter
 from multi_bot_agentic.llm.openai import OpenAIAdapter, _extract_openai_text
 from multi_bot_agentic.models import ModelRequest, Observation
 
@@ -85,4 +86,16 @@ def test_gemini_adapter_default_uses_latest_flash_stack(monkeypatch: MonkeyPatch
     adapter = build_llm_adapter("gemini")
 
     assert isinstance(adapter, GeminiAdapter)
-    assert adapter.model == "gemini-2.5-flash"
+    assert adapter.model == "gemini-3.5-flash"
+
+
+def test_kimi_adapter_default_uses_latest_k2_stack(monkeypatch: MonkeyPatch) -> None:
+    """Kimi adapter defaults should stay aligned with the current K2 stack."""
+
+    monkeypatch.setenv("KIMI_API_KEY", "dummy-key")
+    monkeypatch.delenv("KIMI_MODEL", raising=False)
+
+    adapter = build_llm_adapter("kimi")
+
+    assert isinstance(adapter, KimiAdapter)
+    assert adapter.model == "kimi-k2"

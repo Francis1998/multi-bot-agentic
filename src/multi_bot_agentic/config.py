@@ -79,12 +79,12 @@ def build_llm_adapter(provider: str) -> LLMAdapter:
     if provider == "gemini":
         return GeminiAdapter(
             api_key=_required_env("GEMINI_API_KEY"),
-            model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+            model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash"),
         )
     if provider == "kimi":
         return KimiAdapter(
             api_key=_required_env("KIMI_API_KEY"),
-            model=os.getenv("KIMI_MODEL", "moonshot-v1-8k"),
+            model=os.getenv("KIMI_MODEL", "kimi-k2"),
             base_url=os.getenv("KIMI_BASE_URL", "https://api.moonshot.ai/v1/chat/completions"),
         )
     raise ValueError(f"unsupported provider: {provider}")
