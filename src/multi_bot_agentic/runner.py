@@ -124,7 +124,7 @@ class AgentRunner:
                 new_observation = self._act(selected_run_id, state_machine.state, goal, observations, decision)
                 observations = (*observations, new_observation)
 
-        except (InvalidTransitionError, SafetyError, TimeoutError, RuntimeError, ValueError) as error:
+        except (InvalidTransitionError, SafetyError, OSError, RuntimeError, ValueError) as error:
             return self._fail(selected_run_id, state_machine, self.safety_policy.max_steps, str(error))
 
         return self._fail(selected_run_id, state_machine, self.safety_policy.max_steps, "step budget exhausted")

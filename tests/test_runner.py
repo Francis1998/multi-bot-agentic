@@ -113,6 +113,44 @@ def test_runner_recovers_after_tool_failure(tmp_path: Path) -> None:
     assert tool_events[0].payload["ok"] is False
 
 
+def test_runner_fails_gracefully_on_provider_network_error(tmp_path: Path) -> None:
+    """A provider network error must fail the run, not crash the caller.
+
+    Provider adapters call the network via ``urllib``, which raises
+    ``URLError`` (an ``OSError`` subclass) on connection failures. The runner
+    previously caught ``TimeoutError`` but not its parent ``OSError``, so a
+    connection error escaped the loop and propagated out of ``run``.
+    """
+
+    from urllib.error import URLError
+
+    class NetworkFailureProvider:
+        """Provider that always fails with a network error."""
+
+        provider_name = "fake"
+
+        def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
+            del request, timeout_seconds
+            raise URLError("connection refused")
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        runner = AgentRunner(
+            provider=NetworkFailureProvider(),
+            event_log=log,
+            tools=build_default_tools(root=tmp_path),
+            safety_policy=SafetyPolicy(max_steps=5),
+        )
+        result = runner.run("Summarize the deploy log", run_id="run-net-fail")
+        events = log.list_events("run-net-fail")
+    finally:
+        log.close()
+
+    assert result.state == RunState.FAILED
+    assert "connection refused" in result.answer
+    assert EventType.RUN_FAILED.value in {event.event_type for event in events}
+
+
 def test_runner_cancels_before_action(tmp_path: Path) -> None:
     """A cancellation file transitions the run to cancelled."""
 
