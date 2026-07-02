@@ -39,12 +39,18 @@ class AppConfig:
 
         Returns:
             Application configuration.
+
+        Raises:
+            ValueError: If the resolved ``max_steps`` is less than 1.
         """
 
         selected_provider: str = provider if provider is not None else os.getenv("MULTIBOT_PROVIDER", "fake")
         selected_event_log = event_log or Path(os.getenv("MULTIBOT_EVENT_LOG", "data/runs.sqlite"))
+        resolved_max_steps = max_steps if max_steps is not None else int(os.getenv("MULTIBOT_MAX_STEPS", "6"))
+        if resolved_max_steps < 1:
+            raise ValueError(f"max_steps must be >= 1, got {resolved_max_steps}")
         safety = SafetyPolicy(
-            max_steps=max_steps or int(os.getenv("MULTIBOT_MAX_STEPS", "6")),
+            max_steps=resolved_max_steps,
             timeout_seconds=float(os.getenv("MULTIBOT_TIMEOUT_SECONDS", "30")),
             max_prompt_chars=int(os.getenv("MULTIBOT_MAX_PROMPT_CHARS", "4000")),
             cancellation_file=_optional_path(os.getenv("MULTIBOT_CANCEL_FILE")),
