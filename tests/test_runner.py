@@ -113,6 +113,63 @@ def test_runner_recovers_after_tool_failure(tmp_path: Path) -> None:
     assert tool_events[0].payload["ok"] is False
 
 
+def test_runner_recovers_after_unreadable_file(tmp_path: Path) -> None:
+    """A tool that cannot decode a file must not crash the run.
+
+    The file exists and passes ``is_file()`` but is not valid UTF-8. The tool
+    must return ``ok=False`` (not raise), so the decision engine routes back to
+    the LLM for recovery instead of the run failing with a decode error.
+    """
+
+    binary_path = tmp_path / "artifact.bin"
+    binary_path.write_bytes(b"\xff\xfe\x00\x01\x02\x80\x81")
+
+    class UnreadableFileProvider:
+        """Provider that reads a binary file, then finishes after the error."""
+
+        provider_name = "fake"
+
+        def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
+            del timeout_seconds
+            tool_results = [
+                observation for observation in request.observations if observation.source.startswith("tool:")
+            ]
+            if not tool_results:
+                return ModelOutput(
+                    provider=self.provider_name,
+                    text="TOOL:readonly_file:artifact.bin",
+                    raw={"mode": "unreadable-file-request"},
+                )
+            return ModelOutput(
+                provider=self.provider_name,
+                text="DONE: recovered after unreadable file",
+                raw={"mode": "unreadable-file-recovery"},
+            )
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        runner = AgentRunner(
+            provider=UnreadableFileProvider(),
+            event_log=log,
+            tools=build_default_tools(root=tmp_path),
+            safety_policy=SafetyPolicy(max_steps=5),
+        )
+        result = runner.run("Read the build artifact", run_id="run-unreadable")
+        events = log.list_events("run-unreadable")
+    finally:
+        log.close()
+
+    assert result.state == RunState.SUCCEEDED
+    assert "recovered after unreadable file" in result.answer
+    tool_events = [
+        event
+        for event in events
+        if event.event_type == EventType.ACTION_RESULT.value and event.payload.get("kind") == "tool"
+    ]
+    assert tool_events
+    assert tool_events[0].payload["ok"] is False
+
+
 def test_runner_fails_gracefully_on_provider_network_error(tmp_path: Path) -> None:
     """A provider network error must fail the run, not crash the caller.
 

@@ -241,6 +241,7 @@ GPT / Claude / Gemini / Kimi adapters, and safety controls (timeouts, bounded sc
 | #001 | Non-deterministic agent loops hard to debug | [doc](docs/use-cases/ISSUE-001-non-deterministic-agent-loops-hard-to-de.md) |
 | #002 | Long-running tasks need cancellation | [doc](docs/use-cases/ISSUE-002-long-running-tasks-need-cancellation.md) |
 | #003 | Tool failures should not crash the run | [doc](docs/use-cases/ISSUE-003-tool-failures-should-not-crash-the-run.md) |
+| #005 | Unreadable files should not crash the run | [doc](docs/use-cases/ISSUE-005-unreadable-files-should-not-crash-the-run.md) |
 
 Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 

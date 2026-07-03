@@ -48,7 +48,15 @@ class ReadOnlyFileTool:
                 content="path is not a readable file",
                 metadata={"path": raw_path},
             )
-        text = candidate.read_text(encoding="utf-8")[:4000]
+        try:
+            text = candidate.read_text(encoding="utf-8")[:4000]
+        except (OSError, UnicodeDecodeError) as error:
+            return ToolResult(
+                tool_name=self.name,
+                ok=False,
+                content=f"file could not be read as utf-8 text: {error}",
+                metadata={"path": raw_path},
+            )
         return ToolResult(
             tool_name=self.name,
             ok=True,
