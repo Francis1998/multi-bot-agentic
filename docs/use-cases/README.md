@@ -8,6 +8,7 @@ Real problems **multi-bot-agentic** solves — starting from issues.
 | #002 | Long-running tasks need cancellation | [ISSUE-002](./ISSUE-002-long-running-tasks-need-cancellation.md) |
 | #003 | Tool failures should not crash the run | [ISSUE-003](./ISSUE-003-tool-failures-should-not-crash-the-run.md) |
 | #004 | Invalid step budgets should fail fast | [ISSUE-004](./ISSUE-004-invalid-step-budgets-should-fail-fast.md) |
+| #005 | Unreadable files should not crash the run | [ISSUE-005](./ISSUE-005-unreadable-files-should-not-crash-the-run.md) |
 
 ## Design pillars
 
