@@ -31,3 +31,24 @@ def test_readonly_file_tool_accepts_model_text_payload(tmp_path: Path) -> None:
     assert result.ok is True
     assert result.content == "agent run notes"
     assert result.metadata == {"path": "notes.txt", "chars": 15}
+
+
+def test_readonly_file_tool_returns_failure_for_non_utf8_file(tmp_path: Path) -> None:
+    """A readable but non-UTF-8 file must yield ``ok=False``, not raise.
+
+    The tool contract is that adapters return a structured ``ToolResult``
+    instead of raising, so the runner can route the failure back to the model.
+    A binary file passes ``is_file()`` but previously raised
+    ``UnicodeDecodeError`` from ``read_text('utf-8')``, escaping the tool and
+    crashing the run.
+    """
+
+    binary_path = tmp_path / "logo.bin"
+    binary_path.write_bytes(b"\xff\xfe\x00\x01\x02\x80\x81")
+
+    tool = ReadOnlyFileTool(root=tmp_path)
+    result = tool.execute(ToolInvocation(tool_name="readonly_file", arguments={"path": "logo.bin"}))
+
+    assert result.ok is False
+    assert "utf-8" in result.content
+    assert result.metadata == {"path": "logo.bin"}
