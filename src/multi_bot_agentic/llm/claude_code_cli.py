@@ -36,14 +36,17 @@ class ClaudeCodeCLIAdapter:
         command = shlex.split(self.command)
         if not command:
             raise ValueError("Claude Code command cannot be empty")
-        completed = subprocess.run(
-            command,
-            input=_render_prompt(request),
-            capture_output=True,
-            check=False,
-            text=True,
-            timeout=timeout_seconds,
-        )
+        try:
+            completed = subprocess.run(
+                command,
+                input=_render_prompt(request),
+                capture_output=True,
+                check=False,
+                text=True,
+                timeout=timeout_seconds,
+            )
+        except subprocess.TimeoutExpired as error:
+            raise RuntimeError(f"Claude Code timed out after {timeout_seconds}s: {command[0]}") from error
         if completed.returncode != 0:
             raise RuntimeError(f"Claude Code exited with {completed.returncode}: {completed.stderr.strip()}")
         return ModelOutput(

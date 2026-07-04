@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
 
 from multi_bot_agentic.config import build_llm_adapter
+from multi_bot_agentic.llm.claude_code_cli import ClaudeCodeCLIAdapter
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.llm.gemini import GeminiAdapter, _extract_gemini_text
 from multi_bot_agentic.llm.kimi import KimiAdapter
@@ -87,6 +89,31 @@ def test_gemini_adapter_default_uses_latest_flash_stack(monkeypatch: MonkeyPatch
 
     assert isinstance(adapter, GeminiAdapter)
     assert adapter.model == "gemini-3.5-flash"
+
+
+def test_claude_code_adapter_maps_timeout_to_runtime_error(monkeypatch: MonkeyPatch) -> None:
+    """A Claude Code CLI timeout must surface as a RuntimeError the runner handles.
+
+    ``subprocess.run`` raises ``subprocess.TimeoutExpired`` when the CLI exceeds
+    its timeout budget. That exception is a ``SubprocessError``, not an
+    ``OSError``/``RuntimeError``/``ValueError``, so it previously escaped the
+    ``AgentRunner`` loop's ``except`` clause and crashed the process instead of
+    being recorded as a failed run. The adapter must translate it into a
+    ``RuntimeError`` (its documented provider-failure contract).
+    """
+
+    def fake_run(*_args: object, **_kwargs: object) -> subprocess.CompletedProcess[str]:
+        raise subprocess.TimeoutExpired(cmd="claude", timeout=1.0)
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    adapter = ClaudeCodeCLIAdapter(command="claude")
+    request = ModelRequest(
+        goal="demo",
+        observations=(Observation(source="user", content="demo"),),
+    )
+
+    with pytest.raises(RuntimeError, match="timed out"):
+        adapter.complete(request, timeout_seconds=1.0)
 
 
 def test_kimi_adapter_default_uses_latest_k2_stack(monkeypatch: MonkeyPatch) -> None:
