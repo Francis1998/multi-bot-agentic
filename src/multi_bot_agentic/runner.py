@@ -308,6 +308,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         Tool registry.
     """
 
+    from multi_bot_agentic.tools.calculator import CalculatorTool
     from multi_bot_agentic.tools.checklist import ChecklistTool
     from multi_bot_agentic.tools.echo import EchoTool
     from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
@@ -316,4 +317,5 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "checklist": ChecklistTool(),
         "echo": EchoTool(),
         "readonly_file": ReadOnlyFileTool(root=root),
+        "calculator": CalculatorTool(),
     }

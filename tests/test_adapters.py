@@ -50,6 +50,35 @@ def test_openai_parser_consumes_assistant_message() -> None:
     assert text == "DONE: ok"
 
 
+def test_openai_parser_consumes_structured_content_parts() -> None:
+    """Assistant content delivered as a parts list must be joined, not rejected.
+
+    The base Chat Completions contract returns ``message.content`` as a string,
+    but several OpenAI-compatible gateways (LiteLLM, vLLM, OpenRouter) return it
+    as a list of ``{"type": "text", "text": ...}`` parts. The adapter previously
+    only accepted a string and raised ``ValueError`` for the list shape, which
+    the runner records as a failed run. Structured text parts must be joined into
+    the assistant text.
+    """
+
+    text = _extract_openai_text(
+        {
+            "choices": [
+                {
+                    "message": {
+                        "content": [
+                            {"type": "text", "text": "DONE:"},
+                            {"type": "text", "text": " ok"},
+                        ]
+                    }
+                }
+            ]
+        }
+    )
+
+    assert text == "DONE: ok"
+
+
 def test_gemini_parser_consumes_candidate_parts() -> None:
     """Gemini candidate parts are normalized to text."""
 
