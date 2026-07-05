@@ -100,9 +100,34 @@ def _extract_openai_text(decoded: dict[str, Any]) -> str:
     if not isinstance(message, dict):
         raise ValueError("OpenAI choice did not include message")
     content = message.get("content")
-    if not isinstance(content, str):
-        raise ValueError("OpenAI message content was not text")
-    return content
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        joined = _join_content_parts(content)
+        if joined:
+            return joined
+    raise ValueError("OpenAI message content was not text")
+
+
+def _join_content_parts(parts: list[Any]) -> str:
+    """Join OpenAI structured-content parts into a single text string.
+
+    Args:
+        parts: Content list from an OpenAI-compatible message.
+
+    Returns:
+        Concatenated text of string and ``{"text": ...}`` parts.
+    """
+
+    segments: list[str] = []
+    for part in parts:
+        if isinstance(part, str) and part:
+            segments.append(part)
+        elif isinstance(part, dict):
+            value = part.get("text")
+            if isinstance(value, str) and value:
+                segments.append(value)
+    return "".join(segments)
 
 
 def _finish_reason(decoded: dict[str, Any]) -> str | None:
