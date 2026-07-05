@@ -182,6 +182,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
 - `checklist`: deterministic launch checklist generator used by the fake-provider demo.
 - `echo`: safe text echo for adapter tests.
 - `readonly_file`: root-contained read-only file reader.
+- `calculator`: sandboxed arithmetic evaluator. It parses expressions into an AST
+  and walks an allowlist of numeric literals and `+ - * / // % **` operators —
+  never `eval` — so names, calls, and attribute access are rejected and exponents
+  are bounded against CPU/memory exhaustion. A model requests it with
+  `TOOL:calculator:2 + 3 * 4`, matching the same model-suggests / policy-validates
+  / adapter-executes pattern as every other tool.
 
 ## Repository Layout
 
@@ -242,6 +248,7 @@ GPT / Claude / Gemini / Kimi adapters, and safety controls (timeouts, bounded sc
 | #002 | Long-running tasks need cancellation | [doc](docs/use-cases/ISSUE-002-long-running-tasks-need-cancellation.md) |
 | #003 | Tool failures should not crash the run | [doc](docs/use-cases/ISSUE-003-tool-failures-should-not-crash-the-run.md) |
 | #005 | Unreadable files should not crash the run | [doc](docs/use-cases/ISSUE-005-unreadable-files-should-not-crash-the-run.md) |
+| #007 | OpenAI-compatible gateways may return structured content | [doc](docs/use-cases/ISSUE-007-openai-compatible-structured-content.md) |
 
 Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
