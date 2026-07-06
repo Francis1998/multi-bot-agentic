@@ -25,7 +25,7 @@ class SafetyPolicy:
     max_steps: int = 6
     timeout_seconds: float = 30.0
     max_prompt_chars: int = 4000
-    allowed_tools: frozenset[str] = frozenset({"checklist", "echo", "readonly_file", "calculator"})
+    allowed_tools: frozenset[str] = frozenset({"checklist", "echo", "readonly_file", "calculator", "json_format"})
     cancellation_file: Path | None = None
 
     def validate_goal(self, goal: str) -> None:
