@@ -185,9 +185,16 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
 - `calculator`: sandboxed arithmetic evaluator. It parses expressions into an AST
   and walks an allowlist of numeric literals and `+ - * / // % **` operators —
   never `eval` — so names, calls, and attribute access are rejected and exponents
-  are bounded against CPU/memory exhaustion. A model requests it with
+  are bounded against CPU/memory exhaustion. Results that are not real numbers
+  (for example a fractional power of a negative base) are refused rather than
+  returned as opaque complex values. A model requests it with
   `TOOL:calculator:2 + 3 * 4`, matching the same model-suggests / policy-validates
   / adapter-executes pattern as every other tool.
+- `json_format`: validates a JSON document and returns it canonicalized (sorted
+  keys, 2-space indent). Invalid input yields a structured failure with the
+  parser's message instead of raising. A model requests it with
+  `TOOL:json_format:{"b":1,"a":2}`, giving agents a safe way to verify and
+  normalize JSON produced by earlier steps.
 
 ## Repository Layout
 
