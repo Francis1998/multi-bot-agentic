@@ -86,3 +86,18 @@ def test_calculator_reports_division_by_zero() -> None:
 
     assert ok is False
     assert "could not evaluate" in content
+
+
+def test_calculator_rejects_complex_result() -> None:
+    """A fractional power of a negative base must not return a complex number.
+
+    Python evaluates ``(-8) ** 0.5`` to a ``complex`` value. The tool advertises
+    real arithmetic and annotates a ``float`` result, so a complex value both
+    violates that contract and renders as an opaque ``(...j)`` string. Such a
+    result must be reported as a failure rather than surfaced as a success.
+    """
+
+    ok, content = _run("(-8) ** 0.5")
+
+    assert ok is False
+    assert "real number" in content

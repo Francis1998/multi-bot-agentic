@@ -11,6 +11,7 @@ Real problems **multi-bot-agentic** solves — starting from issues.
 | #005 | Unreadable files should not crash the run | [ISSUE-005](./ISSUE-005-unreadable-files-should-not-crash-the-run.md) |
 | #006 | A provider timeout should fail the run, not crash the process | [ISSUE-006](./ISSUE-006-provider-timeout-should-not-crash-the-run.md) |
 | #007 | OpenAI-compatible gateways may return structured content | [ISSUE-007](./ISSUE-007-openai-compatible-structured-content.md) |
+| #008 | The calculator tool must return real numbers only | [ISSUE-008](./ISSUE-008-calculator-complex-results.md) |
 
 ## Design pillars
 
