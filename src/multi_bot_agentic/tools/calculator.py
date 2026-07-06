@@ -126,7 +126,10 @@ class CalculatorTool:
             right = cls._eval_node(node.right)
             if operator_type is ast.Pow and abs(right) > _MAX_EXPONENT:
                 raise CalculatorError(f"exponent exceeds safe bound {_MAX_EXPONENT}")
-            return binary_operator(left, right)
+            result = binary_operator(left, right)
+            if isinstance(result, complex):
+                raise CalculatorError("result is not a real number")
+            return result
         if isinstance(node, ast.UnaryOp):
             unary_type = type(node.op)
             unary_operator = _UNARY_OPERATORS.get(unary_type)
