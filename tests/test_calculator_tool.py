@@ -101,3 +101,26 @@ def test_calculator_rejects_complex_result() -> None:
 
     assert ok is False
     assert "real number" in content
+
+
+@pytest.mark.parametrize(
+    "expression",
+    [
+        "1e300 * 1e300",
+        "1e300 * 1e300 - 1e300 * 1e300",
+    ],
+)
+def test_calculator_rejects_non_finite_result(expression: str) -> None:
+    """Overflow to infinity or NaN must be reported as a failure.
+
+    Floating-point multiplication silently overflows to ``inf`` in CPython, and
+    ``inf - inf`` yields ``nan``, without raising. The tool advertises a real
+    numeric result, so surfacing ``inf``/``nan`` as ``ok=True`` misleads an agent
+    into treating a non-finite value as a valid answer. Such results must be
+    reported as a failure instead.
+    """
+
+    ok, content = _run(expression)
+
+    assert ok is False
+    assert "finite" in content

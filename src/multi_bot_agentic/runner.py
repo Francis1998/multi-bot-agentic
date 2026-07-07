@@ -313,6 +313,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.echo import EchoTool
     from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
+    from multi_bot_agentic.tools.redaction import RedactionTool
 
     return {
         "checklist": ChecklistTool(),
@@ -320,4 +321,5 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "readonly_file": ReadOnlyFileTool(root=root),
         "calculator": CalculatorTool(),
         "json_format": JsonFormatTool(),
+        "redact": RedactionTool(),
     }
