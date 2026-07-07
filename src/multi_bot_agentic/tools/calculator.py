@@ -11,6 +11,7 @@ expression such as ``9**9**9`` cannot exhaust CPU or memory.
 from __future__ import annotations
 
 import ast
+import math
 import operator
 from collections.abc import Callable
 from typing import Final
@@ -129,6 +130,8 @@ class CalculatorTool:
             result = binary_operator(left, right)
             if isinstance(result, complex):
                 raise CalculatorError("result is not a real number")
+            if isinstance(result, float) and not math.isfinite(result):
+                raise CalculatorError("result is not a finite number")
             return result
         if isinstance(node, ast.UnaryOp):
             unary_type = type(node.op)
