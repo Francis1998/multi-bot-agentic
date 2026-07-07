@@ -27,6 +27,9 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `checklist`: deterministic launch checklist generator.
 - `echo`: safe deterministic echo tool for demos.
 - `readonly_file`: root-contained read-only file access.
+- `calculator`: sandboxed AST arithmetic; refuses non-real and non-finite results.
+- `json_format`: JSON validation and canonicalization.
+- `redact`: scrubs PII (email, phone, SSN, IPv4) from text into typed placeholders.
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 

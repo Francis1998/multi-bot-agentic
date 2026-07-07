@@ -186,15 +186,21 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   and walks an allowlist of numeric literals and `+ - * / // % **` operators —
   never `eval` — so names, calls, and attribute access are rejected and exponents
   are bounded against CPU/memory exhaustion. Results that are not real numbers
-  (for example a fractional power of a negative base) are refused rather than
-  returned as opaque complex values. A model requests it with
-  `TOOL:calculator:2 + 3 * 4`, matching the same model-suggests / policy-validates
-  / adapter-executes pattern as every other tool.
+  (for example a fractional power of a negative base) or not finite (overflow to
+  `inf`, or `nan`) are refused rather than returned as opaque values. A model
+  requests it with `TOOL:calculator:2 + 3 * 4`, matching the same
+  model-suggests / policy-validates / adapter-executes pattern as every other
+  tool.
 - `json_format`: validates a JSON document and returns it canonicalized (sorted
   keys, 2-space indent). Invalid input yields a structured failure with the
   parser's message instead of raising. A model requests it with
   `TOOL:json_format:{"b":1,"a":2}`, giving agents a safe way to verify and
   normalize JSON produced by earlier steps.
+- `redact`: scrubs common PII (email addresses, phone numbers, US Social
+  Security numbers, IPv4 addresses) from text, replacing each match with a typed
+  placeholder such as `[EMAIL]` and reporting per-category counts in the tool
+  metadata. A model requests it with `TOOL:redact:<text>`, giving agents a safe
+  way to sanitize content before it is persisted to the durable event log.
 
 ## Repository Layout
 
