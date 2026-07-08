@@ -201,6 +201,11 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   placeholder such as `[EMAIL]` and reporting per-category counts in the tool
   metadata. A model requests it with `TOOL:redact:<text>`, giving agents a safe
   way to sanitize content before it is persisted to the durable event log.
+- `hash`: computes a hex digest of text with a small allowlist of well-known
+  algorithms (`md5`, `sha1`, `sha256`, `sha512`; default `sha256`). Empty,
+  oversized, or unsupported-algorithm requests return a structured failure. A
+  model requests it with `TOOL:hash:<text>`, giving agents a deterministic
+  fingerprint for deduplication, cache keys, or integrity checks between steps.
 
 ## Repository Layout
 
