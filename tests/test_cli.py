@@ -25,6 +25,46 @@ def test_format_event_text_includes_decision_rule() -> None:
     assert format_event_text(event) == "005 deciding   decision action=call_tool rule=model.requested-tool"
 
 
+def test_format_event_text_omits_metadata_dump_for_llm_action_result() -> None:
+    """An llm action-result row must not dump the metadata dict as the target.
+
+    A missing ``tool`` key previously fell back to the whole ``metadata``
+    dictionary, so an llm action result rendered a noisy ``target={...}`` blob
+    containing model internals. The row should surface only the action kind for
+    non-tool results and reserve ``target=`` for named tools.
+    """
+
+    event = EventRecord(
+        run_id="run-1",
+        seq=7,
+        timestamp="2026-01-01T00:00:00Z",
+        event_type="action_result",
+        state="acting",
+        payload={"kind": "llm", "output": "hi", "metadata": {"model": "gpt-5.5"}},
+    )
+
+    rendered = format_event_text(event)
+
+    assert rendered == "007 acting     action_result kind=llm"
+    assert "{" not in rendered
+    assert "model" not in rendered
+
+
+def test_format_event_text_includes_tool_target_for_tool_action_result() -> None:
+    """A tool action-result row still surfaces the tool name as the target."""
+
+    event = EventRecord(
+        run_id="run-1",
+        seq=8,
+        timestamp="2026-01-01T00:00:00Z",
+        event_type="action_result",
+        state="acting",
+        payload={"kind": "tool", "tool": "checklist", "ok": True},
+    )
+
+    assert format_event_text(event) == "008 acting     action_result kind=tool target=checklist"
+
+
 def test_format_event_json_includes_payload() -> None:
     """JSON replay output should remain machine-readable."""
 

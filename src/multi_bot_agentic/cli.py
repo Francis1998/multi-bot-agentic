@@ -194,8 +194,10 @@ def format_event_text(event: EventRecord) -> str:
         if isinstance(rationale, dict):
             detail = f" action={event.payload.get('action')} rule={rationale.get('rule_id')}"
     elif event.event_type == "action_result":
-        target = event.payload.get("tool", event.payload.get("metadata", {}))
-        detail = f" kind={event.payload.get('kind')} target={target}"
+        detail = f" kind={event.payload.get('kind')}"
+        tool_name = event.payload.get("tool")
+        if tool_name is not None:
+            detail += f" target={tool_name}"
     elif event.event_type in {"run_completed", "run_failed", "run_cancelled"}:
         detail = f" result={event.payload}"
     return f"{event.seq:03d} {event.state:<10} {event.event_type}{detail}"
