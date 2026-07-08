@@ -30,6 +30,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `calculator`: sandboxed AST arithmetic; refuses non-real and non-finite results.
 - `json_format`: JSON validation and canonicalization.
 - `redact`: scrubs PII (email, phone, SSN, IPv4) from text into typed placeholders.
+- `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 

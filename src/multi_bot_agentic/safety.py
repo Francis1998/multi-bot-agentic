@@ -26,7 +26,7 @@ class SafetyPolicy:
     timeout_seconds: float = 30.0
     max_prompt_chars: int = 4000
     allowed_tools: frozenset[str] = frozenset(
-        {"checklist", "echo", "readonly_file", "calculator", "json_format", "redact"}
+        {"checklist", "echo", "readonly_file", "calculator", "json_format", "redact", "hash"}
     )
     cancellation_file: Path | None = None
 
