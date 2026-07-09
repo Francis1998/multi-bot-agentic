@@ -54,6 +54,23 @@ def test_redact_leaves_clean_text_unchanged() -> None:
     assert result.metadata["total"] == 0
 
 
+def test_redact_scrubs_parenthesized_area_code_phone() -> None:
+    """A phone with a parenthesised area code preceded by whitespace is redacted.
+
+    A leading ``\\b`` in the phone pattern could not match before the ``(`` of a
+    ``(415) 555-1234`` number, so such numbers preceded by whitespace (the common
+    case) leaked through unredacted. The boundary must recognise a number that
+    starts with a parenthesised area code.
+    """
+
+    result = _run("Reach me at (415) 555-1234 anytime")
+
+    assert result.ok is True
+    assert result.content == "Reach me at [PHONE] anytime"
+    assert result.metadata["phone"] == 1
+    assert result.metadata["total"] == 1
+
+
 def test_redact_rejects_empty_document() -> None:
     """An empty or whitespace-only document is a structured failure."""
 

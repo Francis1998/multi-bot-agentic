@@ -308,6 +308,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         Tool registry.
     """
 
+    from multi_bot_agentic.tools.base64_codec import Base64Tool
     from multi_bot_agentic.tools.calculator import CalculatorTool
     from multi_bot_agentic.tools.checklist import ChecklistTool
     from multi_bot_agentic.tools.echo import EchoTool
@@ -324,4 +325,5 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "json_format": JsonFormatTool(),
         "redact": RedactionTool(),
         "hash": HashTool(),
+        "base64": Base64Tool(),
     }

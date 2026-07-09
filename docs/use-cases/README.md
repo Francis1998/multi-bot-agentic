@@ -14,6 +14,7 @@ Real problems **multi-bot-agentic** solves — starting from issues.
 | #008 | The calculator tool must return real numbers only | [ISSUE-008](./ISSUE-008-calculator-complex-results.md) |
 | #009 | The calculator tool must return finite numbers only | [ISSUE-009](./ISSUE-009-calculator-non-finite-results.md) |
 | #010 | Replay timelines must not leak provider metadata | [ISSUE-010](./ISSUE-010-replay-timeline-leaks-metadata.md) |
+| #011 | PII redaction missed parenthesized area-code phone numbers | [ISSUE-011](./ISSUE-011-redaction-misses-parenthesized-phone.md) |
 
 ## Design pillars
 

@@ -42,7 +42,12 @@ _REDACTIONS: Final[tuple[tuple[str, str, re.Pattern[str]], ...]] = (
     (
         "phone",
         "[PHONE]",
-        re.compile(r"\b(?:\+?\d{1,3}[.\s-]?)?(?:\(\d{3}\)|\d{3})[.\s-]?\d{3}[.\s-]?\d{4}\b"),
+        # The number may begin with a parenthesised area code (``(415) 555-1234``).
+        # A leading ``\b`` cannot match before ``(`` (a non-word character), which
+        # left parenthesised numbers preceded by whitespace unredacted; use a
+        # ``(?<!\w)``/``(?!\w)`` boundary that holds whether the number starts with
+        # a digit or a ``(``.
+        re.compile(r"(?<!\w)(?:\+?\d{1,3}[.\s-]?)?(?:\(\d{3}\)|\d{3})[.\s-]?\d{3}[.\s-]?\d{4}(?!\w)"),
     ),
 )
 

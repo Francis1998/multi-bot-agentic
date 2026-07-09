@@ -206,6 +206,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   oversized, or unsupported-algorithm requests return a structured failure. A
   model requests it with `TOOL:hash:<text>`, giving agents a deterministic
   fingerprint for deduplication, cache keys, or integrity checks between steps.
+- `base64`: encodes text to standard Base64 or decodes Base64 back to text
+  (`operation: encode|decode`; default `encode`). Decoding validates the payload
+  strictly and requires the decoded bytes to be valid UTF-8, so invalid Base64 or
+  non-text payloads return a structured failure. A model requests it with
+  `TOOL:base64:<text>`, giving agents a safe way to move opaque payloads between
+  steps.
 
 ## Repository Layout
 
@@ -267,6 +273,7 @@ GPT / Claude / Gemini / Kimi adapters, and safety controls (timeouts, bounded sc
 | #003 | Tool failures should not crash the run | [doc](docs/use-cases/ISSUE-003-tool-failures-should-not-crash-the-run.md) |
 | #005 | Unreadable files should not crash the run | [doc](docs/use-cases/ISSUE-005-unreadable-files-should-not-crash-the-run.md) |
 | #007 | OpenAI-compatible gateways may return structured content | [doc](docs/use-cases/ISSUE-007-openai-compatible-structured-content.md) |
+| #011 | PII redaction missed parenthesized area-code phone numbers | [doc](docs/use-cases/ISSUE-011-redaction-misses-parenthesized-phone.md) |
 
 Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
