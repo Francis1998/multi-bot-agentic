@@ -1,6 +1,7 @@
 """Tool adapters exposed to the deterministic agent runtime."""
 
 from multi_bot_agentic.tools.base import ToolAdapter
+from multi_bot_agentic.tools.base64_codec import Base64Tool
 from multi_bot_agentic.tools.calculator import CalculatorTool
 from multi_bot_agentic.tools.checklist import ChecklistTool
 from multi_bot_agentic.tools.echo import EchoTool
@@ -10,6 +11,7 @@ from multi_bot_agentic.tools.json_format import JsonFormatTool
 from multi_bot_agentic.tools.redaction import RedactionTool
 
 __all__ = [
+    "Base64Tool",
     "CalculatorTool",
     "ChecklistTool",
     "EchoTool",

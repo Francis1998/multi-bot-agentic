@@ -31,6 +31,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `json_format`: JSON validation and canonicalization.
 - `redact`: scrubs PII (email, phone, SSN, IPv4) from text into typed placeholders.
 - `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
+- `base64`: encodes text to Base64 or decodes Base64 to text (encode|decode; default encode).
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 
