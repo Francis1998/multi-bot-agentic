@@ -9,6 +9,7 @@ from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
 from multi_bot_agentic.tools.hashing import HashTool
 from multi_bot_agentic.tools.json_format import JsonFormatTool
 from multi_bot_agentic.tools.redaction import RedactionTool
+from multi_bot_agentic.tools.url_parse import UrlParseTool
 
 __all__ = [
     "Base64Tool",
@@ -20,4 +21,5 @@ __all__ = [
     "ReadOnlyFileTool",
     "RedactionTool",
     "ToolAdapter",
+    "UrlParseTool",
 ]

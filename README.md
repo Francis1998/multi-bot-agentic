@@ -212,6 +212,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   non-text payloads return a structured failure. A model requests it with
   `TOOL:base64:<text>`, giving agents a safe way to move opaque payloads between
   steps.
+- `url_parse`: splits an absolute URL into its components (scheme, host, port,
+  path, query, grouped query parameters, fragment) using the standard library —
+  never a network request. Relative URLs, empty input, and invalid ports return a
+  structured failure. A model requests it with `TOOL:url_parse:<url>`, giving
+  agents a safe way to route on a host or inspect a query parameter relayed by an
+  earlier step.
 
 ## Repository Layout
 
