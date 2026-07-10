@@ -212,6 +212,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   non-text payloads return a structured failure. A model requests it with
   `TOOL:base64:<text>`, giving agents a safe way to move opaque payloads between
   steps.
+- `url_parse`: splits an absolute URL into its components (scheme, host, port,
+  path, query, grouped query parameters, fragment) using the standard library —
+  never a network request. Relative URLs, empty input, and invalid ports return a
+  structured failure. A model requests it with `TOOL:url_parse:<url>`, giving
+  agents a safe way to route on a host or inspect a query parameter relayed by an
+  earlier step.
 
 ## Repository Layout
 
@@ -274,6 +280,7 @@ GPT / Claude / Gemini / Kimi adapters, and safety controls (timeouts, bounded sc
 | #005 | Unreadable files should not crash the run | [doc](docs/use-cases/ISSUE-005-unreadable-files-should-not-crash-the-run.md) |
 | #007 | OpenAI-compatible gateways may return structured content | [doc](docs/use-cases/ISSUE-007-openai-compatible-structured-content.md) |
 | #011 | PII redaction missed parenthesized area-code phone numbers | [doc](docs/use-cases/ISSUE-011-redaction-misses-parenthesized-phone.md) |
+| #012 | PII redaction over-redacted non-address dotted numbers | [doc](docs/use-cases/ISSUE-012-redaction-over-redacts-invalid-ipv4.md) |
 
 Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 

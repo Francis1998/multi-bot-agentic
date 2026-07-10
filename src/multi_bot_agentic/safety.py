@@ -35,6 +35,7 @@ class SafetyPolicy:
             "redact",
             "hash",
             "base64",
+            "url_parse",
         }
     )
     cancellation_file: Path | None = None

@@ -316,6 +316,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.hashing import HashTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
     from multi_bot_agentic.tools.redaction import RedactionTool
+    from multi_bot_agentic.tools.url_parse import UrlParseTool
 
     return {
         "checklist": ChecklistTool(),
@@ -326,4 +327,5 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "redact": RedactionTool(),
         "hash": HashTool(),
         "base64": Base64Tool(),
+        "url_parse": UrlParseTool(),
     }

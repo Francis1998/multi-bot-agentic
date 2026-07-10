@@ -37,7 +37,14 @@ _REDACTIONS: Final[tuple[tuple[str, str, re.Pattern[str]], ...]] = (
     (
         "ipv4",
         "[IP]",
-        re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b"),
+        # Each octet is bounded to 0-255 so genuine addresses are redacted while
+        # unrelated dotted numbers (e.g. the build version ``300.400.500.600``)
+        # are not mangled into ``[IP]``. A bare ``\d{1,3}`` matched any 0-999
+        # group and over-redacted such values.
+        re.compile(
+            r"\b(?:(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}"
+            r"(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\b"
+        ),
     ),
     (
         "phone",
