@@ -280,6 +280,7 @@ GPT / Claude / Gemini / Kimi adapters, and safety controls (timeouts, bounded sc
 | #005 | Unreadable files should not crash the run | [doc](docs/use-cases/ISSUE-005-unreadable-files-should-not-crash-the-run.md) |
 | #007 | OpenAI-compatible gateways may return structured content | [doc](docs/use-cases/ISSUE-007-openai-compatible-structured-content.md) |
 | #011 | PII redaction missed parenthesized area-code phone numbers | [doc](docs/use-cases/ISSUE-011-redaction-misses-parenthesized-phone.md) |
+| #012 | PII redaction over-redacted non-address dotted numbers | [doc](docs/use-cases/ISSUE-012-redaction-over-redacts-invalid-ipv4.md) |
 
 Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 

@@ -71,6 +71,34 @@ def test_redact_scrubs_parenthesized_area_code_phone() -> None:
     assert result.metadata["total"] == 1
 
 
+def test_redact_ignores_dotted_numbers_with_out_of_range_octets() -> None:
+    """A dotted-quad whose octets exceed 255 is not a valid IPv4 and is kept.
+
+    The IPv4 pattern matched any four dot-separated groups of one to three
+    digits (``\\d{1,3}``), so non-address dotted numbers such as a build version
+    ``300.400.500.600`` were mangled into ``[IP]`` even though they can never be
+    a real IPv4 address. Octet matching must be bounded to ``0-255`` so genuine
+    addresses are still redacted while unrelated dotted numbers are preserved.
+    """
+
+    result = _run("build 300.400.500.600 shipped")
+
+    assert result.ok is True
+    assert result.content == "build 300.400.500.600 shipped"
+    assert result.metadata["ipv4"] == 0
+    assert result.metadata["total"] == 0
+
+
+def test_redact_still_scrubs_valid_ipv4() -> None:
+    """A valid IPv4 address is still redacted after octet-range tightening."""
+
+    result = _run("host 192.168.1.1 and 10.0.0.255")
+
+    assert result.ok is True
+    assert result.content == "host [IP] and [IP]"
+    assert result.metadata["ipv4"] == 2
+
+
 def test_redact_rejects_empty_document() -> None:
     """An empty or whitespace-only document is a structured failure."""
 
