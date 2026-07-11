@@ -47,6 +47,22 @@ def test_json_format_rejects_empty_document() -> None:
     assert "empty" in content
 
 
+def test_json_format_rejects_non_finite_constants() -> None:
+    """``NaN``/``Infinity``/``-Infinity`` are not valid JSON and must be rejected.
+
+    Python's ``json.loads`` accepts these three constants by default, so the
+    validator previously round-tripped them into output that strict RFC 8259
+    parsers (e.g. JavaScript's ``JSON.parse``) reject. Each must now surface a
+    structured failure instead of being emitted verbatim.
+    """
+
+    for document in ('{"ratio": NaN}', '{"limit": Infinity}', '{"floor": -Infinity}'):
+        ok, content = _run(document)
+
+        assert ok is False, f"expected failure for {document!r}"
+        assert "invalid JSON" in content
+
+
 def test_json_format_reports_top_level_type() -> None:
     """A JSON array's canonical form and top-level type are reported."""
 

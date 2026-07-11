@@ -19,6 +19,25 @@ from multi_bot_agentic.models import ToolInvocation, ToolResult
 _MAX_DOCUMENT_CHARS: Final[int] = 20_000
 
 
+def _reject_non_finite(token: str) -> float:
+    """Reject the non-standard ``NaN``/``Infinity``/``-Infinity`` JSON tokens.
+
+    Python's :func:`json.loads` accepts these three constants by default, but
+    RFC 8259 does not permit them and strict parsers (for example JavaScript's
+    ``JSON.parse``) reject them. Passing this handler as ``parse_constant`` makes
+    the validator reject such documents rather than round-tripping them into
+    output that is not valid JSON.
+
+    Args:
+        token: The literal constant token encountered by the parser.
+
+    Raises:
+        ValueError: Always, identifying the offending token.
+    """
+
+    raise ValueError(f"{token} is not valid JSON")
+
+
 class JsonFormatTool:
     """Validate and canonicalize a JSON document."""
 
@@ -54,7 +73,7 @@ class JsonFormatTool:
             )
 
         try:
-            parsed = json.loads(document)
+            parsed = json.loads(document, parse_constant=_reject_non_finite)
         except (json.JSONDecodeError, ValueError) as error:
             return ToolResult(
                 tool_name=self.name,
