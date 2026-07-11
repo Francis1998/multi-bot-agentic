@@ -36,6 +36,7 @@ class SafetyPolicy:
             "hash",
             "base64",
             "url_parse",
+            "uuid5",
         }
     )
     cancellation_file: Path | None = None

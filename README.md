@@ -193,8 +193,10 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   tool.
 - `json_format`: validates a JSON document and returns it canonicalized (sorted
   keys, 2-space indent). Invalid input yields a structured failure with the
-  parser's message instead of raising. A model requests it with
-  `TOOL:json_format:{"b":1,"a":2}`, giving agents a safe way to verify and
+  parser's message instead of raising, and the non-standard `NaN`/`Infinity`/
+  `-Infinity` tokens (which RFC 8259 forbids and strict parsers reject) are
+  rejected rather than round-tripped into invalid output. A model requests it
+  with `TOOL:json_format:{"b":1,"a":2}`, giving agents a safe way to verify and
   normalize JSON produced by earlier steps.
 - `redact`: scrubs common PII (email addresses, phone numbers, US Social
   Security numbers, IPv4 addresses) from text, replacing each match with a typed
@@ -218,6 +220,13 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   structured failure. A model requests it with `TOOL:url_parse:<url>`, giving
   agents a safe way to route on a host or inspect a query parameter relayed by an
   earlier step.
+- `uuid5`: computes a deterministic version-5 UUID from a name and a namespace
+  (`dns`, `url`, `oid`, `x500`, or a custom UUID string; default `dns`). Because
+  a v5 UUID is a hash of `(namespace, name)`, the same inputs always yield the
+  same id — keeping the runtime deterministic, unlike a random v4 UUID. Empty,
+  oversized, or unusable-namespace requests return a structured failure. A model
+  requests it with `TOOL:uuid5:<name>`, giving agents stable primary keys,
+  idempotency keys, or correlation ids shared across steps.
 
 ## Repository Layout
 
