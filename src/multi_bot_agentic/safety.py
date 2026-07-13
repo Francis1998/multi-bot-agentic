@@ -37,6 +37,7 @@ class SafetyPolicy:
             "base64",
             "url_parse",
             "uuid5",
+            "slugify",
         }
     )
     cancellation_file: Path | None = None

@@ -34,6 +34,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `base64`: encodes text to Base64 or decodes Base64 to text (encode|decode; default encode).
 - `url_parse`: splits an absolute URL into scheme, host, port, path, query, and fragment.
 - `uuid5`: computes a deterministic version-5 UUID from a name and namespace (dns|url|oid|x500|custom UUID; default dns).
+- `slugify`: converts text into a URL-safe ASCII slug (separator default `-`, optional `max_length` truncated on a word boundary).
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 

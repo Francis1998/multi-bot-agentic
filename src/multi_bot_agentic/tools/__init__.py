@@ -9,6 +9,7 @@ from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
 from multi_bot_agentic.tools.hashing import HashTool
 from multi_bot_agentic.tools.json_format import JsonFormatTool
 from multi_bot_agentic.tools.redaction import RedactionTool
+from multi_bot_agentic.tools.slugify import SlugifyTool
 from multi_bot_agentic.tools.url_parse import UrlParseTool
 from multi_bot_agentic.tools.uuid5 import Uuid5Tool
 
@@ -21,6 +22,7 @@ __all__ = [
     "JsonFormatTool",
     "ReadOnlyFileTool",
     "RedactionTool",
+    "SlugifyTool",
     "ToolAdapter",
     "UrlParseTool",
     "Uuid5Tool",

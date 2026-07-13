@@ -227,6 +227,14 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   oversized, or unusable-namespace requests return a structured failure. A model
   requests it with `TOOL:uuid5:<name>`, giving agents stable primary keys,
   idempotency keys, or correlation ids shared across steps.
+- `slugify`: converts free-form text into a URL- and filesystem-safe ASCII slug.
+  It strips diacritics, lowercases, collapses every run of non-alphanumeric
+  characters into a single separator (default `-`, overridable), trims the ends,
+  and can cap the length on a word boundary via `max_length`. Empty, oversized,
+  unusable-separator, invalid-`max_length`, or slug-empty requests return a
+  structured failure. A model requests it with `TOOL:slugify:<text>`, giving
+  agents deterministic branch names, path segments, cache-file names, and anchor
+  ids from arbitrary text.
 
 ## Repository Layout
 

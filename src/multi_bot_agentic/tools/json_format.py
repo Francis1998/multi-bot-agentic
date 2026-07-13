@@ -12,6 +12,7 @@ contract.
 from __future__ import annotations
 
 import json
+import math
 from typing import Final
 
 from multi_bot_agentic.models import ToolInvocation, ToolResult
@@ -36,6 +37,32 @@ def _reject_non_finite(token: str) -> float:
     """
 
     raise ValueError(f"{token} is not valid JSON")
+
+
+def _parse_finite_float(token: str) -> float:
+    """Parse a JSON float token, rejecting values that overflow to infinity.
+
+    A finite numeric literal whose magnitude exceeds the IEEE-754 double range
+    (for example ``1e400``) is parsed by Python's default ``float`` into
+    ``inf``. Unlike the bare ``Infinity`` token, this bypasses ``parse_constant``
+    entirely, so such a document was accepted and then re-serialised as the
+    non-standard ``Infinity`` literal — output that is not valid JSON. Routing
+    floats through this handler rejects the document at validation instead.
+
+    Args:
+        token: The numeric float token encountered by the parser.
+
+    Returns:
+        The parsed float when finite.
+
+    Raises:
+        ValueError: When the literal is not a finite double.
+    """
+
+    value = float(token)
+    if not math.isfinite(value):
+        raise ValueError(f"{token} overflows to a non-finite number and is not valid JSON")
+    return value
 
 
 class JsonFormatTool:
@@ -73,7 +100,11 @@ class JsonFormatTool:
             )
 
         try:
-            parsed = json.loads(document, parse_constant=_reject_non_finite)
+            parsed = json.loads(
+                document,
+                parse_constant=_reject_non_finite,
+                parse_float=_parse_finite_float,
+            )
         except (json.JSONDecodeError, ValueError) as error:
             return ToolResult(
                 tool_name=self.name,
