@@ -63,6 +63,23 @@ def test_json_format_rejects_non_finite_constants() -> None:
         assert "invalid JSON" in content
 
 
+def test_json_format_rejects_overflowing_float_literals() -> None:
+    """A finite literal that overflows to infinity must be rejected, not emitted.
+
+    A numeric literal whose magnitude exceeds the IEEE-754 double range (e.g.
+    ``1e400``) is parsed by Python into ``inf``. Because this bypasses
+    ``parse_constant``, the document was previously accepted and re-serialised as
+    the non-standard ``Infinity`` literal — output that strict RFC 8259 parsers
+    reject. Each such document must now surface a structured failure instead.
+    """
+
+    for document in ('{"ratio": 1e400}', '{"floor": -1e400}', "[1e999]"):
+        ok, content = _run(document)
+
+        assert ok is False, f"expected failure for {document!r}"
+        assert "invalid JSON" in content
+
+
 def test_json_format_reports_top_level_type() -> None:
     """A JSON array's canonical form and top-level type are reported."""
 
