@@ -47,6 +47,21 @@ def test_url_parse_repeated_query_keys_are_grouped() -> None:
     assert metadata["query_params"] == {"tag": ["a", "b", "c"]}
 
 
+def test_url_parse_keeps_present_but_blank_query_params() -> None:
+    """Present-but-valueless query parameters must survive in ``query_params``.
+
+    A flag-style parameter without a value (``?debug``) or an explicit empty
+    value (``?ref=``) is still part of the query a caller may be inspecting for
+    presence. ``parse_qs`` drops such keys by default, silently hiding them; the
+    tool must keep them so ``debug`` and ``ref`` remain observable.
+    """
+
+    ok, _content, metadata = _run("https://example.com/p?debug&verbose=1&ref=")
+
+    assert ok is True
+    assert metadata["query_params"] == {"debug": [""], "verbose": ["1"], "ref": [""]}
+
+
 def test_url_parse_defaults_port_to_none_when_absent() -> None:
     """A URL without an explicit port reports ``port`` as ``None``."""
 
