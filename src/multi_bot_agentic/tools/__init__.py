@@ -4,6 +4,7 @@ from multi_bot_agentic.tools.base import ToolAdapter
 from multi_bot_agentic.tools.base64_codec import Base64Tool
 from multi_bot_agentic.tools.calculator import CalculatorTool
 from multi_bot_agentic.tools.checklist import ChecklistTool
+from multi_bot_agentic.tools.datetime_normalize import DateTimeTool
 from multi_bot_agentic.tools.echo import EchoTool
 from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
 from multi_bot_agentic.tools.hashing import HashTool
@@ -17,6 +18,7 @@ __all__ = [
     "Base64Tool",
     "CalculatorTool",
     "ChecklistTool",
+    "DateTimeTool",
     "EchoTool",
     "HashTool",
     "JsonFormatTool",

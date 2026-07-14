@@ -235,6 +235,14 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   structured failure. A model requests it with `TOOL:slugify:<text>`, giving
   agents deterministic branch names, path segments, cache-file names, and anchor
   ids from arbitrary text.
+- `datetime`: normalizes an ISO-8601 timestamp to a canonical UTC form
+  (`YYYY-MM-DDTHH:MM:SS+00:00`) and reports its Unix epoch and weekday. A
+  trailing `Z` (Zulu) designator and numeric offsets are both accepted; a naive
+  timestamp fails unless `assume_utc=true` is passed. It reads no wall-clock
+  `now`, so it stays fully deterministic. Empty, oversized, unparseable, or
+  naive-without-`assume_utc` requests return a structured failure. A model
+  requests it with `TOOL:datetime:<timestamp>`, giving agents one canonical
+  instant to compare, sort, and log timestamps that arrive in mixed shapes.
 
 ## Repository Layout
 

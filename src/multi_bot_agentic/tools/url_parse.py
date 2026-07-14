@@ -87,7 +87,11 @@ class UrlParseTool:
                 metadata={"netloc": split.netloc},
             )
 
-        query_params = parse_qs(split.query)
+        # ``keep_blank_values=True`` so a present-but-valueless parameter
+        # (``?debug`` or ``?ref=``) still surfaces in ``query_params``. The
+        # default drops such keys entirely, which silently hides a parameter the
+        # caller may be inspecting for presence.
+        query_params = parse_qs(split.query, keep_blank_values=True)
         components: dict[str, object] = {
             "scheme": split.scheme,
             "hostname": split.hostname,

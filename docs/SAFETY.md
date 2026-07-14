@@ -35,6 +35,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `url_parse`: splits an absolute URL into scheme, host, port, path, query, and fragment.
 - `uuid5`: computes a deterministic version-5 UUID from a name and namespace (dns|url|oid|x500|custom UUID; default dns).
 - `slugify`: converts text into a URL-safe ASCII slug (separator default `-`, optional `max_length` truncated on a word boundary).
+- `datetime`: normalizes an ISO-8601 timestamp to canonical UTC (with epoch and weekday); reads no wall-clock `now` and requires `assume_utc` for naive input.
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 
