@@ -15,6 +15,8 @@ Real problems **multi-bot-agentic** solves — starting from issues.
 | #009 | The calculator tool must return finite numbers only | [ISSUE-009](./ISSUE-009-calculator-non-finite-results.md) |
 | #010 | Replay timelines must not leak provider metadata | [ISSUE-010](./ISSUE-010-replay-timeline-leaks-metadata.md) |
 | #011 | PII redaction missed parenthesized area-code phone numbers | [ISSUE-011](./ISSUE-011-redaction-misses-parenthesized-phone.md) |
+| #012 | PII redaction over-redacted invalid IPv4-looking numbers | [ISSUE-012](./ISSUE-012-redaction-over-redacts-invalid-ipv4.md) |
+| #013 | The calculator tool must bound nested power towers | [ISSUE-013](./ISSUE-013-calculator-nested-power-tower.md) |
 
 ## Design pillars
 

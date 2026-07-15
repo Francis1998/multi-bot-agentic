@@ -243,6 +243,15 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   naive-without-`assume_utc` requests return a structured failure. A model
   requests it with `TOOL:datetime:<timestamp>`, giving agents one canonical
   instant to compare, sort, and log timestamps that arrive in mixed shapes.
+- `duration`: parses an ISO-8601 duration (`PT1H30M`, `P1DT2H`, `P2W`, with an
+  optional leading `-` and a fractional smallest component) into its total
+  length in seconds plus a normalized component breakdown. Only fixed-length
+  components (weeks, days, hours, minutes, seconds) are supported; calendar
+  components (years/months) are refused because they have no fixed second
+  length. It reads no wall-clock `now`, so it stays fully deterministic. Empty,
+  oversized, calendar, componentless, or unparseable requests return a
+  structured failure. A model requests it with `TOOL:duration:<duration>`,
+  giving agents one exact scalar for retry backoffs, TTLs, and time budgets.
 
 ## Repository Layout
 

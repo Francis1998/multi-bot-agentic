@@ -39,6 +39,7 @@ class SafetyPolicy:
             "uuid5",
             "slugify",
             "datetime",
+            "duration",
         }
     )
     cancellation_file: Path | None = None
