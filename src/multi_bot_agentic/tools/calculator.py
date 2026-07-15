@@ -20,6 +20,13 @@ from multi_bot_agentic.models import ToolInvocation, ToolResult
 
 _MAX_EXPRESSION_CHARS: Final[int] = 200
 _MAX_EXPONENT: Final[int] = 64
+# Bound the magnitude of any integer result. The per-operation exponent bound
+# alone does not stop a *nested* power tower such as ``((10**60)**60)**60``:
+# every individual exponent stays within ``_MAX_EXPONENT`` while the result grows
+# tower-exponentially, exhausting CPU/memory (and overflowing CPython's integer
+# string-conversion limit). ~4096 bits (~1233 digits) comfortably covers any
+# reasonable single ``base ** 64`` result while rejecting such towers.
+_MAX_RESULT_BITS: Final[int] = 4096
 
 _BINARY_OPERATORS: Final[dict[type[ast.operator], Callable[[float, float], float]]] = {
     ast.Add: operator.add,
@@ -125,13 +132,17 @@ class CalculatorTool:
                 raise CalculatorError(f"operator not allowed: {operator_type.__name__}")
             left = cls._eval_node(node.left)
             right = cls._eval_node(node.right)
-            if operator_type is ast.Pow and abs(right) > _MAX_EXPONENT:
-                raise CalculatorError(f"exponent exceeds safe bound {_MAX_EXPONENT}")
+            if operator_type is ast.Pow:
+                if abs(right) > _MAX_EXPONENT:
+                    raise CalculatorError(f"exponent exceeds safe bound {_MAX_EXPONENT}")
+                cls._guard_power_magnitude(left, right)
             result = binary_operator(left, right)
             if isinstance(result, complex):
                 raise CalculatorError("result is not a real number")
             if isinstance(result, float) and not math.isfinite(result):
                 raise CalculatorError("result is not a finite number")
+            if isinstance(result, int) and result.bit_length() > _MAX_RESULT_BITS:
+                raise CalculatorError(f"result exceeds safe magnitude of {_MAX_RESULT_BITS} bits")
             return result
         if isinstance(node, ast.UnaryOp):
             unary_type = type(node.op)
@@ -140,6 +151,30 @@ class CalculatorTool:
                 raise CalculatorError(f"unary operator not allowed: {unary_type.__name__}")
             return unary_operator(cls._eval_node(node.operand))
         raise CalculatorError(f"unsupported syntax: {type(node).__name__}")
+
+    @staticmethod
+    def _guard_power_magnitude(left: float, right: float) -> None:
+        """Reject an integer power whose result would exceed the magnitude bound.
+
+        The size is estimated from the operands *before* the exponentiation is
+        performed, so a hostile power tower is refused without ever materialising
+        the oversized integer. Only integer bases raised to a non-negative
+        integer exponent can produce an unbounded integer; float results are
+        governed separately by the finiteness check.
+
+        Args:
+            left: Evaluated base value.
+            right: Evaluated exponent value.
+
+        Raises:
+            CalculatorError: If the estimated result exceeds ``_MAX_RESULT_BITS``.
+        """
+
+        if not (isinstance(left, int) and isinstance(right, int)) or right < 0:
+            return
+        estimated_bits = right * max(left.bit_length(), 1)
+        if estimated_bits > _MAX_RESULT_BITS:
+            raise CalculatorError(f"result exceeds safe magnitude of {_MAX_RESULT_BITS} bits")
 
     @staticmethod
     def _format_value(value: float) -> str:
