@@ -27,7 +27,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `checklist`: deterministic launch checklist generator.
 - `echo`: safe deterministic echo tool for demos.
 - `readonly_file`: root-contained read-only file access.
-- `calculator`: sandboxed AST arithmetic; refuses non-real and non-finite results.
+- `calculator`: sandboxed AST arithmetic; refuses non-real and non-finite results, bounds the exponent, and rejects results whose integer magnitude exceeds a fixed bit bound (stops nested power towers).
 - `json_format`: JSON validation and canonicalization.
 - `redact`: scrubs PII (email, phone, SSN, IPv4) from text into typed placeholders.
 - `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
@@ -36,6 +36,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `uuid5`: computes a deterministic version-5 UUID from a name and namespace (dns|url|oid|x500|custom UUID; default dns).
 - `slugify`: converts text into a URL-safe ASCII slug (separator default `-`, optional `max_length` truncated on a word boundary).
 - `datetime`: normalizes an ISO-8601 timestamp to canonical UTC (with epoch and weekday); reads no wall-clock `now` and requires `assume_utc` for naive input.
+- `duration`: parses an ISO-8601 duration into total seconds and a component breakdown; supports only fixed-length components (weeks/days/hours/minutes/seconds) and refuses calendar years/months; reads no wall-clock `now`.
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 

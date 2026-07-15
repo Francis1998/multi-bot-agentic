@@ -79,6 +79,51 @@ def test_calculator_bounds_exponent_to_prevent_dos() -> None:
     assert "exponent" in content
 
 
+@pytest.mark.parametrize(
+    "expression",
+    [
+        "(10**60)**60",
+        "((10**60)**60)**60",
+    ],
+)
+def test_calculator_bounds_nested_power_tower(expression: str) -> None:
+    """A nested power tower must be rejected even though each exponent is small.
+
+    The per-operation exponent bound only inspects a single ``**`` exponent, so a
+    right- or paren-nested tower such as ``((10**60)**60)**60`` slips past it:
+    every exponent stays within the bound while the integer result grows
+    tower-exponentially, exhausting memory and overflowing CPython's integer
+    string-conversion limit. The result-magnitude bound must reject such an
+    expression with a structured failure instead of materialising the value.
+    """
+
+    ok, content = _run(expression)
+
+    assert ok is False
+    assert "magnitude" in content
+
+
+@pytest.mark.parametrize(
+    ("expression", "expected"),
+    [
+        ("2 ** 64", "18446744073709551616"),
+        ("10 ** 64", "1" + "0" * 64),
+    ],
+)
+def test_calculator_still_allows_bounded_large_powers(expression: str, expected: str) -> None:
+    """A single ``base ** exp`` within bounds must remain evaluable.
+
+    The magnitude bound must not regress ordinary large-but-reasonable powers
+    whose exponent is within ``_MAX_EXPONENT``; only tower-scale results are
+    refused.
+    """
+
+    ok, content = _run(expression)
+
+    assert ok is True
+    assert content == expected
+
+
 def test_calculator_reports_division_by_zero() -> None:
     """Division by zero is reported as a failure, not raised."""
 
