@@ -17,10 +17,12 @@ Real problems **multi-bot-agentic** solves — starting from issues.
 | #011 | PII redaction missed parenthesized area-code phone numbers | [ISSUE-011](./ISSUE-011-redaction-misses-parenthesized-phone.md) |
 | #012 | PII redaction over-redacted invalid IPv4-looking numbers | [ISSUE-012](./ISSUE-012-redaction-over-redacts-invalid-ipv4.md) |
 | #013 | The calculator tool must bound nested power towers | [ISSUE-013](./ISSUE-013-calculator-nested-power-tower.md) |
+| #014 | Slugify must not eat edge letters with alphanumeric separators | [ISSUE-014](./ISSUE-014-slugify-alphanumeric-separator-strip.md) |
 
 ## Design pillars
 
 - Deterministic decision engine with rationale traces
 - State-machine run lifecycle + durable event log
-- Tool/adapter abstraction (GPT, Claude, Gemini, Kimi)
+- Tool/adapter abstraction (GPT-5.5, Claude Sonnet 4.6, Gemini 3.x, Kimi K2)
 - Safety: timeouts, bounded scope, cancellation
+- Built-in compare tool (`diff`) for trustworthy before/after observations

@@ -252,6 +252,14 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   oversized, calendar, componentless, or unparseable requests return a
   structured failure. A model requests it with `TOOL:duration:<duration>`,
   giving agents one exact scalar for retry backoffs, TTLs, and time budgets.
+- `diff`: produces a deterministic unified diff between two texts via
+  `difflib`. Supply sides as `text`+`other`, or as a single `text` split on the
+  `<<<DIFF>>>` sentinel (so `TOOL:diff:...` still works with one payload).
+  Optional `context` controls hunk size (default 3). Empty/oversized sides,
+  ambiguous splits, and invalid context return a structured failure. Gives
+  agents a trustworthy before/after comparison for observations and tool
+  outputs — matching the gap popular agent frameworks fill with a dedicated
+  diff/patch tool.
 
 ## Repository Layout
 
