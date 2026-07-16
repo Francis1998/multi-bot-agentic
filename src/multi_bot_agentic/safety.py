@@ -40,6 +40,7 @@ class SafetyPolicy:
             "slugify",
             "datetime",
             "duration",
+            "diff",
         }
     )
     cancellation_file: Path | None = None

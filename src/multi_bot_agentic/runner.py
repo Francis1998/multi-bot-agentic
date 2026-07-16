@@ -312,6 +312,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.calculator import CalculatorTool
     from multi_bot_agentic.tools.checklist import ChecklistTool
     from multi_bot_agentic.tools.datetime_normalize import DateTimeTool
+    from multi_bot_agentic.tools.diff_text import DiffTool
     from multi_bot_agentic.tools.duration_parse import DurationTool
     from multi_bot_agentic.tools.echo import EchoTool
     from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
@@ -336,4 +337,5 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "slugify": SlugifyTool(),
         "datetime": DateTimeTool(),
         "duration": DurationTool(),
+        "diff": DiffTool(),
     }
