@@ -60,6 +60,22 @@ def test_slugify_honors_custom_separator() -> None:
     assert metadata["separator"] == "_"
 
 
+def test_slugify_alphanumeric_separator_does_not_eat_edge_letters() -> None:
+    """An alphanumeric separator must trim whole runs, not character-set strip.
+
+    ``str.strip(separator)`` treats the separator as a character set, so
+    ``text=\"test\", separator=\"t\"`` previously collapsed to ``\"es\"``. The
+    slug must keep its edge letters when they are part of the content, not the
+    separator run.
+    """
+
+    ok, content, metadata = _run("test", separator="t")
+
+    assert ok is True
+    assert content == "test"
+    assert metadata["separator"] == "t"
+
+
 def test_slugify_truncates_on_word_boundary() -> None:
     """``max_length`` truncates back to the last whole word, not mid-word."""
 

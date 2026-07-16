@@ -105,9 +105,15 @@ class SlugifyTool:
         """
 
         decomposed = unicodedata.normalize("NFKD", document)
+        decomposed = unicodedata.normalize("NFKD", document)
         ascii_text = decomposed.encode("ascii", "ignore").decode("ascii").lower()
-        collapsed = _NON_ALPHANUMERIC.sub(separator, ascii_text)
-        return collapsed.strip(separator)
+        # Split on non-alphanumeric runs and re-join. Prefer this over
+        # ``sub(separator)`` + trim: ``str.strip(separator)`` treats the
+        # separator as a character set, and even whole-separator trimming would
+        # eat edge letters when the separator is itself alphanumeric
+        # (``text=\"test\", separator=\"t\"``).
+        words = [word for word in _NON_ALPHANUMERIC.split(ascii_text) if word]
+        return separator.join(words)
 
     @staticmethod
     def _truncate(slug: str, separator: str, max_length: int) -> str:
