@@ -37,7 +37,8 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `slugify`: converts text into a URL-safe ASCII slug (separator default `-`, optional `max_length` truncated on a word boundary).
 - `datetime`: normalizes an ISO-8601 timestamp to canonical UTC (with epoch and weekday); reads no wall-clock `now` and requires `assume_utc` for naive input.
 - `duration`: parses an ISO-8601 duration into total seconds and a component breakdown; supports only fixed-length components (weeks/days/hours/minutes/seconds) and refuses calendar years/months; reads no wall-clock `now`.
-- `diff`: produces a unified diff between two texts (`text`+`other`, or `text` split on `<<<DIFF>>>`); bounds each side and the output line count; never executes code.
+- `diff`: produces a unified diff between two texts (`text`+`other`, or `text` split on `<<<DIFF>>>` with or without surrounding newlines); bounds each side and the output line count; never executes code.
+- `regex`: extracts regex matches from text (`text`+`pattern`, or `text` split on `<<<REGEX>>>`); returns canonical JSON of spans/groups; bounds document/pattern size and match count; never executes code.
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 

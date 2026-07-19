@@ -41,6 +41,7 @@ class SafetyPolicy:
             "datetime",
             "duration",
             "diff",
+            "regex",
         }
     )
     cancellation_file: Path | None = None
