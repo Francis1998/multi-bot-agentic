@@ -12,7 +12,8 @@ and ``json_format`` tool contracts.
 Because the decision engine only forwards a single ``text`` payload from
 ``TOOL:diff:<payload>``, the two sides may be supplied either as separate
 ``text`` / ``other`` arguments (tests and programmatic callers) or as a single
-``text`` value split on the sentinel ``\\n<<<DIFF>>>\\n``.
+``text`` value split on the sentinel ``<<<DIFF>>>`` (optionally surrounded by
+newlines; a bare ``before<<<DIFF>>>after`` payload is accepted).
 """
 
 from __future__ import annotations
@@ -26,7 +27,7 @@ _MAX_SIDE_CHARS: Final[int] = 20_000
 _MAX_OUTPUT_LINES: Final[int] = 2_000
 _DEFAULT_CONTEXT: Final[int] = 3
 _MAX_CONTEXT: Final[int] = 32
-_SPLIT_SENTINEL: Final[str] = "\n<<<DIFF>>>\n"
+_SPLIT_SENTINEL: Final[str] = "<<<DIFF>>>"
 
 
 class DiffTool:

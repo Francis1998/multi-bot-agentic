@@ -104,3 +104,19 @@ def test_diff_is_registered_in_default_tools() -> None:
     tools = build_default_tools(root=Path.cwd())
     assert "diff" in tools
     assert tools["diff"].name == "diff"
+
+
+def test_diff_accepts_bare_sentinel_without_newlines() -> None:
+    """A bare ``<<<DIFF>>>`` without surrounding newlines still splits both sides.
+
+    The decision-engine payload is often a single line like
+    ``before<<<DIFF>>>after``. Requiring the exact ``\\n<<<DIFF>>>\\n`` wrapper
+    rejected those payloads even though the marker was unambiguous.
+    """
+
+    ok, content, metadata = _run(text="before<<<DIFF>>>after")
+
+    assert ok is True
+    assert "-before" in content
+    assert "+after" in content
+    assert metadata["identical"] is False
