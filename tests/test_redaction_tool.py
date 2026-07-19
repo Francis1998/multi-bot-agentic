@@ -106,3 +106,19 @@ def test_redact_rejects_empty_document() -> None:
 
     assert result.ok is False
     assert "empty" in result.content
+
+
+def test_redact_scrubs_ipv6_addresses() -> None:
+    """IPv6 addresses such as ``2001:db8::1`` are redacted like IPv4.
+
+    The redaction tool historically only matched IPv4 dotted quads, so documentation
+    and loopback IPv6 literals (``2001:db8::1``, ``::1``) leaked into durable event
+    logs unredacted. IPv6 must be scrubbed to the same ``[IP]`` placeholder.
+    """
+
+    result = _run("host 2001:db8::1 and ::1 in the path")
+
+    assert result.ok is True
+    assert result.content == "host [IP] and [IP] in the path"
+    assert result.metadata["ipv6"] == 2
+    assert result.metadata["total"] == 2
