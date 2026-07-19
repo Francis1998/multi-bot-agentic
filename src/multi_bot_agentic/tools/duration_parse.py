@@ -15,8 +15,10 @@ on purpose: they have no fixed length in seconds (a month is 28-31 days, a year
 365/366 days), so converting them would silently produce an inexact result.
 Weeks, days, hours, minutes, and seconds are fixed-length and fully supported,
 including a fractional smallest component and an optional leading ``-`` sign.
-This matches the ``datetime``, ``hash``, ``base64``, ``json_format``,
-``url_parse``, ``uuid5``, and ``slugify`` tool contracts.
+Designators are normalised with ``str.upper`` so lowercase payloads such as
+``pt1h30m`` parse the same as ``PT1H30M``. This matches the ``datetime``,
+``hash``, ``base64``, ``json_format``, ``url_parse``, ``uuid5``, and ``slugify``
+tool contracts.
 """
 
 from __future__ import annotations
@@ -72,7 +74,7 @@ class DurationTool:
             duration.
         """
 
-        document = str(invocation.arguments.get("text", "")).strip()
+        document = str(invocation.arguments.get("text", "")).strip().upper()
         if not document:
             return self._fail("duration is empty", {})
         if len(document) > _MAX_DOCUMENT_CHARS:
