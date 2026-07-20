@@ -40,6 +40,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `diff`: produces a unified diff between two texts (`text`+`other`, or `text` split on `<<<DIFF>>>` with or without surrounding newlines); bounds each side and the output line count; never executes code.
 - `regex`: extracts regex matches from text (`text`+`pattern`, or `text` split on `<<<REGEX>>>`); returns canonical JSON of spans/groups; bounds document/pattern size and match count; never executes code.
 - `truncate`: truncates text to a max length (`max_length` arg, or `text` split on `<<<TRUNCATE>>>`, default 256); optional custom `ellipsis`; bounds input size; never executes code.
+- `html_strip`: strips HTML tags to plain text via stdlib `html.parser`; rejects documents containing `script`/`style`; empty or oversized input returns `ok=False`; never executes code.
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 

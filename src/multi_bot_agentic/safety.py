@@ -43,6 +43,7 @@ class SafetyPolicy:
             "diff",
             "regex",
             "truncate",
+            "html_strip",
         }
     )
     cancellation_file: Path | None = None

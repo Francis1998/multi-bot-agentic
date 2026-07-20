@@ -317,6 +317,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.echo import EchoTool
     from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
     from multi_bot_agentic.tools.hashing import HashTool
+    from multi_bot_agentic.tools.html_strip import HtmlStripTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
     from multi_bot_agentic.tools.redaction import RedactionTool
     from multi_bot_agentic.tools.regex_extract import RegexExtractTool
@@ -342,4 +343,5 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "diff": DiffTool(),
         "regex": RegexExtractTool(),
         "truncate": TextTruncateTool(),
+        "html_strip": HtmlStripTool(),
     }
