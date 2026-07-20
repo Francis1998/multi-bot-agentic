@@ -43,6 +43,7 @@ class SafetyPolicy:
             "diff",
             "regex",
             "csv",
+            "truncate",
         }
     )
     cancellation_file: Path | None = None
