@@ -312,7 +312,6 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.calculator import CalculatorTool
     from multi_bot_agentic.tools.checklist import ChecklistTool
     from multi_bot_agentic.tools.csv_parse import CsvParseTool
-    from multi_bot_agentic.tools.text_truncate import TextTruncateTool
     from multi_bot_agentic.tools.datetime_normalize import DateTimeTool
     from multi_bot_agentic.tools.diff_text import DiffTool
     from multi_bot_agentic.tools.duration_parse import DurationTool
@@ -323,6 +322,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.redaction import RedactionTool
     from multi_bot_agentic.tools.regex_extract import RegexExtractTool
     from multi_bot_agentic.tools.slugify import SlugifyTool
+    from multi_bot_agentic.tools.text_truncate import TextTruncateTool
     from multi_bot_agentic.tools.url_parse import UrlParseTool
     from multi_bot_agentic.tools.uuid5 import Uuid5Tool
 
