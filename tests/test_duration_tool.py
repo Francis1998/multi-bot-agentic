@@ -108,3 +108,20 @@ def test_duration_rejects_empty_and_componentless() -> None:
     ok_bad, content_bad, _ = _run("1H")
     assert ok_bad is False
     assert "could not parse" in content_bad
+
+
+def test_duration_accepts_lowercase_designators() -> None:
+    """Lowercase ISO-8601 designators such as ``pt1h30m`` still parse.
+
+    ISO-8601 duration designators are case-insensitive. Callers (and LLM
+    payloads) often emit lowercase ``pt1h30m``; rejecting it forced an extra
+    normalization step that the tool itself should own.
+    """
+
+    ok, content, metadata = _run("pt1h30m")
+
+    assert ok is True
+    assert metadata["total_seconds"] == 5400
+    assert metadata["hours"] == 1
+    assert metadata["minutes"] == 30
+    assert json.loads(content)["total_seconds"] == 5400
