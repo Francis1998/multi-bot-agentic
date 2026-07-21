@@ -29,7 +29,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `readonly_file`: root-contained read-only file access.
 - `calculator`: sandboxed AST arithmetic; refuses non-real and non-finite results, bounds the exponent, and rejects results whose integer magnitude exceeds a fixed bit bound (stops nested power towers).
 - `json_format`: JSON validation and canonicalization.
-- `redact`: scrubs PII (email, phone, SSN, IPv4) from text into typed placeholders.
+- `redact`: scrubs PII (email, phone, SSN, IPv4, IPv6) from text into typed placeholders.
 - `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
 - `base64`: encodes text to Base64 or decodes Base64 to text (encode|decode; default encode).
 - `url_parse`: splits an absolute URL into scheme, host, port, path, query, and fragment.
@@ -40,6 +40,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `diff`: produces a unified diff between two texts (`text`+`other`, or `text` split on `<<<DIFF>>>` with or without surrounding newlines); bounds each side and the output line count; never executes code.
 - `regex`: extracts regex matches from text (`text`+`pattern`, or `text` split on `<<<REGEX>>>`); returns canonical JSON of spans/groups; bounds document/pattern size and match count; never executes code.
 - `truncate`: truncates text to a max length (`max_length` arg, or `text` split on `<<<TRUNCATE>>>`, default 256); optional custom `ellipsis`; bounds input size; never executes code.
+- `csv`: parses CSV text into canonical JSON (header + rows); caps rows/columns; optional single-character `delimiter`; never executes code.
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 
