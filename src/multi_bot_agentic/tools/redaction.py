@@ -4,11 +4,11 @@ Agent runs routinely relay free-form text between steps (model output, tool
 results, user-supplied context) that may contain personal data. Persisting or
 forwarding that text verbatim into the durable event log is a privacy and
 compliance hazard. This tool scrubs common PII patterns (email addresses, phone
-numbers, US Social Security numbers, IPv4 addresses) from a document, replacing
-each match with a typed placeholder such as ``[EMAIL]``, and reports how many
-values of each category were removed. It never executes code and returns a
-structured failure for empty or oversized input, matching the calculator and
-``json_format`` tool contracts.
+numbers, US Social Security numbers, IPv4 addresses, and IPv6 addresses) from a
+document, replacing each match with a typed placeholder such as ``[EMAIL]``, and
+reports how many values of each category were removed. It never executes code
+and returns a structured failure for empty or oversized input, matching the
+calculator and ``json_format`` tool contracts.
 """
 
 from __future__ import annotations
@@ -23,6 +23,8 @@ _MAX_DOCUMENT_CHARS: Final[int] = 20_000
 # Ordered so that more specific patterns run before more permissive ones: an
 # email is redacted before its digits can be misread as a phone number, and a
 # Social Security number (3-2-4 digits) is redacted before the phone pattern.
+# IPv6 runs before IPv4 so a mixed literal is not partially consumed as dotted
+# quads; IPv4 still covers standalone dotted addresses.
 _REDACTIONS: Final[tuple[tuple[str, str, re.Pattern[str]], ...]] = (
     (
         "email",
@@ -33,6 +35,27 @@ _REDACTIONS: Final[tuple[tuple[str, str, re.Pattern[str]], ...]] = (
         "ssn",
         "[SSN]",
         re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
+    ),
+    (
+        "ipv6",
+        "[IP]",
+        # Covers compressed forms such as ``2001:db8::1`` and ``::1``, plus a
+        # full eight-hextet form. Require at least one ``:`` so bare hex tokens
+        # are not mangled. Word-ish boundaries avoid eating surrounding words.
+        re.compile(
+            r"(?<![\w:])(?:"
+            r"(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}"
+            r"|(?:[0-9A-Fa-f]{1,4}:){1,7}:"
+            r"|:(?::[0-9A-Fa-f]{1,4}){1,7}"
+            r"|(?:[0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4}"
+            r"|(?:[0-9A-Fa-f]{1,4}:){1,5}(?::[0-9A-Fa-f]{1,4}){1,2}"
+            r"|(?:[0-9A-Fa-f]{1,4}:){1,4}(?::[0-9A-Fa-f]{1,4}){1,3}"
+            r"|(?:[0-9A-Fa-f]{1,4}:){1,3}(?::[0-9A-Fa-f]{1,4}){1,4}"
+            r"|(?:[0-9A-Fa-f]{1,4}:){1,2}(?::[0-9A-Fa-f]{1,4}){1,5}"
+            r"|[0-9A-Fa-f]{1,4}:(?::[0-9A-Fa-f]{1,4}){1,6}"
+            r"|::"
+            r")(?![\w:])"
+        ),
     ),
     (
         "ipv4",
@@ -63,7 +86,7 @@ class RedactionTool:
     """Redact common PII patterns from a text document."""
 
     name = "redact"
-    description = "Redacts emails, phone numbers, SSNs, and IPv4 addresses from text."
+    description = "Redacts emails, phone numbers, SSNs, IPv4, and IPv6 addresses from text."
 
     def execute(self, invocation: ToolInvocation) -> ToolResult:
         """Redact PII from the document in the invocation text.
