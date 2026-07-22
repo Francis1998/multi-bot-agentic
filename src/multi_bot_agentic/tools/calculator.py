@@ -124,6 +124,12 @@ class CalculatorTool:
         if isinstance(node, ast.Constant):
             if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
                 raise CalculatorError("only integer and float literals are allowed")
+            # A literal such as ``1e400`` is parsed by CPython into ``inf`` at
+            # AST-construction time, so the post-operation finiteness check never
+            # sees it. Reject non-finite constants here so bare overflow literals
+            # fail the same way as ``1e300 * 1e300``.
+            if isinstance(node.value, float) and not math.isfinite(node.value):
+                raise CalculatorError("result is not a finite number")
             return node.value
         if isinstance(node, ast.BinOp):
             operator_type = type(node.op)

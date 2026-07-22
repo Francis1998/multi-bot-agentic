@@ -44,6 +44,7 @@ class SafetyPolicy:
             "regex",
             "truncate",
             "csv",
+            "html_strip",
         }
     )
     cancellation_file: Path | None = None
