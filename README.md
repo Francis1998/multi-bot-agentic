@@ -260,6 +260,11 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   agents a trustworthy before/after comparison for observations and tool
   outputs — matching the gap popular agent frameworks fill with a dedicated
   diff/patch tool.
+- `html_strip`: strips HTML markup to plain text via the stdlib HTML parser.
+  Documents containing `<script>` or `<style>` are rejected; empty or oversized
+  input returns a structured failure. A model requests it with
+  `TOOL:html_strip:<html>`, giving agents a deterministic way to turn scraped
+  snippets into readable text without inventing or leaking markup.
 
 ## Repository Layout
 

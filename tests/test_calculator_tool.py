@@ -169,3 +169,26 @@ def test_calculator_rejects_non_finite_result(expression: str) -> None:
 
     assert ok is False
     assert "finite" in content
+
+
+@pytest.mark.parametrize(
+    "expression",
+    [
+        "1e400",
+        "-1e400",
+        "1e309",
+    ],
+)
+def test_calculator_rejects_non_finite_float_literal(expression: str) -> None:
+    """A bare overflow float literal must fail, not return ``inf``.
+
+    CPython parses ``1e400`` into an ``ast.Constant`` whose value is already
+    ``inf``, so the post-operation finiteness check never runs. Without a
+    literal-level guard the tool returned ``ok=True`` with content ``inf``,
+    contradicting the finite-result contract proven for ``1e300 * 1e300``.
+    """
+
+    ok, content = _run(expression)
+
+    assert ok is False
+    assert "finite" in content
