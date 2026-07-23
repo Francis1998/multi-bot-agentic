@@ -46,6 +46,7 @@ class SafetyPolicy:
             "truncate",
             "csv",
             "html_strip",
+            "template_render",
         }
     )
     cancellation_file: Path | None = None

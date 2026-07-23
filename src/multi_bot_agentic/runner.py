@@ -324,6 +324,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.redaction import RedactionTool
     from multi_bot_agentic.tools.regex_extract import RegexExtractTool
     from multi_bot_agentic.tools.slugify import SlugifyTool
+    from multi_bot_agentic.tools.template_render import TemplateRenderTool
     from multi_bot_agentic.tools.text_truncate import TextTruncateTool
     from multi_bot_agentic.tools.url_parse import UrlParseTool
     from multi_bot_agentic.tools.uuid5 import Uuid5Tool
@@ -348,4 +349,5 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "truncate": TextTruncateTool(),
         "csv": CsvParseTool(),
         "html_strip": HtmlStripTool(),
+        "template_render": TemplateRenderTool(),
     }
