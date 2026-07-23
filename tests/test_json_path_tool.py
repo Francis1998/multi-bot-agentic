@@ -144,7 +144,9 @@ def test_json_path_rejects_oversized_document_path_and_result() -> None:
     ok, content, metadata = _run(text=compact_large_array, path="value")
     assert ok is False
     assert "result exceeds" in content
-    assert metadata["chars"] > 20_000
+    chars = metadata["chars"]
+    assert isinstance(chars, int)
+    assert chars > 20_000
 
 
 def test_json_path_requires_path_or_sentinel() -> None:
