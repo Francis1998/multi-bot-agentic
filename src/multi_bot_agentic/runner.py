@@ -320,6 +320,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.hashing import HashTool
     from multi_bot_agentic.tools.html_strip import HtmlStripTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
+    from multi_bot_agentic.tools.json_path import JsonPathTool
     from multi_bot_agentic.tools.redaction import RedactionTool
     from multi_bot_agentic.tools.regex_extract import RegexExtractTool
     from multi_bot_agentic.tools.slugify import SlugifyTool
@@ -333,6 +334,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "readonly_file": ReadOnlyFileTool(root=root),
         "calculator": CalculatorTool(),
         "json_format": JsonFormatTool(),
+        "json_path": JsonPathTool(),
         "redact": RedactionTool(),
         "hash": HashTool(),
         "base64": Base64Tool(),

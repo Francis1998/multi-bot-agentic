@@ -50,6 +50,20 @@ def test_csv_respects_custom_delimiter() -> None:
     assert metadata["delimiter"] == "|"
 
 
+def test_csv_rejects_blank_header_cells() -> None:
+    """Blank header cells are ambiguous column names and must fail.
+
+    This previously parsed successfully with ``""`` as a column name, making the
+    result hard for downstream agents to reference deterministically.
+    """
+
+    ok, content, metadata = _run(text="name,\nAda,36\n")
+
+    assert ok is False
+    assert "blank column names" in content
+    assert metadata["columns"] == [1]
+
+
 def test_csv_rejects_oversized_column_count() -> None:
     """More than the column cap is a structured failure."""
 

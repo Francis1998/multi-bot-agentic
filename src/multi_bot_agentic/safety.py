@@ -32,6 +32,7 @@ class SafetyPolicy:
             "readonly_file",
             "calculator",
             "json_format",
+            "json_path",
             "redact",
             "hash",
             "base64",

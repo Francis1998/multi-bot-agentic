@@ -95,6 +95,12 @@ class CsvParseTool:
         header = list(raw_rows[0])
         # Pad short header / body rows so every row has ``width`` cells.
         header.extend([""] * (width - len(header)))
+        blank_header_columns = [index for index, name in enumerate(header) if not name.strip()]
+        if blank_header_columns:
+            return self._fail(
+                "header contains blank column names",
+                {"columns": blank_header_columns},
+            )
         body: list[list[str]] = []
         for row in raw_rows[1:]:
             padded = list(row) + [""] * (width - len(row))

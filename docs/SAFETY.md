@@ -29,6 +29,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `readonly_file`: root-contained read-only file access.
 - `calculator`: sandboxed AST arithmetic; refuses non-real and non-finite results, bounds the exponent, and rejects results whose integer magnitude exceeds a fixed bit bound (stops nested power towers).
 - `json_format`: JSON validation and canonicalization.
+- `json_path`: extracts values from JSON via a simple dot/[index] path (`text`+`path`, or `text` split on `<<<JSON_PATH>>>`); rejects recursive descent, filters, scripts, pipes, oversized input/results, and invalid JSON; never executes code.
 - `redact`: scrubs PII (email, phone, SSN, IPv4, IPv6) from text into typed placeholders.
 - `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
 - `base64`: encodes text to Base64 or decodes Base64 to text (encode|decode; default encode).
