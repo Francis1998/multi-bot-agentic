@@ -198,6 +198,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   rejected rather than round-tripped into invalid output. A model requests it
   with `TOOL:json_format:{"b":1,"a":2}`, giving agents a safe way to verify and
   normalize JSON produced by earlier steps.
+- `json_path`: extracts one value from a JSON document using a small deterministic
+  path dialect (`.foo.bar`, `items[0].name`, or `$`/empty for the whole document).
+  Supply `text`+`path`, or a single payload split on `<<<JSON_PATH>>>` for
+  `TOOL:json_path:...` directives. Recursive descent, filters, scripts, pipes,
+  oversized input, and oversized serialized results return structured failures;
+  the tool uses `json.loads` only and never executes code.
 - `redact`: scrubs common PII (email addresses, phone numbers, US Social
   Security numbers, IPv4 addresses) from text, replacing each match with a typed
   placeholder such as `[EMAIL]` and reporting per-category counts in the tool
@@ -283,6 +289,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Configuration](docs/CONFIGURATION.md)
 - [Safety](docs/SAFETY.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
 
 ## Verification
 
