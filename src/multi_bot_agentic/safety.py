@@ -45,6 +45,7 @@ class SafetyPolicy:
             "regex",
             "truncate",
             "csv",
+            "spreadsheet_slice",
             "html_strip",
         }
     )
