@@ -11,8 +11,8 @@ inspects only *one* `**` operator's exponent, so it does not stop a *nested*
 power tower where every individual exponent stays within the bound:
 
 ```python
-(10**60)**60          # 10**3600 — a 3601-digit integer, accepted (ok=True)
-((10**60)**60)**60     # 10**216000 — grows tower-exponentially
+(10**60) ** 60  # 10**3600 — a 3601-digit integer, accepted (ok=True)
+((10**60) ** 60) ** 60  # 10**216000 — grows tower-exponentially
 ```
 
 Each exponent (`60`) is well within `_MAX_EXPONENT`, so the per-operation bound

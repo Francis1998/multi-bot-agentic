@@ -11,7 +11,7 @@ silently overflows to infinity in CPython, and `inf - inf` yields `nan`, without
 raising an exception:
 
 ```python
-1e300 * 1e300              # inf
+1e300 * 1e300  # inf
 1e300 * 1e300 - 1e300 * 1e300  # nan
 ```
 
