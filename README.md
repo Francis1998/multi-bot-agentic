@@ -2,7 +2,7 @@
 
 `multi-bot-agentic` is a standalone AI-agent engineering showcase: a deterministic agent coordinator with explicit **Observe -> Decide -> Act** loops, durable event logs, rationale traces, provider adapters, and bounded safety controls.
 
-It is built as a portfolio-quality recreation of the `multi-bot` product idea without depending on private infrastructure. The default path runs fully offline with a deterministic fake provider. Real adapters are included for OpenAI GPT, Claude Code CLI, Gemini, and Kimi/Moonshot.
+It is built as a portfolio-quality recreation of the `multi-bot` product idea without depending on private infrastructure. The default path runs fully offline with a deterministic fake provider. Real adapters are included for GPT-5.5/OpenAI-compatible models, Claude Sonnet 4.6 via Claude Code CLI, Gemini 3.x, and Kimi K2/Moonshot.
 
 ![multi-bot-agentic animated demo](docs/demo.gif)
 
@@ -35,16 +35,16 @@ Many agent frameworks let the model choose and invoke tools directly. That is co
 
 This repo treats model output as an observation. The deterministic decision engine interprets constrained text like `TOOL:checklist:<payload>`, checks the safety policy, and only then executes an allowlisted tool adapter.
 
-### 3. "I need the same agent flow to work with GPT, Claude Code, Gemini, and Kimi."
+### 3. "I need the same agent flow to work with GPT-5.5, Claude Sonnet 4.6, Gemini 3.x, and Kimi K2."
 
 Provider-specific SDKs and response shapes make agent code hard to port. A prototype built around one model often leaks provider details into the orchestration layer.
 
 `multi-bot-agentic` normalizes providers behind one adapter interface:
 
-- `OpenAIAdapter` for GPT/OpenAI-compatible chat completions.
-- `ClaudeCodeCLIAdapter` for local Claude Code CLI workflows.
-- `GeminiAdapter` for Gemini `generateContent`.
-- `KimiAdapter` for Moonshot/Kimi chat completions.
+- `OpenAIAdapter` for GPT-5.5/OpenAI-compatible chat completions.
+- `ClaudeCodeCLIAdapter` for local Claude Code CLI workflows with Claude Sonnet 4.6.
+- `GeminiAdapter` for Gemini 3.x `generateContent`.
+- `KimiAdapter` for Moonshot/Kimi K2 chat completions.
 - `FakeLLMAdapter` for deterministic CI and demos.
 
 The runner consumes all provider responses as `ModelOutput`, so orchestration logic stays provider-neutral.
@@ -77,7 +77,7 @@ Unbounded agent loops are a common failure mode. They waste time, cost money, an
 
 ### 7. "I need to compare AI provider behavior without rewriting my orchestration."
 
-Teams often want to test GPT vs Gemini vs Kimi vs Claude Code, but provider-specific code makes comparisons noisy.
+Teams often want to test GPT-5.5 vs Gemini 3.x vs Kimi K2 vs Claude Sonnet 4.6, but provider-specific code makes comparisons noisy.
 
 With provider adapters, you can keep the same runner, same decision engine, same event log, and same replay/report UX while swapping the provider:
 
@@ -159,7 +159,7 @@ multi-bot-agentic report --event-log data/runs.sqlite
 - Deterministic decision engine with rationale traces.
 - State-machine lifecycle: created, observing, deciding, acting, succeeded, failed, cancelled.
 - Durable sqlite event log with replay.
-- LLM adapters for OpenAI GPT, Claude Code CLI, Gemini, and Kimi/Moonshot.
+- LLM adapters for GPT-5.5/OpenAI-compatible models, Claude Sonnet 4.6 via Claude Code CLI, Gemini 3.x, and Kimi K2/Moonshot.
 - Tool adapters with allowlisted execution, including deterministic checklist generation.
 - Safety controls for max steps, prompt bounds, cancellation, and timeouts.
 - Human-readable replay and run reports for inspecting durable rationale traces.
@@ -170,10 +170,10 @@ multi-bot-agentic report --event-log data/runs.sqlite
 | Provider | Adapter | Live credential |
 | --- | --- | --- |
 | Fake | deterministic local provider | none |
-| GPT / OpenAI | `OpenAIAdapter` | `OPENAI_API_KEY` |
-| Claude Code | `ClaudeCodeCLIAdapter` | local `claude` command |
-| Gemini | `GeminiAdapter` | `GEMINI_API_KEY` |
-| Kimi / Moonshot | `KimiAdapter` | `KIMI_API_KEY` |
+| GPT-5.5 / OpenAI-compatible | `OpenAIAdapter` | `OPENAI_API_KEY` |
+| Claude Sonnet 4.6 / Claude Code | `ClaudeCodeCLIAdapter` | local `claude` command |
+| Gemini 3.x | `GeminiAdapter` | `GEMINI_API_KEY` |
+| Kimi K2 / Moonshot | `KimiAdapter` | `KIMI_API_KEY` |
 
 All adapters normalize output into `ModelOutput`. The runner consumes that output as an observation before the decision engine selects the next action.
 
@@ -204,6 +204,14 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   `TOOL:json_path:...` directives. Recursive descent, filters, scripts, pipes,
   oversized input, and oversized serialized results return structured failures;
   the tool uses `json.loads` only and never executes code.
+- `spreadsheet_slice`: parses CSV text and returns a deterministic row/column
+  subset as JSON (`header` + `rows`). Row ranges use zero-based, end-exclusive
+  body-row slices via `rows=1:3` or `row_start`/`row_end`; columns may be selected
+  by exact header name and/or zero-based index. A single `TOOL:spreadsheet_slice`
+  payload can embed options after `<<<SPREADSHEET_SLICE>>>`. Empty input,
+  oversized tables, blank headers, invalid ranges, missing names, ambiguous
+  names, and out-of-bounds indexes return structured failures; the tool uses
+  stdlib `csv` only and never executes code.
 - `redact`: scrubs common PII (email addresses, phone numbers, US Social
   Security numbers, IPv4 addresses) from text, replacing each match with a typed
   placeholder such as `[EMAIL]` and reporting per-category counts in the tool
@@ -290,6 +298,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Safety](docs/SAFETY.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
+- [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
 
 ## Verification
 
@@ -324,7 +333,7 @@ MIT — see [LICENSE](LICENSE).
 ## Production use cases
 
 Real issues this agent solves — deterministic ODA loop, rationale traces, durable event log,
-GPT / Claude / Gemini / Kimi adapters, and safety controls (timeouts, bounded scope, cancellation).
+GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 adapters, and safety controls (timeouts, bounded scope, cancellation).
 
 | Issue | Problem | Solution doc |
 |-------|---------|--------------|
