@@ -14,6 +14,7 @@ from multi_bot_agentic.tools.hashing import HashTool
 from multi_bot_agentic.tools.html_strip import HtmlStripTool
 from multi_bot_agentic.tools.json_format import JsonFormatTool
 from multi_bot_agentic.tools.json_path import JsonPathTool
+from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
 from multi_bot_agentic.tools.redaction import RedactionTool
 from multi_bot_agentic.tools.regex_extract import RegexExtractTool
 from multi_bot_agentic.tools.slugify import SlugifyTool
@@ -35,6 +36,7 @@ __all__ = [
     "HtmlStripTool",
     "JsonFormatTool",
     "JsonPathTool",
+    "MarkdownTableTool",
     "ReadOnlyFileTool",
     "RedactionTool",
     "RegexExtractTool",
