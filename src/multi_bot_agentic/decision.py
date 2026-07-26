@@ -189,7 +189,6 @@ def _parse_tool_request(content: str) -> tuple[str, str] | None:
 
     _, tool_name, text = parts
     tool_name = tool_name.strip()
-    text = text.strip()
-    if not tool_name or not text:
+    if not tool_name or not text.strip():
         return None
     return tool_name, text
