@@ -22,6 +22,7 @@ from multi_bot_agentic.tools.spreadsheet_slice import SpreadsheetSliceTool
 from multi_bot_agentic.tools.text_truncate import TextTruncateTool
 from multi_bot_agentic.tools.url_parse import UrlParseTool
 from multi_bot_agentic.tools.uuid5 import Uuid5Tool
+from multi_bot_agentic.tools.yaml_format import YamlFormatTool
 
 __all__ = [
     "Base64Tool",
@@ -46,4 +47,5 @@ __all__ = [
     "ToolAdapter",
     "UrlParseTool",
     "Uuid5Tool",
+    "YamlFormatTool",
 ]

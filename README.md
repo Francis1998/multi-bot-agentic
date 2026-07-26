@@ -198,6 +198,13 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   rejected rather than round-tripped into invalid output. A model requests it
   with `TOOL:json_format:{"b":1,"a":2}`, giving agents a safe way to verify and
   normalize JSON produced by earlier steps.
+- `yaml_format`: validates a constrained safe YAML subset and returns it
+  canonicalized (sorted mapping keys, 2-space indentation). It supports block
+  mappings/sequences, JSON-style flow collections, and finite scalar values
+  using the Python stdlib only; unsupported full-YAML features such as anchors,
+  tags, document markers, and constructors return structured failures. A model
+  requests it with `TOOL:yaml_format:enabled: true`, giving agents a safe way to
+  normalize YAML handoff snippets.
 - `json_path`: extracts one value from a JSON document using a small deterministic
   path dialect (`.foo.bar`, `items[0].name`, or `$`/empty for the whole document).
   Supply `text`+`path`, or a single payload split on `<<<JSON_PATH>>>` for

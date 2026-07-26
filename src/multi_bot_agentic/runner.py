@@ -329,6 +329,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.text_truncate import TextTruncateTool
     from multi_bot_agentic.tools.url_parse import UrlParseTool
     from multi_bot_agentic.tools.uuid5 import Uuid5Tool
+    from multi_bot_agentic.tools.yaml_format import YamlFormatTool
 
     return {
         "checklist": ChecklistTool(),
@@ -352,4 +353,5 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "spreadsheet_slice": SpreadsheetSliceTool(),
         "html_strip": HtmlStripTool(),
         "markdown_table": MarkdownTableTool(),
+        "yaml_format": YamlFormatTool(),
     }

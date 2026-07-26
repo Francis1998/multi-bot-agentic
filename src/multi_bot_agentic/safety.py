@@ -48,6 +48,7 @@ class SafetyPolicy:
             "spreadsheet_slice",
             "html_strip",
             "markdown_table",
+            "yaml_format",
         }
     )
     cancellation_file: Path | None = None
