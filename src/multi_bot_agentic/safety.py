@@ -47,6 +47,7 @@ class SafetyPolicy:
             "csv",
             "spreadsheet_slice",
             "html_strip",
+            "markdown_table",
         }
     )
     cancellation_file: Path | None = None
