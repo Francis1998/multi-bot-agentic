@@ -57,6 +57,21 @@ def test_decision_routes_tool_request() -> None:
     assert decision.payload == {"text": "hello"}
 
 
+def test_decision_preserves_tool_payload_whitespace() -> None:
+    """Tool payload whitespace is data and must survive directive parsing."""
+
+    model_observation = Observation(source="llm:fake", content="TOOL:echo:  padded template  ")
+    decision = DeterministicDecisionEngine(provider_name="fake").decide(
+        observations=(Observation(source="user", content="goal"), model_observation),
+        step=1,
+        policy=SafetyPolicy(),
+    )
+
+    assert decision.action == "call_tool"
+    assert decision.target == "echo"
+    assert decision.payload == {"text": "  padded template  "}
+
+
 def test_decision_redirects_disallowed_tool_request_to_model() -> None:
     """A tool request outside the allowlist redirects to the provider, not call_tool."""
 
