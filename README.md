@@ -279,6 +279,13 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   input returns a structured failure. A model requests it with
   `TOOL:html_strip:<html>`, giving agents a deterministic way to turn scraped
   snippets into readable text without inventing or leaking markup.
+- `template_render`: fills simple `{var}` or Jinja-like `{{ var }}`
+  placeholders from scalar JSON variables. It HTML-escapes every substituted
+  value, rejects expressions/filters/attribute access instead of evaluating
+  them, caps template/variable/output sizes, and supports a single directive
+  payload split on `<<<TEMPLATE_VARS>>>`. A model requests it with
+  `TOOL:template_render:Hello {name}<<<TEMPLATE_VARS>>>{"name":"Ada"}` for safe,
+  repeatable snippets without raw string surgery.
 
 ## Repository Layout
 
@@ -299,6 +306,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
+- [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
 
 ## Verification
 
