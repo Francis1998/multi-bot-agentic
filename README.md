@@ -279,6 +279,11 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   input returns a structured failure. A model requests it with
   `TOOL:html_strip:<html>`, giving agents a deterministic way to turn scraped
   snippets into readable text without inventing or leaking markup.
+- `html_table`: extracts the first HTML table, or a 1-based `table_index`, and
+  renders it as GitHub-flavored markdown or CSV. It uses stdlib `html.parser`
+  only, rejects `<script>`/`<style>`, caps document/output chars plus rows and
+  columns, and returns structured metadata for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 workers that need safe tabular observations from HTML.
 - `template_render`: fills simple `{var}` or Jinja-like `{{ var }}`
   placeholders from scalar JSON variables. It HTML-escapes every substituted
   value, rejects expressions/filters/attribute access instead of evaluating
@@ -306,6 +311,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
+- [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
 - [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
 
 ## Verification
