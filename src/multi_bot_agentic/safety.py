@@ -47,6 +47,7 @@ class SafetyPolicy:
             "csv",
             "spreadsheet_slice",
             "html_strip",
+            "html_table",
             "markdown_table",
             "template_render",
             "yaml_format",
