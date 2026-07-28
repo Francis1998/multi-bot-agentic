@@ -85,14 +85,14 @@ def _get_toml_loads() -> Callable[[str], object] | None:
     """Return a TOML ``loads`` function when a parser is available."""
 
     try:
-        import tomllib  # type: ignore[import-not-found]
+        import tomllib  # type: ignore[import-not-found,unused-ignore]
 
         return cast(Callable[[str], object], tomllib.loads)
     except ImportError:
         pass
 
     try:
-        import tomli  # type: ignore[import-not-found]
+        import tomli  # type: ignore[import-not-found,unused-ignore]
 
         return cast(Callable[[str], object], tomli.loads)
     except ImportError:
@@ -103,7 +103,7 @@ def _get_toml_dumps() -> Callable[[dict[str, TomlValue]], str] | None:
     """Return a TOML ``dumps`` function when ``tomli_w`` is available."""
 
     try:
-        import tomli_w  # type: ignore[import-not-found]
+        import tomli_w  # type: ignore[import-not-found,unused-ignore]
     except ImportError:
         return None
     return cast(Callable[[dict[str, TomlValue]], str], tomli_w.dumps)
