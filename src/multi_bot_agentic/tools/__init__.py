@@ -22,6 +22,7 @@ from multi_bot_agentic.tools.slugify import SlugifyTool
 from multi_bot_agentic.tools.spreadsheet_slice import SpreadsheetSliceTool
 from multi_bot_agentic.tools.template_render import TemplateRenderTool
 from multi_bot_agentic.tools.text_truncate import TextTruncateTool
+from multi_bot_agentic.tools.toml_format import TomlFormatTool
 from multi_bot_agentic.tools.url_parse import UrlParseTool
 from multi_bot_agentic.tools.uuid5 import Uuid5Tool
 from multi_bot_agentic.tools.yaml_format import YamlFormatTool
@@ -48,6 +49,7 @@ __all__ = [
     "SpreadsheetSliceTool",
     "TemplateRenderTool",
     "TextTruncateTool",
+    "TomlFormatTool",
     "ToolAdapter",
     "UrlParseTool",
     "Uuid5Tool",
