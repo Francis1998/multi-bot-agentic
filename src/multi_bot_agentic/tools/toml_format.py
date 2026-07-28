@@ -14,7 +14,7 @@ from __future__ import annotations
 import math
 import re
 from collections.abc import Callable
-from typing import Final, TypeAlias
+from typing import Final, TypeAlias, cast
 
 from multi_bot_agentic.models import ToolInvocation, ToolResult
 
@@ -85,16 +85,16 @@ def _get_toml_loads() -> Callable[[str], object] | None:
     """Return a TOML ``loads`` function when a parser is available."""
 
     try:
-        import tomllib
+        import tomllib  # type: ignore[import-not-found]
 
-        return tomllib.loads
+        return cast(Callable[[str], object], tomllib.loads)
     except ImportError:
         pass
 
     try:
-        import tomli
+        import tomli  # type: ignore[import-not-found]
 
-        return tomli.loads
+        return cast(Callable[[str], object], tomli.loads)
     except ImportError:
         return None
 
@@ -103,10 +103,10 @@ def _get_toml_dumps() -> Callable[[dict[str, TomlValue]], str] | None:
     """Return a TOML ``dumps`` function when ``tomli_w`` is available."""
 
     try:
-        import tomli_w
+        import tomli_w  # type: ignore[import-not-found]
     except ImportError:
         return None
-    return tomli_w.dumps
+    return cast(Callable[[dict[str, TomlValue]], str], tomli_w.dumps)
 
 
 def _load_toml(document: str) -> object:
@@ -146,7 +146,9 @@ def _dump_toml(document: dict[str, TomlValue]) -> str:
 
     dumps = _get_toml_dumps()
     if dumps is not None:
-        return dumps(_sort_keys(document)).rstrip("\n")
+        sorted_document = _sort_keys(document)
+        assert isinstance(sorted_document, dict)
+        return dumps(sorted_document).rstrip("\n")
 
     lines: list[str] = []
     _emit_table(lines, document, path=())
