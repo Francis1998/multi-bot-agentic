@@ -205,6 +205,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   tags, document markers, and constructors return structured failures. A model
   requests it with `TOOL:yaml_format:enabled: true`, giving agents a safe way to
   normalize YAML handoff snippets.
+- `toml_format`: validates TOML (via `tomllib` on Python 3.11+ or `tomli` when
+  available) and returns a deterministic serialization with sorted keys for
+  tables/arrays/strings/ints/floats/bools. Dates/times, non-finite floats, empty
+  or oversized input, and a missing parser return structured failures. A model
+  requests it with `TOOL:toml_format:enabled = true`, giving agents a safe way to
+  normalize TOML configuration snippets.
 - `json_path`: extracts one value from a JSON document using a small deterministic
   path dialect (`.foo.bar`, `items[0].name`, or `$`/empty for the whole document).
   Supply `text`+`path`, or a single payload split on `<<<JSON_PATH>>>` for
@@ -320,6 +326,8 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
 - [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
 - [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
+- [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
+- [YAML Format Tool Guide](docs/guides/YAML_FORMAT_TOOL_GUIDE.md)
 
 ## Verification
 
