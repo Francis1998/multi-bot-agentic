@@ -211,6 +211,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   or oversized input, and a missing parser return structured failures. A model
   requests it with `TOOL:toml_format:enabled = true`, giving agents a safe way to
   normalize TOML configuration snippets.
+- `tsv_format`: validates tab-separated spreadsheet text via stdlib `csv`
+  (`excel-tab` dialect) and returns canonical TSV with consistent newlines.
+  Empty or oversized input, uneven column counts (header defines width), and
+  malformed tables return structured failures; trailing blank rows are stripped.
+  A model requests it with `TOOL:tsv_format:model\tscore`, giving agents a safe
+  way to normalize TSV handoff snippets.
 - `json_path`: extracts one value from a JSON document using a small deterministic
   path dialect (`.foo.bar`, `items[0].name`, or `$`/empty for the whole document).
   Supply `text`+`path`, or a single payload split on `<<<JSON_PATH>>>` for
@@ -327,6 +333,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
 - [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
 - [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
+- [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
 - [YAML Format Tool Guide](docs/guides/YAML_FORMAT_TOOL_GUIDE.md)
 
 ## Verification

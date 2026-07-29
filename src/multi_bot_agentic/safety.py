@@ -51,6 +51,7 @@ class SafetyPolicy:
             "markdown_table",
             "template_render",
             "toml_format",
+            "tsv_format",
             "yaml_format",
         }
     )
