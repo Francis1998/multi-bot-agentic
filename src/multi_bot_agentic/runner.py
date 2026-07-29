@@ -333,6 +333,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.tsv_format import TsvFormatTool
     from multi_bot_agentic.tools.url_parse import UrlParseTool
     from multi_bot_agentic.tools.uuid5 import Uuid5Tool
+    from multi_bot_agentic.tools.xml_parse import XmlParseTool
     from multi_bot_agentic.tools.yaml_format import YamlFormatTool
 
     return {
@@ -361,5 +362,6 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "template_render": TemplateRenderTool(),
         "toml_format": TomlFormatTool(),
         "tsv_format": TsvFormatTool(),
+        "xml_parse": XmlParseTool(),
         "yaml_format": YamlFormatTool(),
     }

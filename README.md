@@ -217,6 +217,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   malformed tables return structured failures; trailing blank rows are stripped.
   A model requests it with `TOOL:tsv_format:model\tscore`, giving agents a safe
   way to normalize TSV handoff snippets.
+- `xml_parse`: parses XML via stdlib `xml.etree.ElementTree` into a compact
+  indented text tree (tag names, `@attr=value` pairs, direct text nodes).
+  Empty or oversized input, DOCTYPE/ENTITY declarations (XXE hardening), and
+  malformed XML return structured failures; rendering is depth- and
+  element-capped. A model requests it with `TOOL:xml_parse:<root>...</root>`,
+  giving agents a safe way to summarize XML handoff snippets.
 - `json_path`: extracts one value from a JSON document using a small deterministic
   path dialect (`.foo.bar`, `items[0].name`, or `$`/empty for the whole document).
   Supply `text`+`path`, or a single payload split on `<<<JSON_PATH>>>` for
