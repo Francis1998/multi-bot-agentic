@@ -52,6 +52,7 @@ class SafetyPolicy:
             "template_render",
             "toml_format",
             "tsv_format",
+            "xml_parse",
             "yaml_format",
         }
     )
