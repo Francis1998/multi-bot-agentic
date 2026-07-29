@@ -211,6 +211,13 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   or oversized input, and a missing parser return structured failures. A model
   requests it with `TOOL:toml_format:enabled = true`, giving agents a safe way to
   normalize TOML configuration snippets.
+- `toml_json`: converts between TOML and JSON text for agent handoffs
+  (`direction`: `to_json` default or `to_toml`). Parsing uses `tomllib`/`tomli`
+  or strict `json.loads`; output is canonical JSON (sorted keys, 2-space indent)
+  or deterministic TOML (same dumper as `toml_format`). Dates/times, JSON null,
+  non-finite numbers, empty or oversized input, and missing parsers return
+  structured failures. A model requests it with `TOOL:toml_json:enabled = true`,
+  giving agents a safe way to bridge TOML configuration and JSON payloads.
 - `tsv_format`: validates tab-separated spreadsheet text via stdlib `csv`
   (`excel-tab` dialect) and returns canonical TSV with consistent newlines.
   Empty or oversized input, uneven column counts (header defines width), and

@@ -330,6 +330,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.template_render import TemplateRenderTool
     from multi_bot_agentic.tools.text_truncate import TextTruncateTool
     from multi_bot_agentic.tools.toml_format import TomlFormatTool
+    from multi_bot_agentic.tools.toml_json import TomlJsonTool
     from multi_bot_agentic.tools.tsv_format import TsvFormatTool
     from multi_bot_agentic.tools.url_parse import UrlParseTool
     from multi_bot_agentic.tools.uuid5 import Uuid5Tool
@@ -361,6 +362,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "markdown_table": MarkdownTableTool(),
         "template_render": TemplateRenderTool(),
         "toml_format": TomlFormatTool(),
+        "toml_json": TomlJsonTool(),
         "tsv_format": TsvFormatTool(),
         "xml_parse": XmlParseTool(),
         "yaml_format": YamlFormatTool(),
