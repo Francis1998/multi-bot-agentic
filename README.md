@@ -316,6 +316,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   input returns a structured failure. A model requests it with
   `TOOL:html_strip:<html>`, giving agents a deterministic way to turn scraped
   snippets into readable text without inventing or leaking markup.
+- `html_markdown`: converts safe HTML fragments to Markdown (headings, links,
+  lists, bold/italic, code, paragraphs) via stdlib `html.parser`. Documents
+  containing `<script>` or `<style>` are rejected; empty or oversized input
+  returns a structured failure. A model requests it with
+  `TOOL:html_markdown:<html>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 workers that need deterministic HTML→Markdown handoffs.
 - `html_table`: extracts the first HTML table, or a 1-based `table_index`, and
   renders it as GitHub-flavored markdown or CSV. It uses stdlib `html.parser`
   only, rejects `<script>`/`<style>`, caps document/output chars plus rows and
@@ -348,6 +354,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
+- [HTML Markdown Tool Guide](docs/guides/HTML_MARKDOWN_TOOL_GUIDE.md)
 - [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
 - [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
 - [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
