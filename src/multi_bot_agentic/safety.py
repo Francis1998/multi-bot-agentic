@@ -44,6 +44,7 @@ class SafetyPolicy:
             "diff",
             "regex",
             "truncate",
+            "text_sort_lines",
             "csv",
             "spreadsheet_slice",
             "html_strip",

@@ -306,6 +306,11 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   agents a trustworthy before/after comparison for observations and tool
   outputs — matching the gap popular agent frameworks fill with a dedicated
   diff/patch tool.
+- `text_sort_lines`: sorts multi-line text ascending or descending (`order`
+  default `asc`) with optional `unique` dedupe after sort. Empty, oversized, or
+  unsupported-order requests return a structured failure. A model requests it
+  with `TOOL:text_sort_lines:<text>`, giving agents a stable line order for
+  checklists, tags, and other line-oriented observations.
 - `html_strip`: strips HTML markup to plain text via the stdlib HTML parser.
   Documents containing `<script>` or `<style>` are rejected; empty or oversized
   input returns a structured failure. A model requests it with
@@ -347,6 +352,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
 - [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
 - [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
+- [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
 - [YAML Format Tool Guide](docs/guides/YAML_FORMAT_TOOL_GUIDE.md)
 
 ## Verification
