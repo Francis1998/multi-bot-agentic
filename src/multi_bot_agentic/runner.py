@@ -318,6 +318,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.echo import EchoTool
     from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
     from multi_bot_agentic.tools.hashing import HashTool
+    from multi_bot_agentic.tools.html_markdown import HtmlMarkdownTool
     from multi_bot_agentic.tools.html_strip import HtmlStripTool
     from multi_bot_agentic.tools.html_table import HtmlTableTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
@@ -359,6 +360,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "text_sort_lines": TextSortLinesTool(),
         "csv": CsvParseTool(),
         "spreadsheet_slice": SpreadsheetSliceTool(),
+        "html_markdown": HtmlMarkdownTool(),
         "html_strip": HtmlStripTool(),
         "html_table": HtmlTableTool(),
         "markdown_table": MarkdownTableTool(),

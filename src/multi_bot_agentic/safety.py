@@ -47,6 +47,7 @@ class SafetyPolicy:
             "text_sort_lines",
             "csv",
             "spreadsheet_slice",
+            "html_markdown",
             "html_strip",
             "html_table",
             "markdown_table",
