@@ -5,6 +5,7 @@ from multi_bot_agentic.tools.base64_codec import Base64Tool
 from multi_bot_agentic.tools.calculator import CalculatorTool
 from multi_bot_agentic.tools.checklist import ChecklistTool
 from multi_bot_agentic.tools.csv_parse import CsvParseTool
+from multi_bot_agentic.tools.csv_tsv import CsvTsvTool
 from multi_bot_agentic.tools.datetime_normalize import DateTimeTool
 from multi_bot_agentic.tools.diff_text import DiffTool
 from multi_bot_agentic.tools.duration_parse import DurationTool
@@ -37,6 +38,7 @@ __all__ = [
     "CalculatorTool",
     "ChecklistTool",
     "CsvParseTool",
+    "CsvTsvTool",
     "DateTimeTool",
     "DiffTool",
     "DurationTool",
