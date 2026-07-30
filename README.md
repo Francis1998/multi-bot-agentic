@@ -224,6 +224,14 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   malformed tables return structured failures; trailing blank rows are stripped.
   A model requests it with `TOOL:tsv_format:model\tscore`, giving agents a safe
   way to normalize TSV handoff snippets.
+- `csv_tsv`: converts between CSV and TSV text for agent handoffs
+  (`direction`: `csv_to_tsv` default or `tsv_to_csv`). Parsing and serialization
+  use stdlib `csv` only; an optional single-character `delimiter` overrides the
+  input separator. Empty or oversized input, invalid direction/delimiter,
+  uneven column counts, and malformed tables return structured failures. A model
+  requests it with `TOOL:csv_tsv:model,score`, giving agents a safe way to bridge
+  CSV and TSV handoff snippets across GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 workers.
 - `xml_parse`: parses XML via stdlib `xml.etree.ElementTree` into a compact
   indented text tree (tag names, `@attr=value` pairs, direct text nodes).
   Empty or oversized input, DOCTYPE/ENTITY declarations (XXE hardening), and
@@ -359,7 +367,11 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
 - [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
 - [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
+<<<<<<< HEAD
 - [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
+=======
+- [CSV TSV Tool Guide](docs/guides/CSV_TSV_TOOL_GUIDE.md)
+>>>>>>> 812a918 (feat(tools): add csv_tsv bridge tool)
 - [YAML Format Tool Guide](docs/guides/YAML_FORMAT_TOOL_GUIDE.md)
 
 ## Verification
