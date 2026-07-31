@@ -117,8 +117,7 @@ def _sniff_content_type(sample: str) -> tuple[str, float]:
         return json_type, json_conf
 
     if (
-        _XML_DECL.search(stripped)
-        or (stripped.startswith("<") and re.match(r"<\?xml\b|<[A-Za-z_][\w\-.:]*", stripped))
+        _XML_DECL.search(stripped) or (stripped.startswith("<") and re.match(r"<\?xml\b|<[A-Za-z_][\w\-.:]*", stripped))
     ) and _looks_like_xml(stripped):
         return "xml", 0.95
 
