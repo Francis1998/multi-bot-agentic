@@ -59,6 +59,7 @@ class SafetyPolicy:
             "tsv_format",
             "xml_parse",
             "yaml_format",
+            "zip_list",
         }
     )
     cancellation_file: Path | None = None

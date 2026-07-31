@@ -348,6 +348,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   payload split on `<<<TEMPLATE_VARS>>>`. A model requests it with
   `TOOL:template_render:Hello {name}<<<TEMPLATE_VARS>>>{"name":"Ada"}` for safe,
   repeatable snippets without raw string surgery.
+- `zip_list`: lists ZIP archive member metadata (`name`, `size`, `compress_size`,
+  `date`) from base64-encoded bytes via stdlib `zipfile`. It never extracts or
+  executes archive members; invalid base64, non-ZIP payloads, and empty or
+  oversized input return structured failures. A model requests it with
+  `TOOL:zip_list:<base64>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi
+  K2 workers inspecting small attachment bundles.
 
 ## Repository Layout
 
@@ -377,6 +383,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
 - [CSV TSV Tool Guide](docs/guides/CSV_TSV_TOOL_GUIDE.md)
 - [YAML Format Tool Guide](docs/guides/YAML_FORMAT_TOOL_GUIDE.md)
+- [ZIP List Tool Guide](docs/guides/ZIP_LIST_TOOL_GUIDE.md)
 
 ## Verification
 
