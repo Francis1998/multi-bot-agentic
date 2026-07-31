@@ -28,6 +28,7 @@ class SafetyPolicy:
     allowed_tools: frozenset[str] = frozenset(
         {
             "checklist",
+            "content_type_sniff",
             "echo",
             "readonly_file",
             "calculator",

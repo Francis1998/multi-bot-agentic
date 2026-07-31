@@ -180,6 +180,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
 ## Built-In Safe Tools
 
 - `checklist`: deterministic launch checklist generator used by the fake-provider demo.
+- `content_type_sniff`: sniffs likely content type from a bounded text or base64
+  byte prefix (`json`, `xml`, `html`, `csv`, `tsv`, `markdown`, `plain`) and
+  returns a confidence score without network access. Empty or oversized input
+  returns a structured failure. A model requests it with
+  `TOOL:content_type_sniff:<payload>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini
+  3.x / Kimi K2 workers that need a parser hint before the next step.
 - `echo`: safe text echo for adapter tests.
 - `readonly_file`: root-contained read-only file reader.
 - `calculator`: sandboxed arithmetic evaluator. It parses expressions into an AST
@@ -370,6 +376,7 @@ docs/                    architecture, safety, config, quickstart, demo
 
 - [Quickstart](docs/QUICKSTART.md)
 - [Configuration](docs/CONFIGURATION.md)
+- [Content Type Sniff Tool Guide](docs/guides/CONTENT_TYPE_SNIFF_TOOL_GUIDE.md)
 - [Safety](docs/SAFETY.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
