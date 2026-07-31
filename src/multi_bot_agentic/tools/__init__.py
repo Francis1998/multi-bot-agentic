@@ -33,6 +33,7 @@ from multi_bot_agentic.tools.url_parse import UrlParseTool
 from multi_bot_agentic.tools.uuid5 import Uuid5Tool
 from multi_bot_agentic.tools.xml_parse import XmlParseTool
 from multi_bot_agentic.tools.yaml_format import YamlFormatTool
+from multi_bot_agentic.tools.zip_list import ZipListTool
 
 __all__ = [
     "Base64Tool",
@@ -68,4 +69,5 @@ __all__ = [
     "Uuid5Tool",
     "XmlParseTool",
     "YamlFormatTool",
+    "ZipListTool",
 ]
