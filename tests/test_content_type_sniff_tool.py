@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 import base64
 from pathlib import Path
 
@@ -26,7 +28,7 @@ def test_content_type_sniff_detects_json() -> None:
     assert ok is True
     assert content == "json"
     assert metadata["content_type"] == "json"
-    assert float(metadata["confidence"]) >= 0.95
+    assert cast(float, metadata["confidence"]) >= 0.95
 
 
 def test_content_type_sniff_detects_xml() -> None:
@@ -37,7 +39,7 @@ def test_content_type_sniff_detects_xml() -> None:
     assert ok is True
     assert content == "xml"
     assert metadata["content_type"] == "xml"
-    assert float(metadata["confidence"]) >= 0.9
+    assert cast(float, metadata["confidence"]) >= 0.9
 
 
 def test_content_type_sniff_detects_html() -> None:
