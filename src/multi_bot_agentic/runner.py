@@ -311,6 +311,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.base64_codec import Base64Tool
     from multi_bot_agentic.tools.calculator import CalculatorTool
     from multi_bot_agentic.tools.checklist import ChecklistTool
+    from multi_bot_agentic.tools.content_type_sniff import ContentTypeSniffTool
     from multi_bot_agentic.tools.csv_parse import CsvParseTool
     from multi_bot_agentic.tools.csv_tsv import CsvTsvTool
     from multi_bot_agentic.tools.datetime_normalize import DateTimeTool
@@ -344,6 +345,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
 
     return {
         "checklist": ChecklistTool(),
+        "content_type_sniff": ContentTypeSniffTool(),
         "echo": EchoTool(),
         "readonly_file": ReadOnlyFileTool(root=root),
         "calculator": CalculatorTool(),
