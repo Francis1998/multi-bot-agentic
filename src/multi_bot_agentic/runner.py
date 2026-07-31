@@ -322,6 +322,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.html_markdown import HtmlMarkdownTool
     from multi_bot_agentic.tools.html_strip import HtmlStripTool
     from multi_bot_agentic.tools.html_table import HtmlTableTool
+    from multi_bot_agentic.tools.html_table_csv import HtmlTableCsvTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
     from multi_bot_agentic.tools.json_path import JsonPathTool
     from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
@@ -365,6 +366,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "html_markdown": HtmlMarkdownTool(),
         "html_strip": HtmlStripTool(),
         "html_table": HtmlTableTool(),
+        "html_table_csv": HtmlTableCsvTool(),
         "markdown_table": MarkdownTableTool(),
         "template_render": TemplateRenderTool(),
         "toml_format": TomlFormatTool(),

@@ -335,6 +335,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   only, rejects `<script>`/`<style>`, caps document/output chars plus rows and
   columns, and returns structured metadata for GPT-5.5 / Claude Sonnet 4.6 /
   Gemini 3.x / Kimi K2 workers that need safe tabular observations from HTML.
+- `html_table_csv`: converts the first HTML table (default) or every table
+  (`all=true`) to CSV text via stdlib `html.parser`. It rejects `<script>`/
+  `<style>`, caps document and output chars, and returns structured failures for
+  empty, oversized, or table-less input. A model requests it with
+  `TOOL:html_table_csv:<html>` for deterministic CSV handoffs across GPT-5.5 /
+  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
 - `template_render`: fills simple `{var}` or Jinja-like `{{ var }}`
   placeholders from scalar JSON variables. It HTML-escapes every substituted
   value, rejects expressions/filters/attribute access instead of evaluating
@@ -364,14 +370,12 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
 - [HTML Markdown Tool Guide](docs/guides/HTML_MARKDOWN_TOOL_GUIDE.md)
 - [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
+- [HTML Table CSV Tool Guide](docs/guides/HTML_TABLE_CSV_TOOL_GUIDE.md)
 - [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
 - [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
 - [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
-<<<<<<< HEAD
 - [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
-=======
 - [CSV TSV Tool Guide](docs/guides/CSV_TSV_TOOL_GUIDE.md)
->>>>>>> 812a918 (feat(tools): add csv_tsv bridge tool)
 - [YAML Format Tool Guide](docs/guides/YAML_FORMAT_TOOL_GUIDE.md)
 
 ## Verification
