@@ -51,6 +51,7 @@ class SafetyPolicy:
             "html_markdown",
             "html_strip",
             "html_table",
+            "html_table_csv",
             "markdown_table",
             "template_render",
             "toml_format",

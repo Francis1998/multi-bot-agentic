@@ -51,6 +51,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `csv`: parses CSV text into canonical JSON (header + rows); caps rows/columns; optional single-character `delimiter`; never executes code.
 - `html_strip`: strips HTML tags to plain text via stdlib `html.parser`; rejects documents containing `script`/`style`; empty or oversized input returns `ok=False`; never executes code.
 - `html_markdown`: converts safe HTML fragments to Markdown (headings, links, lists, bold/italic, code, paragraphs) via stdlib `html.parser`; rejects documents containing `script`/`style`; empty or oversized input returns `ok=False`; never executes code or makes network requests.
+- `html_table_csv`: converts the first HTML table (default) or all tables (`all=true`) to CSV text via stdlib `html.parser`; rejects documents containing `script`/`style`; empty, oversized, or table-less input returns `ok=False`; never executes code or makes network requests.
 - `markdown_table`: renders CSV-like text or list-of-rows input as a GitHub-flavored markdown table; caps rows/columns; escapes pipe/newline cell content; never executes code.
 - `template_render`: renders `{var}` / `{{ var }}` placeholders from scalar JSON variables (`template`+`variables`, or `text` split on `<<<TEMPLATE_VARS>>>`); HTML-escapes substitutions; rejects expressions, filters, attribute lookup, unsupported brace syntax, nested variables, and oversized output; never executes code.
 
