@@ -26,7 +26,7 @@ def test_content_type_sniff_detects_json() -> None:
     assert ok is True
     assert content == "json"
     assert metadata["content_type"] == "json"
-    assert metadata["confidence"] >= 0.95
+    assert float(metadata["confidence"]) >= 0.95
 
 
 def test_content_type_sniff_detects_xml() -> None:
@@ -37,7 +37,7 @@ def test_content_type_sniff_detects_xml() -> None:
     assert ok is True
     assert content == "xml"
     assert metadata["content_type"] == "xml"
-    assert metadata["confidence"] >= 0.9
+    assert float(metadata["confidence"]) >= 0.9
 
 
 def test_content_type_sniff_detects_html() -> None:
