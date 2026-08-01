@@ -46,6 +46,7 @@ class SafetyPolicy:
             "regex",
             "truncate",
             "text_sort_lines",
+            "unicode_normalize",
             "csv",
             "csv_tsv",
             "spreadsheet_slice",
