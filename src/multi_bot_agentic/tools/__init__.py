@@ -27,6 +27,7 @@ from multi_bot_agentic.tools.spreadsheet_slice import SpreadsheetSliceTool
 from multi_bot_agentic.tools.template_render import TemplateRenderTool
 from multi_bot_agentic.tools.text_sort_lines import TextSortLinesTool
 from multi_bot_agentic.tools.text_truncate import TextTruncateTool
+from multi_bot_agentic.tools.text_wrap import TextWrapTool
 from multi_bot_agentic.tools.toml_format import TomlFormatTool
 from multi_bot_agentic.tools.toml_json import TomlJsonTool
 from multi_bot_agentic.tools.tsv_format import TsvFormatTool
@@ -64,6 +65,7 @@ __all__ = [
     "TemplateRenderTool",
     "TextSortLinesTool",
     "TextTruncateTool",
+    "TextWrapTool",
     "TomlFormatTool",
     "TomlJsonTool",
     "ToolAdapter",

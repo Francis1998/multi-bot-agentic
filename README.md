@@ -330,6 +330,11 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   requests return a structured failure. A model requests it with
   `TOOL:unicode_normalize:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini
   3.x / Kimi K2 workers that need canonical text before comparison or hashing.
+- `text_wrap`: wraps or fills text via stdlib `textwrap` (`mode` `wrap` default
+  or `fill`, `width` default 80). Empty, oversized, invalid-width, or
+  unsupported-mode requests return a structured failure. A model requests it
+  with `TOOL:text_wrap:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 workers that need bounded line reflow for logs and previews.
 - `html_strip`: strips HTML markup to plain text via the stdlib HTML parser.
   Documents containing `<script>` or `<style>` are rejected; empty or oversized
   input returns a structured failure. A model requests it with
@@ -394,6 +399,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
 - [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
 - [Unicode Normalize Tool Guide](docs/guides/UNICODE_NORMALIZE_TOOL_GUIDE.md)
+- [Text Wrap Tool Guide](docs/guides/TEXT_WRAP_TOOL_GUIDE.md)
 - [CSV TSV Tool Guide](docs/guides/CSV_TSV_TOOL_GUIDE.md)
 - [YAML Format Tool Guide](docs/guides/YAML_FORMAT_TOOL_GUIDE.md)
 - [ZIP List Tool Guide](docs/guides/ZIP_LIST_TOOL_GUIDE.md)
