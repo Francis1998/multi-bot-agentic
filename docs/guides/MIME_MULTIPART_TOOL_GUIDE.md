@@ -28,9 +28,7 @@ Content-Type: text/plain; charset=utf-8
 Hello Kimi K2
 --BOUNDARY--
 """
-result = MimeMultipartTool().execute(
-    ToolInvocation(tool_name="mime_multipart", arguments={"raw": raw})
-)
+result = MimeMultipartTool().execute(ToolInvocation(tool_name="mime_multipart", arguments={"raw": raw}))
 print(result.content)
 ```
 
