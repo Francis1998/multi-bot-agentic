@@ -51,6 +51,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `truncate`: truncates text to a max length (`max_length` arg, or `text` split on `<<<TRUNCATE>>>`, default 256); optional custom `ellipsis`; bounds input size; never executes code.
 - `text_sort_lines`: sorts text lines ascending or descending (`order`: `asc`/`desc`, default `asc`); optional `unique` dedupe after sort; rejects empty/oversized input and unsupported order; never executes code.
 - `unicode_normalize`: normalizes Unicode text via stdlib `unicodedata` (`form`: NFC default, NFD, NFKC, NFKD); rejects empty/oversized input and unsupported forms; never executes code or makes network requests.
+- `text_wrap`: wraps or fills text via stdlib `textwrap` (`mode`: `wrap` default or `fill`, `width` default 80, range 1..500); rejects empty/oversized input, invalid width, and unsupported mode; never executes code or makes network requests.
 - `csv`: parses CSV text into canonical JSON (header + rows); caps rows/columns; optional single-character `delimiter`; never executes code.
 - `html_strip`: strips HTML tags to plain text via stdlib `html.parser`; rejects documents containing `script`/`style`; empty or oversized input returns `ok=False`; never executes code.
 - `html_markdown`: converts safe HTML fragments to Markdown (headings, links, lists, bold/italic, code, paragraphs) via stdlib `html.parser`; rejects documents containing `script`/`style`; empty or oversized input returns `ok=False`; never executes code or makes network requests.
