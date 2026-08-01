@@ -30,6 +30,7 @@ from multi_bot_agentic.tools.text_truncate import TextTruncateTool
 from multi_bot_agentic.tools.toml_format import TomlFormatTool
 from multi_bot_agentic.tools.toml_json import TomlJsonTool
 from multi_bot_agentic.tools.tsv_format import TsvFormatTool
+from multi_bot_agentic.tools.unicode_normalize import UnicodeNormalizeTool
 from multi_bot_agentic.tools.url_parse import UrlParseTool
 from multi_bot_agentic.tools.uuid5 import Uuid5Tool
 from multi_bot_agentic.tools.xml_parse import XmlParseTool
@@ -67,6 +68,7 @@ __all__ = [
     "TomlJsonTool",
     "ToolAdapter",
     "TsvFormatTool",
+    "UnicodeNormalizeTool",
     "UrlParseTool",
     "Uuid5Tool",
     "XmlParseTool",
