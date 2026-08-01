@@ -20,6 +20,7 @@ from multi_bot_agentic.tools.html_table_csv import HtmlTableCsvTool
 from multi_bot_agentic.tools.json_format import JsonFormatTool
 from multi_bot_agentic.tools.json_path import JsonPathTool
 from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
+from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
 from multi_bot_agentic.tools.redaction import RedactionTool
 from multi_bot_agentic.tools.regex_extract import RegexExtractTool
 from multi_bot_agentic.tools.slugify import SlugifyTool
@@ -57,6 +58,7 @@ __all__ = [
     "JsonFormatTool",
     "JsonPathTool",
     "MarkdownTableTool",
+    "MimeMultipartTool",
     "ReadOnlyFileTool",
     "RedactionTool",
     "RegexExtractTool",
