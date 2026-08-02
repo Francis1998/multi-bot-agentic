@@ -244,7 +244,16 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   malformed XML return structured failures; rendering is depth- and
   element-capped. A model requests it with `TOOL:xml_parse:<root>...</root>`,
   giving agents a safe way to summarize XML handoff snippets.
-- `json_path`: extracts one value from a JSON document using a small deterministic
+- `json_path`:
+PLACEHOLDER
+- `json_query`: filters JSON object arrays (`where` field equals
+  value) or plucks a field across objects (`pluck`) via stdlib
+  `json`. Empty, oversized, malformed, or unsupported-mode requests
+  return a structured failure. A model requests it with
+  `TOOL:json_query:<json><<<JSON_QUERY>>>{...}` for GPT-5.5 /
+  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need
+  deterministic array select beyond `json_path`.
+- `json_path_KEEP`: extracts one value from a JSON document using a small deterministic
   path dialect (`.foo.bar`, `items[0].name`, or `$`/empty for the whole document).
   Supply `text`+`path`, or a single payload split on `<<<JSON_PATH>>>` for
   `TOOL:json_path:...` directives. Recursive descent, filters, scripts, pipes,
@@ -402,6 +411,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Safety](docs/SAFETY.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
+- [JSON Query Tool Guide](docs/guides/JSON_QUERY_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
 - [HTML Entities Tool Guide](docs/guides/HTML_ENTITIES_TOOL_GUIDE.md)
 - [HTML Markdown Tool Guide](docs/guides/HTML_MARKDOWN_TOOL_GUIDE.md)

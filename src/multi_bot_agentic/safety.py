@@ -34,6 +34,7 @@ class SafetyPolicy:
             "calculator",
             "json_format",
             "json_path",
+            "json_query",
             "redact",
             "hash",
             "base64",
