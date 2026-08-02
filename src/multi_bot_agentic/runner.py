@@ -326,6 +326,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.html_table_csv import HtmlTableCsvTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
     from multi_bot_agentic.tools.json_path import JsonPathTool
+    from multi_bot_agentic.tools.json_query import JsonQueryTool
     from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
     from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
     from multi_bot_agentic.tools.redaction import RedactionTool
@@ -354,6 +355,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "calculator": CalculatorTool(),
         "json_format": JsonFormatTool(),
         "json_path": JsonPathTool(),
+        "json_query": JsonQueryTool(),
         "redact": RedactionTool(),
         "hash": HashTool(),
         "base64": Base64Tool(),

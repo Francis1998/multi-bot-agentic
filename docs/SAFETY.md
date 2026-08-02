@@ -38,6 +38,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `csv_tsv`: converts between CSV and TSV text (`direction`: `csv_to_tsv` default or `tsv_to_csv`); optional single-character input `delimiter` override; rejects empty/oversized input, invalid direction/delimiter, uneven column counts, and malformed tables; never executes code.
 - `xml_parse`: parses XML via stdlib `xml.etree.ElementTree` into a compact indented text tree (tags, `@attr=value`, text nodes); rejects empty/oversized input, DOCTYPE/ENTITY declarations (XXE hardening), and malformed XML; depth- and element-capped rendering; never executes code.
 - `json_path`: extracts values from JSON via a simple dot/[index] path (`text`+`path`, or `text` split on `<<<JSON_PATH>>>`); rejects recursive descent, filters, scripts, pipes, oversized input/results, and invalid JSON; never executes code.
+- `json_query`: filters JSON object arrays (`where` field==value) or plucks a field (`pluck`) via stdlib `json`; rejects empty/oversized/malformed input and unsupported mode; never executes code, evaluates scripts, or makes network requests.
 - `redact`: scrubs PII (email, phone, SSN, IPv4, IPv6) from text into typed placeholders.
 - `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
 - `base64`: encodes text to Base64 or decodes Base64 to text (encode|decode; default encode).
