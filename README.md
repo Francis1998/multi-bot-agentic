@@ -335,6 +335,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   unsupported-mode requests return a structured failure. A model requests it
   with `TOOL:text_wrap:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
   Kimi K2 workers that need bounded line reflow for logs and previews.
+- `html_entities`: encodes or decodes HTML entities via stdlib `html`
+  (`mode` `encode` default or `decode`; encode optionally escapes quotes).
+  Empty, oversized, unsupported-mode, or invalid-quote requests return a
+  structured failure. A model requests it with `TOOL:html_entities:<text>`
+  for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need
+  deterministic entity escaping before render or compare.
 - `html_strip`: strips HTML markup to plain text via the stdlib HTML parser.
   Documents containing `<script>` or `<style>` are rejected; empty or oversized
   input returns a structured failure. A model requests it with
@@ -397,6 +403,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
+- [HTML Entities Tool Guide](docs/guides/HTML_ENTITIES_TOOL_GUIDE.md)
 - [HTML Markdown Tool Guide](docs/guides/HTML_MARKDOWN_TOOL_GUIDE.md)
 - [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
 - [HTML Table CSV Tool Guide](docs/guides/HTML_TABLE_CSV_TOOL_GUIDE.md)

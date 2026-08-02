@@ -51,6 +51,7 @@ class SafetyPolicy:
             "csv",
             "csv_tsv",
             "spreadsheet_slice",
+            "html_entities",
             "html_markdown",
             "html_strip",
             "html_table",
