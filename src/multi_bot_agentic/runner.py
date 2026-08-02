@@ -313,6 +313,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.checklist import ChecklistTool
     from multi_bot_agentic.tools.content_type_sniff import ContentTypeSniffTool
     from multi_bot_agentic.tools.csv_parse import CsvParseTool
+    from multi_bot_agentic.tools.csv_pivot import CsvPivotTool
     from multi_bot_agentic.tools.csv_tsv import CsvTsvTool
     from multi_bot_agentic.tools.datetime_normalize import DateTimeTool
     from multi_bot_agentic.tools.diff_text import DiffTool
@@ -368,6 +369,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "text_sort_lines": TextSortLinesTool(),
         "text_wrap": TextWrapTool(),
         "csv": CsvParseTool(),
+        "csv_pivot": CsvPivotTool(),
         "csv_tsv": CsvTsvTool(),
         "spreadsheet_slice": SpreadsheetSliceTool(),
         "html_markdown": HtmlMarkdownTool(),

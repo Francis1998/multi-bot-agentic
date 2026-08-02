@@ -49,6 +49,7 @@ class SafetyPolicy:
             "unicode_normalize",
             "text_wrap",
             "csv",
+            "csv_pivot",
             "csv_tsv",
             "spreadsheet_slice",
             "html_markdown",
