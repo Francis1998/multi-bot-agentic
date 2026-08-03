@@ -35,6 +35,7 @@ class SafetyPolicy:
             "json_format",
             "json_path",
             "json_query",
+            "line_number",
             "redact",
             "hash",
             "base64",
