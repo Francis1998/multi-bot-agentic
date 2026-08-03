@@ -230,6 +230,12 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   malformed tables return structured failures; trailing blank rows are stripped.
   A model requests it with `TOOL:tsv_format:model\tscore`, giving agents a safe
   way to normalize TSV handoff snippets.
+- `json_merge_patch`: applies RFC 7396 JSON Merge Patch (`base`+`patch`,
+  or `text` with `<<<PATCH>>>`) via stdlib `json`. Empty, oversized,
+  malformed, or over-deep requests return a structured failure. A model
+  requests it with `TOOL:json_merge_patch:<json>` for GPT-5.5 /
+  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic
+  partial JSON updates.
 - `line_number`: prefixes each text line with a 1-based line number
   (optional `start` / `separator`). Empty or oversized input and invalid
   start/separator values return a structured failure. A model requests it
@@ -430,6 +436,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
 - [JSON Query Tool Guide](docs/guides/JSON_QUERY_TOOL_GUIDE.md)
+- [JSON Merge Patch Tool Guide](docs/guides/JSON_MERGE_PATCH_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
 - [HTML Entities Tool Guide](docs/guides/HTML_ENTITIES_TOOL_GUIDE.md)
 - [HTML Markdown Tool Guide](docs/guides/HTML_MARKDOWN_TOOL_GUIDE.md)

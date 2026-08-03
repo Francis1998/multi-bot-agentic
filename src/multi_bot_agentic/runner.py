@@ -328,6 +328,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.html_table import HtmlTableTool
     from multi_bot_agentic.tools.html_table_csv import HtmlTableCsvTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
+    from multi_bot_agentic.tools.json_merge_patch import JsonMergePatchTool
     from multi_bot_agentic.tools.json_path import JsonPathTool
     from multi_bot_agentic.tools.json_query import JsonQueryTool
     from multi_bot_agentic.tools.line_number import LineNumberTool
@@ -358,6 +359,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "readonly_file": ReadOnlyFileTool(root=root),
         "calculator": CalculatorTool(),
         "json_format": JsonFormatTool(),
+        "json_merge_patch": JsonMergePatchTool(),
         "json_path": JsonPathTool(),
         "json_query": JsonQueryTool(),
         "line_number": LineNumberTool(),

@@ -33,6 +33,7 @@ class SafetyPolicy:
             "readonly_file",
             "calculator",
             "json_format",
+            "json_merge_patch",
             "json_path",
             "json_query",
             "line_number",
