@@ -47,6 +47,7 @@ class SafetyPolicy:
             "duration",
             "diff",
             "regex",
+            "regex_replace",
             "truncate",
             "text_sort_lines",
             "unicode_normalize",
