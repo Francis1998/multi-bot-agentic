@@ -47,6 +47,12 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--event-log", type=Path, default=None, help="sqlite event log path")
     run_parser.add_argument("--max-steps", type=int, default=None, help="maximum loop steps")
     run_parser.add_argument("--run-id", default=None, help="optional run id")
+    run_parser.add_argument(
+        "--cancel-file",
+        type=Path,
+        default=None,
+        help="optional cancellation file checked between ODA steps",
+    )
 
     replay_parser = subparsers.add_parser("replay", help="print durable event log")
     replay_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
@@ -74,6 +80,7 @@ def run_command(args: argparse.Namespace) -> int:
         provider=args.provider,
         event_log=args.event_log,
         max_steps=args.max_steps,
+        cancel_file=args.cancel_file,
     )
     event_log = SQLiteEventLog(config.event_log)
     try:

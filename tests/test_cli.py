@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from multi_bot_agentic.cli import build_run_report, format_event, format_event_text
 from multi_bot_agentic.event_log import EventRecord
 
@@ -75,3 +77,30 @@ def test_build_run_report_summarizes_decisions_tools_and_answer() -> None:
     assert report["runs"][0]["decisions"][0]["rule_id"] == "model.requested-tool"
     assert report["runs"][0]["tool_calls"][0]["tool"] == "checklist"
     assert report["runs"][0]["answer"] == "done"
+
+
+def test_run_parser_accepts_cancel_file(tmp_path: Path) -> None:
+    """CLI run command must expose --cancel-file as a SafetyPolicy override."""
+    from multi_bot_agentic.cli import build_parser
+    from multi_bot_agentic.config import AppConfig
+
+    cancel_path = tmp_path / "cancel"
+    parser = build_parser()
+    args = parser.parse_args(
+        [
+            "run",
+            "--goal",
+            "demo",
+            "--provider",
+            "fake",
+            "--cancel-file",
+            str(cancel_path),
+        ]
+    )
+    config = AppConfig.from_env(
+        provider=args.provider,
+        event_log=args.event_log,
+        max_steps=args.max_steps,
+        cancel_file=args.cancel_file,
+    )
+    assert config.safety.cancellation_file == cancel_path

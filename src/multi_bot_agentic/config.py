@@ -29,6 +29,7 @@ class AppConfig:
         provider: str | None = None,
         event_log: Path | None = None,
         max_steps: int | None = None,
+        cancel_file: Path | None = None,
     ) -> AppConfig:
         """Load configuration from environment with optional CLI overrides.
 
@@ -36,6 +37,7 @@ class AppConfig:
             provider: Optional provider override.
             event_log: Optional event-log path override.
             max_steps: Optional max-step override.
+            cancel_file: Optional cancellation-file override.
 
         Returns:
             Application configuration.
@@ -43,11 +45,12 @@ class AppConfig:
 
         selected_provider: str = provider if provider is not None else os.getenv("MULTIBOT_PROVIDER", "fake")
         selected_event_log = event_log or Path(os.getenv("MULTIBOT_EVENT_LOG", "data/runs.sqlite"))
+        selected_cancel_file = cancel_file or _optional_path(os.getenv("MULTIBOT_CANCEL_FILE"))
         safety = SafetyPolicy(
             max_steps=max_steps or int(os.getenv("MULTIBOT_MAX_STEPS", "6")),
             timeout_seconds=float(os.getenv("MULTIBOT_TIMEOUT_SECONDS", "30")),
             max_prompt_chars=int(os.getenv("MULTIBOT_MAX_PROMPT_CHARS", "4000")),
-            cancellation_file=_optional_path(os.getenv("MULTIBOT_CANCEL_FILE")),
+            cancellation_file=selected_cancel_file,
         )
         return cls(provider=selected_provider, event_log=selected_event_log, safety=safety)
 
