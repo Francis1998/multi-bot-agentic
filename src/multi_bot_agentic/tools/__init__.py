@@ -15,6 +15,7 @@ from multi_bot_agentic.tools.duration_parse import DurationTool
 from multi_bot_agentic.tools.echo import EchoTool
 from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
 from multi_bot_agentic.tools.hashing import HashTool
+from multi_bot_agentic.tools.html_attr_extract import HtmlAttrExtractTool
 from multi_bot_agentic.tools.html_entities import HtmlEntitiesTool
 from multi_bot_agentic.tools.html_markdown import HtmlMarkdownTool
 from multi_bot_agentic.tools.html_strip import HtmlStripTool
@@ -60,6 +61,7 @@ __all__ = [
     "DurationTool",
     "EchoTool",
     "HashTool",
+    "HtmlAttrExtractTool",
     "HtmlEntitiesTool",
     "HtmlMarkdownTool",
     "HtmlStripTool",

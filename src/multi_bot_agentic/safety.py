@@ -57,6 +57,7 @@ class SafetyPolicy:
             "csv_pivot",
             "csv_tsv",
             "spreadsheet_slice",
+            "html_attr_extract",
             "html_entities",
             "html_markdown",
             "html_strip",

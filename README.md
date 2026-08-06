@@ -374,6 +374,12 @@ PLACEHOLDER
   unsupported-mode requests return a structured failure. A model requests it
   with `TOOL:text_wrap:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
   Kimi K2 workers that need bounded line reflow for logs and previews.
+- `html_attr_extract`: extracts HTML attribute values via stdlib
+  `html.parser` (required `attr`; optional `tag` filter and `max_results`).
+  Empty, oversized, or invalid-bound requests return a structured failure.
+  A model requests it with `TOOL:html_attr_extract:<html>` for GPT-5.5 /
+  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic
+  attribute extraction from markup handoffs.
 - `html_entities`: encodes or decodes HTML entities via stdlib `html`
   (`mode` `encode` default or `decode`; encode optionally escapes quotes).
   Empty, oversized, unsupported-mode, or invalid-quote requests return a
@@ -444,6 +450,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [JSON Query Tool Guide](docs/guides/JSON_QUERY_TOOL_GUIDE.md)
 - [JSON Merge Patch Tool Guide](docs/guides/JSON_MERGE_PATCH_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
+- [HTML Attribute Extract Tool Guide](docs/guides/HTML_ATTR_EXTRACT_TOOL_GUIDE.md)
 - [HTML Entities Tool Guide](docs/guides/HTML_ENTITIES_TOOL_GUIDE.md)
 - [HTML Markdown Tool Guide](docs/guides/HTML_MARKDOWN_TOOL_GUIDE.md)
 - [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
