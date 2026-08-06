@@ -54,6 +54,7 @@ class SafetyPolicy:
             "text_wrap",
             "csv",
             "csv_groupby",
+            "csv_join",
             "csv_pivot",
             "csv_tsv",
             "spreadsheet_slice",

@@ -6,6 +6,7 @@ from multi_bot_agentic.tools.calculator import CalculatorTool
 from multi_bot_agentic.tools.checklist import ChecklistTool
 from multi_bot_agentic.tools.content_type_sniff import ContentTypeSniffTool
 from multi_bot_agentic.tools.csv_groupby import CsvGroupbyTool
+from multi_bot_agentic.tools.csv_join import CsvJoinTool
 from multi_bot_agentic.tools.csv_parse import CsvParseTool
 from multi_bot_agentic.tools.csv_pivot import CsvPivotTool
 from multi_bot_agentic.tools.csv_tsv import CsvTsvTool
@@ -52,6 +53,7 @@ __all__ = [
     "ChecklistTool",
     "ContentTypeSniffTool",
     "CsvGroupbyTool",
+    "CsvJoinTool",
     "CsvParseTool",
     "CsvPivotTool",
     "CsvTsvTool",
