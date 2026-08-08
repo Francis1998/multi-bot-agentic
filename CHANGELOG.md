@@ -3,6 +3,8 @@
 ## Unreleased
 
 ### Added
+- Added the `csv_filter` safe tool for filtering CSV rows by named-column
+  equals/contains predicates; guide + demo GIF.
 - Added the `json_pointer` safe tool for RFC 6901 JSON Pointer extraction
   (distinct from `json_path`); guide + demo GIF.
 

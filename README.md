@@ -241,6 +241,13 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   start/separator values return a structured failure. A model requests it
   with `TOOL:line_number:<text>` for GPT-5.5 / Claude Sonnet 4.6 /
   Gemini 3.x / Kimi K2 workers that need stable line citations.
+- `csv_filter`: filters CSV rows where a named column equals or contains a
+  value (`mode`: `equals` default or `contains`; `case_insensitive`: true
+  default) via stdlib `csv`. Empty, oversized, malformed, unknown-column, or
+  over-bounds requests return a structured failure. A model requests it with
+  `TOOL:csv_filter:<csv><<<CSV_FILTER>>>column<<<=>>>value` (or
+  `column<<<~>>>value`) for deterministic tabular predicates before the next
+  turn.
 - `csv_groupby`: groups CSV rows by key columns and aggregates numeric
   value columns (`agg`: `sum` default, `count`, `min`, `max`, `mean`) via
   stdlib `csv`. Empty, oversized, malformed, unknown-column, or non-numeric
@@ -481,6 +488,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Text Wrap Tool Guide](docs/guides/TEXT_WRAP_TOOL_GUIDE.md)
 - [Line Number Tool Guide](docs/guides/LINE_NUMBER_TOOL_GUIDE.md)
 - [Regex Replace Tool Guide](docs/guides/REGEX_REPLACE_TOOL_GUIDE.md)
+- [CSV Filter Tool Guide](docs/guides/CSV_FILTER_TOOL_GUIDE.md)
 - [CSV Group-By Tool Guide](docs/guides/CSV_GROUPBY_TOOL_GUIDE.md)
 - [CSV Join Tool Guide](docs/guides/CSV_JOIN_TOOL_GUIDE.md)
 - [CSV Pivot Tool Guide](docs/guides/CSV_PIVOT_TOOL_GUIDE.md)
