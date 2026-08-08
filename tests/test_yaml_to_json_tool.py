@@ -65,7 +65,9 @@ def test_yaml_to_json_rejects_oversized_document() -> None:
 
     assert ok is False
     assert "max_chars" in content
-    assert metadata["chars"] > 20_000
+    chars = metadata["chars"]
+    assert isinstance(chars, int)
+    assert chars > 20_000
 
 
 def test_yaml_to_json_rejects_tags_and_anchors() -> None:
