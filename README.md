@@ -353,6 +353,12 @@ PLACEHOLDER
   agents a trustworthy before/after comparison for observations and tool
   outputs — matching the gap popular agent frameworks fill with a dedicated
   diff/patch tool.
+- `regex_replace`: applies a bounded regex find/replace (`text` / `pattern` /
+  `repl`, optional `count`) via stdlib `re`. Empty or oversized input, patterns
+  over 200 chars, nested-quantifier ReDoS shapes, and match counts over the
+  cap return a structured failure. A model requests it with
+  `TOOL:regex_replace:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 workers that need deterministic substitutions before the next turn.
 - `text_sort_lines`: sorts multi-line text ascending or descending (`order`
   default `asc`) with optional `unique` dedupe after sort. Empty, oversized, or
   unsupported-order requests return a structured failure. A model requests it
@@ -450,6 +456,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Unicode Normalize Tool Guide](docs/guides/UNICODE_NORMALIZE_TOOL_GUIDE.md)
 - [Text Wrap Tool Guide](docs/guides/TEXT_WRAP_TOOL_GUIDE.md)
 - [Line Number Tool Guide](docs/guides/LINE_NUMBER_TOOL_GUIDE.md)
+- [Regex Replace Tool Guide](docs/guides/REGEX_REPLACE_TOOL_GUIDE.md)
 - [CSV Group-By Tool Guide](docs/guides/CSV_GROUPBY_TOOL_GUIDE.md)
 - [CSV Pivot Tool Guide](docs/guides/CSV_PIVOT_TOOL_GUIDE.md)
 - [CSV TSV Tool Guide](docs/guides/CSV_TSV_TOOL_GUIDE.md)

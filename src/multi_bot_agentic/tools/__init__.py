@@ -29,6 +29,7 @@ from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
 from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
 from multi_bot_agentic.tools.redaction import RedactionTool
 from multi_bot_agentic.tools.regex_extract import RegexExtractTool
+from multi_bot_agentic.tools.regex_replace import RegexReplaceTool
 from multi_bot_agentic.tools.slugify import SlugifyTool
 from multi_bot_agentic.tools.spreadsheet_slice import SpreadsheetSliceTool
 from multi_bot_agentic.tools.template_render import TemplateRenderTool
@@ -74,6 +75,7 @@ __all__ = [
     "ReadOnlyFileTool",
     "RedactionTool",
     "RegexExtractTool",
+    "RegexReplaceTool",
     "SlugifyTool",
     "SpreadsheetSliceTool",
     "TemplateRenderTool",
