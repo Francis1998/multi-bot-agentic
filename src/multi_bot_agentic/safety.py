@@ -56,6 +56,7 @@ class SafetyPolicy:
             "unicode_normalize",
             "text_wrap",
             "csv",
+            "csv_filter",
             "csv_groupby",
             "csv_join",
             "csv_pivot",
