@@ -321,6 +321,8 @@ PLACEHOLDER
   agents a safe way to route on a host or inspect a query parameter relayed by an
   earlier step.
 - `uuid4`: generates random version-4 UUID identifier(s) (optional `count`
+  requests it with `TOOL:yaml_to_json:enabled: true`, giving GPT-5.5 /
+- `yaml_to_json`: converts a constrained safe YAML subset to canonical JSON
   1..16, default 1). Output is one UUID string or newline-joined UUIDs when
   `count` > 1. These are opaque identifiers for GPT-5.5 / Claude Sonnet 4.6 /
   Gemini 3.x / Kimi K2 workflows — not cryptographic secrets or keying material.

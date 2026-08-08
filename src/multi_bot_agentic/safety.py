@@ -42,6 +42,7 @@ class SafetyPolicy:
             "base64",
             "url_parse",
             "uuid4",
+            "yaml_to_json",
             "uuid5",
             "slugify",
             "datetime",
