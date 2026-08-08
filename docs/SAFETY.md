@@ -49,6 +49,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
 - `base64`: encodes text to Base64 or decodes Base64 to text (encode|decode; default encode).
 - `url_parse`: splits an absolute URL into scheme, host, port, path, query, and fragment.
+- `uuid4`: generates random version-4 UUID identifier(s) (optional `count` 1..16, default 1); opaque ids only — not cryptographic secrets; never executes code or makes network requests.
 - `uuid5`: computes a deterministic version-5 UUID from a name and namespace (dns|url|oid|x500|custom UUID; default dns).
 - `slugify`: converts text into a URL-safe ASCII slug (separator default `-`, optional `max_length` truncated on a word boundary).
 - `datetime`: normalizes an ISO-8601 timestamp to canonical UTC (with epoch and weekday); reads no wall-clock `now` and requires `assume_utc` for naive input.

@@ -41,6 +41,7 @@ class SafetyPolicy:
             "hash",
             "base64",
             "url_parse",
+            "uuid4",
             "uuid5",
             "slugify",
             "datetime",
