@@ -248,6 +248,13 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   `TOOL:csv_groupby:<csv>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
   Kimi K2 workers that need deterministic tabular aggregation before the
   next turn.
+- `csv_join`: joins two CSV tables on a key column (`how`: `inner` default or
+  `left`; `on` or `left_on`+`right_on`) via stdlib `csv`. Supply sides as
+  `left`+`right`, or `text`+`right`. Empty, oversized, malformed, or
+  unknown-column requests return a structured failure. A model requests it
+  with `TOOL:csv_join:<csv>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 workers that need deterministic tabular lookup joins before the
+  next turn.
 - `csv_pivot`: pivots long CSV to wide (`index`/`columns`/`values`) or
   unpivots wide columns (`id_vars`/`value_vars`) via stdlib `csv`. Empty,
   oversized, malformed, or unknown-column requests return a structured
@@ -458,6 +465,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Line Number Tool Guide](docs/guides/LINE_NUMBER_TOOL_GUIDE.md)
 - [Regex Replace Tool Guide](docs/guides/REGEX_REPLACE_TOOL_GUIDE.md)
 - [CSV Group-By Tool Guide](docs/guides/CSV_GROUPBY_TOOL_GUIDE.md)
+- [CSV Join Tool Guide](docs/guides/CSV_JOIN_TOOL_GUIDE.md)
 - [CSV Pivot Tool Guide](docs/guides/CSV_PIVOT_TOOL_GUIDE.md)
 - [CSV TSV Tool Guide](docs/guides/CSV_TSV_TOOL_GUIDE.md)
 - [YAML Format Tool Guide](docs/guides/YAML_FORMAT_TOOL_GUIDE.md)
