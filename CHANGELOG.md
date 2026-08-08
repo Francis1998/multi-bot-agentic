@@ -3,6 +3,13 @@
 ## Unreleased
 
 ### Added
+- Added the `json_pointer` safe tool for RFC 6901 JSON Pointer extraction
+  (distinct from `json_path`); guide + demo GIF.
+
+
+## Unreleased
+
+### Added
 - Added the `yaml_to_json` safe tool for converting a constrained YAML subset
 
 - Added the `uuid4` safe tool for generating random version-4 UUID

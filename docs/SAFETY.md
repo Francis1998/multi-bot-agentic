@@ -44,6 +44,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `html_attr_extract`: extracts HTML attribute values via stdlib `html.parser` (required `attr`; optional `tag` filter and `max_results`); rejects empty/oversized input and invalid bounds; never executes code or makes network requests.
 - `xml_parse`: parses XML via stdlib `xml.etree.ElementTree` into a compact indented text tree (tags, `@attr=value`, text nodes); rejects empty/oversized input, DOCTYPE/ENTITY declarations (XXE hardening), and malformed XML; depth- and element-capped rendering; never executes code.
 - `json_path`: extracts values from JSON via a simple dot/[index] path (`text`+`path`, or `text` split on `<<<JSON_PATH>>>`); rejects recursive descent, filters, scripts, pipes, oversized input/results, and invalid JSON; never executes code.
+- `json_pointer`: extracts values from JSON via RFC 6901 JSON Pointer (`text`+`pointer`, or `text` split on `<<<JSON_POINTER>>>`; empty pointer = whole document; `~0`/`~1` escapes); rejects invalid pointers, missing keys, bad array indexes, oversized input/results, and invalid JSON; never executes code.
 - `json_query`: filters JSON object arrays (`where` field==value) or plucks a field (`pluck`) via stdlib `json`; rejects empty/oversized/malformed input and unsupported mode; never executes code, evaluates scripts, or makes network requests.
 - `redact`: scrubs PII (email, phone, SSN, IPv4, IPv6) from text into typed placeholders.
 - `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
