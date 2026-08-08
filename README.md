@@ -320,6 +320,12 @@ PLACEHOLDER
   structured failure. A model requests it with `TOOL:url_parse:<url>`, giving
   agents a safe way to route on a host or inspect a query parameter relayed by an
   earlier step.
+- `uuid4`: generates random version-4 UUID identifier(s) (optional `count`
+  1..16, default 1). Output is one UUID string or newline-joined UUIDs when
+  `count` > 1. These are opaque identifiers for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 workflows — not cryptographic secrets or keying material.
+  Out-of-range or non-integer `count` returns a structured failure. A model
+  requests it with `TOOL:uuid4:`.
 - `uuid5`: computes a deterministic version-5 UUID from a name and a namespace
   (`dns`, `url`, `oid`, `x500`, or a custom UUID string; default `dns`). Because
   a v5 UUID is a hash of `(namespace, name)`, the same inputs always yield the
@@ -468,6 +474,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
 - [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
 - [Unicode Normalize Tool Guide](docs/guides/UNICODE_NORMALIZE_TOOL_GUIDE.md)
+- [UUID4 Tool Guide](docs/guides/UUID4_TOOL_GUIDE.md)
 - [Text Wrap Tool Guide](docs/guides/TEXT_WRAP_TOOL_GUIDE.md)
 - [Line Number Tool Guide](docs/guides/LINE_NUMBER_TOOL_GUIDE.md)
 - [Regex Replace Tool Guide](docs/guides/REGEX_REPLACE_TOOL_GUIDE.md)

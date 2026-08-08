@@ -43,6 +43,7 @@ from multi_bot_agentic.tools.toml_json import TomlJsonTool
 from multi_bot_agentic.tools.tsv_format import TsvFormatTool
 from multi_bot_agentic.tools.unicode_normalize import UnicodeNormalizeTool
 from multi_bot_agentic.tools.url_parse import UrlParseTool
+from multi_bot_agentic.tools.uuid4 import Uuid4Tool
 from multi_bot_agentic.tools.uuid5 import Uuid5Tool
 from multi_bot_agentic.tools.xml_parse import XmlParseTool
 from multi_bot_agentic.tools.yaml_format import YamlFormatTool
@@ -92,6 +93,7 @@ __all__ = [
     "TsvFormatTool",
     "UnicodeNormalizeTool",
     "UrlParseTool",
+    "Uuid4Tool",
     "Uuid5Tool",
     "XmlParseTool",
     "YamlFormatTool",

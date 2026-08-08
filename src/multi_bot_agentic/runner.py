@@ -350,6 +350,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.tsv_format import TsvFormatTool
     from multi_bot_agentic.tools.unicode_normalize import UnicodeNormalizeTool
     from multi_bot_agentic.tools.url_parse import UrlParseTool
+    from multi_bot_agentic.tools.uuid4 import Uuid4Tool
     from multi_bot_agentic.tools.uuid5 import Uuid5Tool
     from multi_bot_agentic.tools.xml_parse import XmlParseTool
     from multi_bot_agentic.tools.yaml_format import YamlFormatTool
@@ -370,6 +371,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "hash": HashTool(),
         "base64": Base64Tool(),
         "url_parse": UrlParseTool(),
+        "uuid4": Uuid4Tool(),
         "uuid5": Uuid5Tool(),
         "slugify": SlugifyTool(),
         "datetime": DateTimeTool(),
