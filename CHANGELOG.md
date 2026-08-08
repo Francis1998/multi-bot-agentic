@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `yaml_to_json` safe tool for converting a constrained YAML subset
 
 - Added the `uuid4` safe tool for generating random version-4 UUID
   identifier(s) (optional `count` 1..16) for GPT-5.5 / Claude Sonnet 4.6 /

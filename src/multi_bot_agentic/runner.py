@@ -354,6 +354,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.uuid5 import Uuid5Tool
     from multi_bot_agentic.tools.xml_parse import XmlParseTool
     from multi_bot_agentic.tools.yaml_format import YamlFormatTool
+    from multi_bot_agentic.tools.yaml_to_json import YamlToJsonTool
     from multi_bot_agentic.tools.zip_list import ZipListTool
 
     return {
@@ -403,5 +404,6 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "unicode_normalize": UnicodeNormalizeTool(),
         "xml_parse": XmlParseTool(),
         "yaml_format": YamlFormatTool(),
+        "yaml_to_json": YamlToJsonTool(),
         "zip_list": ZipListTool(),
     }

@@ -47,6 +47,7 @@ from multi_bot_agentic.tools.uuid4 import Uuid4Tool
 from multi_bot_agentic.tools.uuid5 import Uuid5Tool
 from multi_bot_agentic.tools.xml_parse import XmlParseTool
 from multi_bot_agentic.tools.yaml_format import YamlFormatTool
+from multi_bot_agentic.tools.yaml_to_json import YamlToJsonTool
 from multi_bot_agentic.tools.zip_list import ZipListTool
 
 __all__ = [
@@ -97,5 +98,6 @@ __all__ = [
     "Uuid5Tool",
     "XmlParseTool",
     "YamlFormatTool",
+    "YamlToJsonTool",
     "ZipListTool",
 ]
