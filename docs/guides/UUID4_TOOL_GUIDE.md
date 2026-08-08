@@ -17,9 +17,7 @@ Gemini 3.x / Kimi K2 workers.
 from multi_bot_agentic.models import ToolInvocation
 from multi_bot_agentic.tools.uuid4 import Uuid4Tool
 
-result = Uuid4Tool().execute(
-    ToolInvocation(tool_name="uuid4", arguments={"count": 1})
-)
+result = Uuid4Tool().execute(ToolInvocation(tool_name="uuid4", arguments={"count": 1}))
 print(result.content)
 ```
 
@@ -29,9 +27,7 @@ with `count`.
 Generate several at once:
 
 ```python
-result = Uuid4Tool().execute(
-    ToolInvocation(tool_name="uuid4", arguments={"count": 3})
-)
+result = Uuid4Tool().execute(ToolInvocation(tool_name="uuid4", arguments={"count": 3}))
 print(result.content)  # three newline-joined UUID strings
 ```
 
