@@ -35,6 +35,7 @@ class SafetyPolicy:
             "json_format",
             "json_merge_patch",
             "json_path",
+            "json_pointer",
             "json_query",
             "line_number",
             "redact",

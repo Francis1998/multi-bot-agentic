@@ -276,6 +276,7 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   element-capped. A model requests it with `TOOL:xml_parse:<root>...</root>`,
   giving agents a safe way to summarize XML handoff snippets.
 - `json_path`:
+- `json_pointer`: extracts one value from a JSON document using RFC 6901 JSON Pointer (`/foo/0/bar`, `~0`/`~1` escapes); agents may split document and pointer on `<<<JSON_POINTER>>>` for `TOOL:json_pointer:...` directives. Distinct from `json_path`.
 PLACEHOLDER
 - `json_query`: filters JSON object arrays (`where` field equals
   value) or plucks a field across objects (`pluck`) via stdlib
