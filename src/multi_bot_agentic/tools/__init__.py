@@ -28,6 +28,7 @@ from multi_bot_agentic.tools.json_merge_patch import JsonMergePatchTool
 from multi_bot_agentic.tools.json_path import JsonPathTool
 from multi_bot_agentic.tools.json_pointer import JsonPointerTool
 from multi_bot_agentic.tools.json_query import JsonQueryTool
+from multi_bot_agentic.tools.jwt_decode import JwtDecodeTool
 from multi_bot_agentic.tools.line_number import LineNumberTool
 from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
 from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
@@ -79,6 +80,7 @@ __all__ = [
     "JsonPathTool",
     "JsonPointerTool",
     "JsonQueryTool",
+    "JwtDecodeTool",
     "LineNumberTool",
     "MarkdownTableTool",
     "MimeMultipartTool",
