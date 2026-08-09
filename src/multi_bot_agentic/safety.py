@@ -53,6 +53,7 @@ class SafetyPolicy:
             "regex",
             "regex_replace",
             "truncate",
+            "text_case",
             "text_sort_lines",
             "unicode_normalize",
             "text_wrap",
