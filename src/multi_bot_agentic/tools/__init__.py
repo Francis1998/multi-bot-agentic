@@ -38,6 +38,7 @@ from multi_bot_agentic.tools.regex_replace import RegexReplaceTool
 from multi_bot_agentic.tools.slugify import SlugifyTool
 from multi_bot_agentic.tools.spreadsheet_slice import SpreadsheetSliceTool
 from multi_bot_agentic.tools.template_render import TemplateRenderTool
+from multi_bot_agentic.tools.text_case import TextCaseTool
 from multi_bot_agentic.tools.text_sort_lines import TextSortLinesTool
 from multi_bot_agentic.tools.text_truncate import TextTruncateTool
 from multi_bot_agentic.tools.text_wrap import TextWrapTool
@@ -91,6 +92,7 @@ __all__ = [
     "SlugifyTool",
     "SpreadsheetSliceTool",
     "TemplateRenderTool",
+    "TextCaseTool",
     "TextSortLinesTool",
     "TextTruncateTool",
     "TextWrapTool",
