@@ -317,6 +317,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.csv_join import CsvJoinTool
     from multi_bot_agentic.tools.csv_parse import CsvParseTool
     from multi_bot_agentic.tools.csv_pivot import CsvPivotTool
+    from multi_bot_agentic.tools.csv_select_columns import CsvSelectColumnsTool
     from multi_bot_agentic.tools.csv_tsv import CsvTsvTool
     from multi_bot_agentic.tools.datetime_normalize import DateTimeTool
     from multi_bot_agentic.tools.diff_text import DiffTool
@@ -395,6 +396,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "csv_groupby": CsvGroupbyTool(),
         "csv_join": CsvJoinTool(),
         "csv_pivot": CsvPivotTool(),
+        "csv_select_columns": CsvSelectColumnsTool(),
         "csv_tsv": CsvTsvTool(),
         "spreadsheet_slice": SpreadsheetSliceTool(),
         "html_attr_extract": HtmlAttrExtractTool(),
