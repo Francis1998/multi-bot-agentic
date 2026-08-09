@@ -384,6 +384,7 @@ PLACEHOLDER
   `TOOL:regex_replace:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
   Kimi K2 workers that need deterministic substitutions before the next turn.
 - `text_case`: converts text to `lower`, `upper`, `title`, `snake`, `kebab`, or `camel` (default `lower`; max 20_000 chars). Supply `text`+`case`, or a single payload split on `<<<TEXT_CASE>>>`. Empty, oversized, or unsupported `case` values return a structured failure. A model requests it with `TOOL:text_case:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic case transforms.
+- `csv_select_columns`: selects and reorders CSV columns by name via stdlib `csv` (max 500 rows, 64 columns). Supply `text`+`columns`, or a single payload split on `<<<CSV_SELECT>>>`. Empty, oversized, malformed, unknown-column, or over-bounds requests return a structured failure. A model requests it with `TOOL:csv_select_columns:<csv><<<CSV_SELECT>>>col1,col2` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic tabular projection.
 - `text_sort_lines`: sorts multi-line text ascending or descending (`order`
   default `asc`) with optional `unique` dedupe after sort. Empty, oversized, or
   unsupported-order requests return a structured failure. A model requests it
@@ -487,6 +488,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
 - [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
 - [Text Case Tool Guide](docs/guides/TEXT_CASE_TOOL_GUIDE.md)
+- [CSV Select Columns Tool Guide](docs/guides/CSV_SELECT_COLUMNS_TOOL_GUIDE.md)
 - [Unicode Normalize Tool Guide](docs/guides/UNICODE_NORMALIZE_TOOL_GUIDE.md)
 - [UUID4 Tool Guide](docs/guides/UUID4_TOOL_GUIDE.md)
 - [Text Wrap Tool Guide](docs/guides/TEXT_WRAP_TOOL_GUIDE.md)
