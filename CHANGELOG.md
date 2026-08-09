@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `jwt_decode` safe tool for base64url-decoding JWT header+payload claims without signature verification (never trust output); guide + demo GIF.
 - Added the `csv_filter` safe tool for filtering CSV rows by named-column
   equals/contains predicates; guide + demo GIF.
 - Added the `json_pointer` safe tool for RFC 6901 JSON Pointer extraction

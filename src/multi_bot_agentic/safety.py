@@ -37,6 +37,7 @@ class SafetyPolicy:
             "json_path",
             "json_pointer",
             "json_query",
+            "jwt_decode",
             "line_number",
             "redact",
             "hash",

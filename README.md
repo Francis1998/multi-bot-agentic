@@ -285,6 +285,7 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
 - `json_path`:
 - `json_pointer`: extracts one value from a JSON document using RFC 6901 JSON Pointer (`/foo/0/bar`, `~0`/`~1` escapes); agents may split document and pointer on `<<<JSON_POINTER>>>` for `TOOL:json_pointer:...` directives. Distinct from `json_path`.
 PLACEHOLDER
+- `jwt_decode`: base64url-decodes a JWT header and payload into JSON claims without verifying the signature. Empty, oversized, or malformed tokens return a structured failure. Output is never trusted as authenticated. A model requests it with `TOOL:jwt_decode:<jwt>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need opaque claim inspection.
 - `json_query`: filters JSON object arrays (`where` field equals
   value) or plucks a field across objects (`pluck`) via stdlib
   `json`. Empty, oversized, malformed, or unsupported-mode requests
@@ -471,6 +472,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
 - [JSON Query Tool Guide](docs/guides/JSON_QUERY_TOOL_GUIDE.md)
+- [JWT Decode Tool Guide](docs/guides/JWT_DECODE_TOOL_GUIDE.md)
 - [JSON Merge Patch Tool Guide](docs/guides/JSON_MERGE_PATCH_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
 - [HTML Attribute Extract Tool Guide](docs/guides/HTML_ATTR_EXTRACT_TOOL_GUIDE.md)
