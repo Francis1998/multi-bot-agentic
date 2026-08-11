@@ -5,6 +5,7 @@ from multi_bot_agentic.tools.base64_codec import Base64Tool
 from multi_bot_agentic.tools.calculator import CalculatorTool
 from multi_bot_agentic.tools.checklist import ChecklistTool
 from multi_bot_agentic.tools.content_type_sniff import ContentTypeSniffTool
+from multi_bot_agentic.tools.csv_diff import CsvDiffTool
 from multi_bot_agentic.tools.csv_filter import CsvFilterTool
 from multi_bot_agentic.tools.csv_groupby import CsvGroupbyTool
 from multi_bot_agentic.tools.csv_join import CsvJoinTool
@@ -62,6 +63,7 @@ __all__ = [
     "CalculatorTool",
     "ChecklistTool",
     "ContentTypeSniffTool",
+    "CsvDiffTool",
     "CsvFilterTool",
     "CsvGroupbyTool",
     "CsvJoinTool",

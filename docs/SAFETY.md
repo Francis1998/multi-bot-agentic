@@ -91,3 +91,4 @@ Credentials are read from environment variables and are never written to the eve
 
 This repo does not expose a network service or remote terminal control. If adapted into a server, add authentication, authorization, request auditing, workspace isolation, and per-user quota enforcement before exposing it beyond localhost.
 - `yaml_to_json`: converts a constrained safe YAML subset to canonical JSON (sorted keys, 2-space indent) via the same stdlib-only subset parser as `yaml_format` (no PyYAML); rejects anchors, aliases, tags, constructors, oversized input/results, and non-finite numbers; never executes code.
+- `csv_diff`: compares two CSV documents by one or more primary-key columns via stdlib `csv` and returns JSON key maps for added, removed, and changed rows (`left`+`right`+`key`, or `<<<CSV_DIFF>>>`/`<<<CSV_DIFF_KEY>>>`); rejects empty/oversized/malformed input, missing/duplicate/empty keys, and row/column overages; never executes code or makes network requests.

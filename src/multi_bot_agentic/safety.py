@@ -29,6 +29,7 @@ class SafetyPolicy:
         {
             "checklist",
             "content_type_sniff",
+            "csv_diff",
             "echo",
             "readonly_file",
             "calculator",
