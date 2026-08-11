@@ -312,6 +312,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.calculator import CalculatorTool
     from multi_bot_agentic.tools.checklist import ChecklistTool
     from multi_bot_agentic.tools.content_type_sniff import ContentTypeSniffTool
+    from multi_bot_agentic.tools.csv_diff import CsvDiffTool
     from multi_bot_agentic.tools.csv_filter import CsvFilterTool
     from multi_bot_agentic.tools.csv_groupby import CsvGroupbyTool
     from multi_bot_agentic.tools.csv_join import CsvJoinTool
@@ -420,4 +421,5 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "yaml_format": YamlFormatTool(),
         "yaml_to_json": YamlToJsonTool(),
         "zip_list": ZipListTool(),
+        "csv_diff": CsvDiffTool(),
     }
