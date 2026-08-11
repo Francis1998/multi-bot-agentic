@@ -73,6 +73,7 @@ class SafetyPolicy:
             "html_table_csv",
             "markdown_table",
             "mime_multipart",
+            "mime_part_headers",
             "template_render",
             "toml_format",
             "toml_json",

@@ -340,6 +340,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.line_number import LineNumberTool
     from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
     from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
+    from multi_bot_agentic.tools.mime_part_headers import MimePartHeadersTool
     from multi_bot_agentic.tools.redaction import RedactionTool
     from multi_bot_agentic.tools.regex_extract import RegexExtractTool
     from multi_bot_agentic.tools.regex_replace import RegexReplaceTool
@@ -407,6 +408,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "html_table_csv": HtmlTableCsvTool(),
         "markdown_table": MarkdownTableTool(),
         "mime_multipart": MimeMultipartTool(),
+        "mime_part_headers": MimePartHeadersTool(),
         "template_render": TemplateRenderTool(),
         "toml_format": TomlFormatTool(),
         "toml_json": TomlJsonTool(),

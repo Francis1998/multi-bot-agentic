@@ -73,6 +73,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `html_table_csv`: converts the first HTML table (default) or all tables (`all=true`) to CSV text via stdlib `html.parser`; rejects documents containing `script`/`style`; empty, oversized, or table-less input returns `ok=False`; never executes code or makes network requests.
 - `markdown_table`: renders CSV-like text or list-of-rows input as a GitHub-flavored markdown table; caps rows/columns; escapes pipe/newline cell content; never executes code.
 - `mime_multipart`: parses a raw MIME message via stdlib `email` and returns JSON summaries of each part (`content_type`, `charset`, `size`, `payload_preview`); rejects empty/oversized input; never executes code, extracts attachments to disk, or makes network requests.
+- `mime_part_headers`: parses a raw MIME message via stdlib `email` and returns only top-level and per-part header name/value maps; rejects empty/oversized/malformed input; never returns payloads, executes code, writes attachments, or makes network requests.
 - `template_render`: renders `{var}` / `{{ var }}` placeholders from scalar JSON variables (`template`+`variables`, or `text` split on `<<<TEMPLATE_VARS>>>`); HTML-escapes substitutions; rejects expressions, filters, attribute lookup, unsupported brace syntax, nested variables, and oversized output; never executes code.
 
 Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
