@@ -54,6 +54,7 @@ class SafetyPolicy:
             "regex_replace",
             "truncate",
             "text_case",
+            "text_dedent",
             "text_sort_lines",
             "unicode_normalize",
             "text_wrap",
