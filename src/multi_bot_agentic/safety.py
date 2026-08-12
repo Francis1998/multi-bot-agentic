@@ -58,6 +58,7 @@ class SafetyPolicy:
             "text_case",
             "text_dedent",
             "text_sort_lines",
+            "text_squeeze_ws",
             "unicode_normalize",
             "text_wrap",
             "csv",

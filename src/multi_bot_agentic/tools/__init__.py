@@ -45,6 +45,7 @@ from multi_bot_agentic.tools.template_render import TemplateRenderTool
 from multi_bot_agentic.tools.text_case import TextCaseTool
 from multi_bot_agentic.tools.text_dedent import TextDedentTool
 from multi_bot_agentic.tools.text_sort_lines import TextSortLinesTool
+from multi_bot_agentic.tools.text_squeeze_ws import TextSqueezeWsTool
 from multi_bot_agentic.tools.text_truncate import TextTruncateTool
 from multi_bot_agentic.tools.text_wrap import TextWrapTool
 from multi_bot_agentic.tools.toml_format import TomlFormatTool
@@ -104,6 +105,7 @@ __all__ = [
     "TextCaseTool",
     "TextDedentTool",
     "TextSortLinesTool",
+    "TextSqueezeWsTool",
     "TextTruncateTool",
     "TextWrapTool",
     "TomlFormatTool",
