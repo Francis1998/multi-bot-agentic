@@ -475,6 +475,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
 - [JSON Query Tool Guide](docs/guides/JSON_QUERY_TOOL_GUIDE.md)
 - [JWT Decode Tool Guide](docs/guides/JWT_DECODE_TOOL_GUIDE.md)
+- [Hex Encode Tool Guide](docs/guides/HEX_ENCODE_TOOL_GUIDE.md)
 - [JSON Merge Patch Tool Guide](docs/guides/JSON_MERGE_PATCH_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
 - [HTML Attribute Extract Tool Guide](docs/guides/HTML_ATTR_EXTRACT_TOOL_GUIDE.md)

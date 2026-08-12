@@ -42,6 +42,7 @@ class SafetyPolicy:
             "line_number",
             "redact",
             "hash",
+            "hex_encode",
             "base64",
             "url_parse",
             "uuid4",
