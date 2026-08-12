@@ -488,6 +488,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
 - [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
 - [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
+- [Text Squeeze Whitespace Tool Guide](docs/guides/TEXT_SQUEEZE_WS_TOOL_GUIDE.md)
 - [Text Case Tool Guide](docs/guides/TEXT_CASE_TOOL_GUIDE.md)
 - [CSV Select Columns Tool Guide](docs/guides/CSV_SELECT_COLUMNS_TOOL_GUIDE.md)
 - [Unicode Normalize Tool Guide](docs/guides/UNICODE_NORMALIZE_TOOL_GUIDE.md)

@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `text_squeeze_ws` safe tool for collapsing whitespace runs (optional preserve_newlines; max 20_000 chars); guide + demo GIF.
 - Added the `hex_encode` safe tool for UTF-8 text → hex encoding (optional uppercase; max 20_000 chars); guide + demo GIF.
 - Added the `csv_select_columns` safe tool for selecting/reordering CSV columns by name (max 500 rows, 64 columns); guide + demo GIF.
 - Added the `text_case` safe tool for lower/upper/title/snake/kebab/camel conversion (max 20_000 chars); guide + demo GIF.
