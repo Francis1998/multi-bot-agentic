@@ -51,6 +51,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `json_query`: filters JSON object arrays (`where` field==value) or plucks a field (`pluck`) via stdlib `json`; rejects empty/oversized/malformed input and unsupported mode; never executes code, evaluates scripts, or makes network requests.
 - `redact`: scrubs PII (email, phone, SSN, IPv4, IPv6) from text into typed placeholders.
 - `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
+- `hex_encode`: encodes text to a hexadecimal string of its UTF-8 bytes (`text` plus optional `uppercase`, default false, or `<<<HEX_ENCODE>>>`); rejects empty/oversized input and invalid boolean settings; never executes code or makes network requests.
 - `base64`: encodes text to Base64 or decodes Base64 to text (encode|decode; default encode).
 - `url_parse`: splits an absolute URL into scheme, host, port, path, query, and fragment.
 - `uuid4`: generates random version-4 UUID identifier(s) (optional `count` 1..16, default 1); opaque ids only — not cryptographic secrets; never executes code or makes network requests.
