@@ -67,6 +67,7 @@ class SafetyPolicy:
             "csv_join",
             "csv_pivot",
             "csv_select_columns",
+            "csv_sort",
             "csv_tsv",
             "spreadsheet_slice",
             "html_attr_extract",

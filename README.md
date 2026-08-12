@@ -491,6 +491,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Text Squeeze Whitespace Tool Guide](docs/guides/TEXT_SQUEEZE_WS_TOOL_GUIDE.md)
 - [Text Case Tool Guide](docs/guides/TEXT_CASE_TOOL_GUIDE.md)
 - [CSV Select Columns Tool Guide](docs/guides/CSV_SELECT_COLUMNS_TOOL_GUIDE.md)
+- [CSV Sort Tool Guide](docs/guides/CSV_SORT_TOOL_GUIDE.md)
 - [Unicode Normalize Tool Guide](docs/guides/UNICODE_NORMALIZE_TOOL_GUIDE.md)
 - [UUID4 Tool Guide](docs/guides/UUID4_TOOL_GUIDE.md)
 - [Text Wrap Tool Guide](docs/guides/TEXT_WRAP_TOOL_GUIDE.md)
