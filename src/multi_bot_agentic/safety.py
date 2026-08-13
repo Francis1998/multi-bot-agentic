@@ -57,6 +57,7 @@ class SafetyPolicy:
             "truncate",
             "text_case",
             "text_dedent",
+            "text_indent",
             "text_sort_lines",
             "text_squeeze_ws",
             "unicode_normalize",

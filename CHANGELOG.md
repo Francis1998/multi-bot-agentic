@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `text_indent` safe tool for indenting non-empty lines by N spaces (default 2, max 32; optional skip_first; max 20_000 chars); guide + demo GIF.
 - Added the `csv_sort` safe tool for sorting CSV rows by a named column (optional descending/numeric; max 500 rows, 64 columns); guide + demo GIF.
 - Added the `text_squeeze_ws` safe tool for collapsing whitespace runs (optional preserve_newlines; max 20_000 chars); guide + demo GIF.
 - Added the `hex_encode` safe tool for UTF-8 text → hex encoding (optional uppercase; max 20_000 chars); guide + demo GIF.
