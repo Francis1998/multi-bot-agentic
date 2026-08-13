@@ -321,6 +321,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.csv_select_columns import CsvSelectColumnsTool
     from multi_bot_agentic.tools.csv_sort import CsvSortTool
     from multi_bot_agentic.tools.csv_tsv import CsvTsvTool
+    from multi_bot_agentic.tools.csv_unique import CsvUniqueTool
     from multi_bot_agentic.tools.datetime_normalize import DateTimeTool
     from multi_bot_agentic.tools.diff_text import DiffTool
     from multi_bot_agentic.tools.duration_parse import DurationTool
@@ -410,6 +411,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "csv_select_columns": CsvSelectColumnsTool(),
         "csv_sort": CsvSortTool(),
         "csv_tsv": CsvTsvTool(),
+        "csv_unique": CsvUniqueTool(),
         "spreadsheet_slice": SpreadsheetSliceTool(),
         "html_attr_extract": HtmlAttrExtractTool(),
         "html_entities": HtmlEntitiesTool(),

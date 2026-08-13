@@ -391,6 +391,13 @@ PLACEHOLDER
   `TOOL:text_indent:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
   Kimi K2 workers that need deterministic indentation.
 - `csv_select_columns`: selects and reorders CSV columns by name via stdlib `csv` (max 500 rows, 64 columns). Supply `text`+`columns`, or a single payload split on `<<<CSV_SELECT>>>`. Empty, oversized, malformed, unknown-column, or over-bounds requests return a structured failure. A model requests it with `TOOL:csv_select_columns:<csv><<<CSV_SELECT>>>col1,col2` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic tabular projection.
+- `csv_unique`: deduplicates CSV rows by named column(s) via stdlib `csv`
+  (keep first occurrence; max 500 rows, 64 columns). Supply `text`+`columns`,
+  or a single payload split on `<<<CSV_UNIQUE>>>`. Empty, oversized, malformed,
+  unknown-column, or over-bounds requests return a structured failure. A model
+  requests it with `TOOL:csv_unique:<csv><<<CSV_UNIQUE>>>col1,col2` for
+  GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need
+  deterministic tabular deduplication.
 - `text_sort_lines`: sorts multi-line text ascending or descending (`order`
   default `asc`) with optional `unique` dedupe after sort. Empty, oversized, or
   unsupported-order requests return a structured failure. A model requests it
@@ -499,6 +506,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Text Case Tool Guide](docs/guides/TEXT_CASE_TOOL_GUIDE.md)
 - [CSV Select Columns Tool Guide](docs/guides/CSV_SELECT_COLUMNS_TOOL_GUIDE.md)
 - [CSV Sort Tool Guide](docs/guides/CSV_SORT_TOOL_GUIDE.md)
+- [CSV Unique Tool Guide](docs/guides/CSV_UNIQUE_TOOL_GUIDE.md)
 - [Unicode Normalize Tool Guide](docs/guides/UNICODE_NORMALIZE_TOOL_GUIDE.md)
 - [UUID4 Tool Guide](docs/guides/UUID4_TOOL_GUIDE.md)
 - [Text Wrap Tool Guide](docs/guides/TEXT_WRAP_TOOL_GUIDE.md)
