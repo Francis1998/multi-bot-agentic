@@ -70,6 +70,7 @@ class SafetyPolicy:
             "csv_select_columns",
             "csv_sort",
             "csv_tsv",
+            "csv_unique",
             "spreadsheet_slice",
             "html_attr_extract",
             "html_entities",
