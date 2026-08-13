@@ -44,6 +44,7 @@ class SafetyPolicy:
             "hash",
             "hex_encode",
             "base64",
+            "url_encode",
             "url_parse",
             "uuid4",
             "yaml_to_json",

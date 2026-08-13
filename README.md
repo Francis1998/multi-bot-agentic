@@ -323,6 +323,11 @@ PLACEHOLDER
   non-text payloads return a structured failure. A model requests it with
   `TOOL:base64:<text>`, giving agents a safe way to move opaque payloads between
   steps.
+- `url_encode`: percent-encodes text via stdlib `urllib.parse.quote` (optional
+  `safe` default `/`, `plus` for space-as-`+`). Empty, oversized, or invalid
+  option requests return a structured failure. A model requests it with
+  `TOOL:url_encode:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 workers that need deterministic URL encoding.
 - `url_parse`: splits an absolute URL into its components (scheme, host, port,
   path, query, grouped query parameters, fragment) using the standard library —
   never a network request. Relative URLs, empty input, and invalid ports return a
@@ -489,6 +494,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [JSON Query Tool Guide](docs/guides/JSON_QUERY_TOOL_GUIDE.md)
 - [JWT Decode Tool Guide](docs/guides/JWT_DECODE_TOOL_GUIDE.md)
 - [Hex Encode Tool Guide](docs/guides/HEX_ENCODE_TOOL_GUIDE.md)
+- [URL Encode Tool Guide](docs/guides/URL_ENCODE_TOOL_GUIDE.md)
 - [JSON Merge Patch Tool Guide](docs/guides/JSON_MERGE_PATCH_TOOL_GUIDE.md)
 - [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
 - [HTML Attribute Extract Tool Guide](docs/guides/HTML_ATTR_EXTRACT_TOOL_GUIDE.md)
