@@ -352,6 +352,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.template_render import TemplateRenderTool
     from multi_bot_agentic.tools.text_case import TextCaseTool
     from multi_bot_agentic.tools.text_dedent import TextDedentTool
+    from multi_bot_agentic.tools.text_indent import TextIndentTool
     from multi_bot_agentic.tools.text_sort_lines import TextSortLinesTool
     from multi_bot_agentic.tools.text_squeeze_ws import TextSqueezeWsTool
     from multi_bot_agentic.tools.text_truncate import TextTruncateTool
@@ -397,6 +398,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "truncate": TextTruncateTool(),
         "text_case": TextCaseTool(),
         "text_dedent": TextDedentTool(),
+        "text_indent": TextIndentTool(),
         "text_sort_lines": TextSortLinesTool(),
         "text_squeeze_ws": TextSqueezeWsTool(),
         "text_wrap": TextWrapTool(),
