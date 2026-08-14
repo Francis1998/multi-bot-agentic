@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `mime_attachment_names` safe tool for listing MIME attachment filenames without returning payloads (max 20_000 chars); guide + demo GIF.
 - Added the `url_encode` safe tool for percent-encoding text via `urllib.parse.quote` (optional safe chars / plus-for-space; max 20_000 chars); guide + demo GIF.
 - Added the `csv_unique` safe tool for deduplicating CSV rows by named column(s) (keep first; max 500 rows, 64 columns); guide + demo GIF.
 - Added the `text_indent` safe tool for indenting non-empty lines by N spaces (default 2, max 32; optional skip_first; max 20_000 chars); guide + demo GIF.

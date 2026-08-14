@@ -80,6 +80,7 @@ class SafetyPolicy:
             "html_table",
             "html_table_csv",
             "markdown_table",
+            "mime_attachment_names",
             "mime_multipart",
             "mime_part_headers",
             "template_render",
