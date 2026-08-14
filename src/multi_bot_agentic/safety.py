@@ -45,6 +45,7 @@ class SafetyPolicy:
             "hash",
             "hex_encode",
             "base64",
+            "text_outdent",
             "url_encode",
             "url_parse",
             "uuid4",

@@ -452,7 +452,7 @@ PLACEHOLDER
   empty, oversized, or table-less input. A model requests it with
   `TOOL:html_table_csv:<html>` for deterministic CSV handoffs across GPT-5.5 /
   Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-- `mime_attachment_namescsv_melt`: parses bounded raw MIME with stdlib `email` and
+- `mime_attachment_namescsv_melt`, `text_outdent`: parses bounded raw MIME with stdlib `email` and
   returns only a JSON list of decoded attachment `filename`/`name` parameters.
   Empty, oversized, or defective input returns a structured failure; payloads
   are never returned or written. A model requests it with
