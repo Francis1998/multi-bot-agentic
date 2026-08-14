@@ -316,6 +316,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.csv_filter import CsvFilterTool
     from multi_bot_agentic.tools.csv_groupby import CsvGroupbyTool
     from multi_bot_agentic.tools.csv_join import CsvJoinTool
+    from multi_bot_agentic.tools.csv_melt import CsvMeltTool
     from multi_bot_agentic.tools.csv_parse import CsvParseTool
     from multi_bot_agentic.tools.csv_pivot import CsvPivotTool
     from multi_bot_agentic.tools.csv_select_columns import CsvSelectColumnsTool
@@ -375,6 +376,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     return {
         "checklist": ChecklistTool(),
         "content_type_sniff": ContentTypeSniffTool(),
+        "csv_melt": CsvMeltTool(),
         "echo": EchoTool(),
         "readonly_file": ReadOnlyFileTool(root=root),
         "calculator": CalculatorTool(),
