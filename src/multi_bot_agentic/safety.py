@@ -30,6 +30,7 @@ class SafetyPolicy:
             "checklist",
             "content_type_sniff",
             "csv_diff",
+            "csv_melt",
             "echo",
             "readonly_file",
             "calculator",

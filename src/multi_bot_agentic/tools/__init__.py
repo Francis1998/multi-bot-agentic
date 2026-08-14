@@ -9,6 +9,7 @@ from multi_bot_agentic.tools.csv_diff import CsvDiffTool
 from multi_bot_agentic.tools.csv_filter import CsvFilterTool
 from multi_bot_agentic.tools.csv_groupby import CsvGroupbyTool
 from multi_bot_agentic.tools.csv_join import CsvJoinTool
+from multi_bot_agentic.tools.csv_melt import CsvMeltTool
 from multi_bot_agentic.tools.csv_parse import CsvParseTool
 from multi_bot_agentic.tools.csv_pivot import CsvPivotTool
 from multi_bot_agentic.tools.csv_select_columns import CsvSelectColumnsTool
@@ -74,6 +75,7 @@ __all__ = [
     "CsvFilterTool",
     "CsvGroupbyTool",
     "CsvJoinTool",
+    "CsvMeltTool",
     "CsvParseTool",
     "CsvPivotTool",
     "CsvSelectColumnsTool",
