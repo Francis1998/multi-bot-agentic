@@ -75,6 +75,7 @@ __all__ = [
     "CsvFilterTool",
     "CsvGroupbyTool",
     "CsvJoinTool",
+    "CsvMeltTool",
     "CsvParseTool",
     "CsvPivotTool",
     "CsvSelectColumnsTool",
@@ -131,5 +132,4 @@ __all__ = [
     "YamlFormatTool",
     "YamlToJsonTool",
     "ZipListTool",
-    "csv_melt",
 ]
