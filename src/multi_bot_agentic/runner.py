@@ -359,6 +359,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.text_dedent import TextDedentTool
     from multi_bot_agentic.tools.text_indent import TextIndentTool
     from multi_bot_agentic.tools.text_outdent import TextOutdentTool
+    from multi_bot_agentic.tools.text_pad_lines import TextPadLinesTool
     from multi_bot_agentic.tools.text_sort_lines import TextSortLinesTool
     from multi_bot_agentic.tools.text_squeeze_ws import TextSqueezeWsTool
     from multi_bot_agentic.tools.text_truncate import TextTruncateTool
@@ -396,6 +397,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "hex_encode": HexEncodeTool(),
         "base64": Base64Tool(),
         "text_outdent": TextOutdentTool(),
+        "text_pad_lines": TextPadLinesTool(),
         "url_encode": UrlEncodeTool(),
         "url_parse": UrlParseTool(),
         "uuid4": Uuid4Tool(),

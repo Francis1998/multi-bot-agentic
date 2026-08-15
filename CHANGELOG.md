@@ -3,6 +3,23 @@
 ## Unreleased
 
 ### Added
+- Added the `text_pad_lines` safe tool for padding non-empty lines to a target width with ASCII spaces (default width 80, side right; max 20_000 chars); guide + demo GIF.
+  equals/contains predicates; guide + demo GIF.
+  (distinct from `json_path`); guide + demo GIF.
+  identifier(s) (optional `count` 1..16) for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 agent workflows. Opaque ids only — not cryptographic
+  secrets.
+  selected 1-based table index, into markdown or CSV with bounded chars, rows,
+  columns, and structured metadata for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 agent workflows.
+  equals/contains predicates; guide + demo GIF.
+  (distinct from `json_path`); guide + demo GIF.
+  identifier(s) (optional `count` 1..16) for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 agent workflows. Opaque ids only — not cryptographic
+  secrets.
+  selected 1-based table index, into markdown or CSV with bounded chars, rows,
+  columns, and structured metadata for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 agent workflows.
 - Added the `json_flatten` safe tool for flattening nested JSON into dotted/bracket keys (max 20_000 chars input, 2000 keys); guide + demo GIF.
   equals/contains predicates; guide + demo GIF.
   (distinct from `json_path`); guide + demo GIF.
