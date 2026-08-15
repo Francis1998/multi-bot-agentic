@@ -83,6 +83,7 @@ class SafetyPolicy:
             "html_table_csv",
             "markdown_table",
             "mime_attachment_names",
+            "mime_attachment_sizes",
             "mime_multipart",
             "mime_part_headers",
             "template_render",

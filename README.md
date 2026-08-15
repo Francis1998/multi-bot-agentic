@@ -452,12 +452,18 @@ PLACEHOLDER
   empty, oversized, or table-less input. A model requests it with
   `TOOL:html_table_csv:<html>` for deterministic CSV handoffs across GPT-5.5 /
   Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-- `mime_attachment_namescsv_melt`, `text_outdent`: parses bounded raw MIME with stdlib `email` and
+- `mime_attachment_names`, `text_outdent`: parses bounded raw MIME with stdlib `email` and
   returns only a JSON list of decoded attachment `filename`/`name` parameters.
   Empty, oversized, or defective input returns a structured failure; payloads
   are never returned or written. A model requests it with
   `TOOL:mime_attachment_names:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
   Gemini 3.x / Kimi K2 workers that need safe attachment routing metadata.
+- `mime_attachment_sizes`: parses bounded raw MIME with stdlib `email` and
+  returns only a JSON list of attachment `filename`/`size` objects. Sizes use
+  `Content-Length` when present, otherwise decoded payload byte length.
+  Payloads are never returned or written. A model requests it with
+  `TOOL:mime_attachment_sizes:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 workers that need safe attachment size metadata.
 - `mime_multipart`: parses a raw MIME message via stdlib `email` and returns
   JSON summaries of each part (`content_type`, `charset`, `size`, `payload
   preview`). Empty or oversized input returns a structured failure. A model

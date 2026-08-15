@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `mime_attachment_sizes` safe tool for listing MIME attachment filenames with byte sizes without returning payloads (max 20_000 chars); guide + demo GIF.
 - `text_outdent` safe tool: remove up to N leading spaces per non-empty line. See `docs/guides/TEXT_OUTDENT_TOOL_GUIDE.md`.
 -  safe tool: unpivot wide CSV to long form (id_vars/value_vars). See .
 - Added the `mime_attachment_names` safe tool for listing MIME attachment filenames without returning payloads (max 20_000 chars); guide + demo GIF.
