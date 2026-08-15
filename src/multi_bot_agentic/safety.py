@@ -78,6 +78,7 @@ class SafetyPolicy:
             "text_dedent",
             "text_indent",
             "text_outdent",
+            "text_pad_lines",
             "text_sort_lines",
             "text_squeeze_ws",
             "text_wrap",
