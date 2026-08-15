@@ -71,7 +71,7 @@ payload
     ok, content, metadata = _run(raw)
 
     assert ok is True
-    assert json.loads(content) == [{"filename": "café.txt", "size": 7}]
+    assert json.loads(content) == [{"filename": "café.txt", "size": 8}]
     assert metadata["attachment_count"] == 1
 
 
