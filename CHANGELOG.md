@@ -3,6 +3,15 @@
 ## Unreleased
 
 ### Added
+- Added the `json_flatten` safe tool for flattening nested JSON into dotted/bracket keys (max 20_000 chars input, 2000 keys); guide + demo GIF.
+  equals/contains predicates; guide + demo GIF.
+  (distinct from `json_path`); guide + demo GIF.
+  identifier(s) (optional `count` 1..16) for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 agent workflows. Opaque ids only — not cryptographic
+  secrets.
+  selected 1-based table index, into markdown or CSV with bounded chars, rows,
+  columns, and structured metadata for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 agent workflows.
 - Added the `mime_attachment_sizes` safe tool for listing MIME attachment filenames with byte sizes without returning payloads (max 20_000 chars); guide + demo GIF.
 - `text_outdent` safe tool: remove up to N leading spaces per non-empty line. See `docs/guides/TEXT_OUTDENT_TOOL_GUIDE.md`.
 -  safe tool: unpivot wide CSV to long form (id_vars/value_vars). See .
