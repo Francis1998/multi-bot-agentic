@@ -61,6 +61,7 @@ class SafetyPolicy:
             "json_pointer",
             "json_query",
             "json_unflatten",
+            "text_center_lines",
             "mime_attachment_ctypes",
             "jwt_decode",
             "line_number",
