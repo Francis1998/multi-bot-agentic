@@ -358,6 +358,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.spreadsheet_slice import SpreadsheetSliceTool
     from multi_bot_agentic.tools.template_render import TemplateRenderTool
     from multi_bot_agentic.tools.text_case import TextCaseTool
+    from multi_bot_agentic.tools.text_center_lines import TextCenterLinesTool
     from multi_bot_agentic.tools.text_dedent import TextDedentTool
     from multi_bot_agentic.tools.text_indent import TextIndentTool
     from multi_bot_agentic.tools.text_outdent import TextOutdentTool
@@ -393,6 +394,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "json_pointer": JsonPointerTool(),
         "json_query": JsonQueryTool(),
         "json_unflatten": JsonUnflattenTool(),
+        "text_center_lines": TextCenterLinesTool(),
         "mime_attachment_ctypes": MimeAttachmentCtypesTool(),
         "jwt_decode": JwtDecodeTool(),
         "line_number": LineNumberTool(),
