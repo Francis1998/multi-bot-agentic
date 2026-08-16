@@ -342,6 +342,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.json_path import JsonPathTool
     from multi_bot_agentic.tools.json_pointer import JsonPointerTool
     from multi_bot_agentic.tools.json_query import JsonQueryTool
+    from multi_bot_agentic.tools.json_unflatten import JsonUnflattenTool
     from multi_bot_agentic.tools.jwt_decode import JwtDecodeTool
     from multi_bot_agentic.tools.line_number import LineNumberTool
     from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
@@ -390,6 +391,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "json_path": JsonPathTool(),
         "json_pointer": JsonPointerTool(),
         "json_query": JsonQueryTool(),
+        "json_unflatten": JsonUnflattenTool(),
         "jwt_decode": JwtDecodeTool(),
         "line_number": LineNumberTool(),
         "redact": RedactionTool(),
