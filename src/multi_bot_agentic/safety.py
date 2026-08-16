@@ -60,6 +60,7 @@ class SafetyPolicy:
             "json_path",
             "json_pointer",
             "json_query",
+            "json_unflatten",
             "jwt_decode",
             "line_number",
             "markdown_table",
