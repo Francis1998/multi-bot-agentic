@@ -336,6 +336,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.html_strip import HtmlStripTool
     from multi_bot_agentic.tools.html_table import HtmlTableTool
     from multi_bot_agentic.tools.html_table_csv import HtmlTableCsvTool
+    from multi_bot_agentic.tools.json_diff_paths import JsonDiffPathsTool
     from multi_bot_agentic.tools.json_flatten import JsonFlattenTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
     from multi_bot_agentic.tools.json_merge_patch import JsonMergePatchTool
