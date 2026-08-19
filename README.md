@@ -505,6 +505,8 @@ docs/                    architecture, safety, config, quickstart, demo
 
 ## Documentation
 
+- [Text Margin Lines Tool Guide](docs/guides/TEXT_MARGIN_LINES_TOOL_GUIDE.md)
+
 - [Quickstart](docs/QUICKSTART.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Content Type Sniff Tool Guide](docs/guides/CONTENT_TYPE_SNIFF_TOOL_GUIDE.md)
@@ -611,3 +613,5 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
   `TOOL:json_diff_paths:<before><<<JSON_DIFF_PATHS>>><after>` for GPT-5.5 /
   Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need compact change
   routing without echoing both documents.
+
+- `text_margin_lines`: adds left/right ASCII margins to non-empty lines for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
