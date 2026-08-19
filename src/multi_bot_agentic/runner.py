@@ -386,6 +386,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "content_type_sniff": ContentTypeSniffTool(),
         "csv_melt": CsvMeltTool(),
         "echo": EchoTool(),
+        "json_diff_paths": JsonDiffPathsTool(),
         "json_flatten": JsonFlattenTool(),
         "readonly_file": ReadOnlyFileTool(root=root),
         "calculator": CalculatorTool(),

@@ -54,6 +54,7 @@ class SafetyPolicy:
             "html_strip",
             "html_table",
             "html_table_csv",
+            "json_diff_paths",
             "json_flatten",
             "json_format",
             "json_merge_patch",

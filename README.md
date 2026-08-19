@@ -602,3 +602,12 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 - **Event log** — SQLite/JSON audit trail for replay
 - **Tool adapters** — pluggable HTTP/LLM/retrieval integrations
 - **Safety** — timeouts, cancellation tokens, bounded run scope
+
+- `json_diff_paths`: compares two bounded JSON documents and returns only the
+  sorted paths whose values differ, using dotted object keys and bracketed array
+  indexes. Supply `text`+`other`, or one directive payload split on
+  `<<<JSON_DIFF_PATHS>>>`. Empty, malformed, non-finite, oversized, or
+  over-expanded input returns a structured failure. A model requests it with
+  `TOOL:json_diff_paths:<before><<<JSON_DIFF_PATHS>>><after>` for GPT-5.5 /
+  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need compact change
+  routing without echoing both documents.
