@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `json_diff_paths` safe tool for returning sorted dotted/bracket paths that differ between two JSON documents (max 20_000 chars per document, 2000 paths); guide + demo GIF.
 - Added the `mime_attachment_disposition` safe tool for listing MIME Content-Disposition filenames and attachment/inline disposition types without returning payloads (max 20_000 chars); guide + demo GIF.
 - Added the `text_pad_lines` safe tool for padding non-empty lines to a target width with ASCII spaces (default width 80, side right; max 20_000 chars); guide + demo GIF.
   equals/contains predicates; guide + demo GIF.
