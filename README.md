@@ -464,6 +464,14 @@ PLACEHOLDER
   Payloads are never returned or written. A model requests it with
   `TOOL:mime_attachment_sizes:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
   Gemini 3.x / Kimi K2 workers that need safe attachment size metadata.
+- `mime_attachment_disposition`: parses bounded raw MIME with stdlib `email`
+  and returns only Content-Disposition `filename`/`disposition` objects for
+  attachment and inline parts, including unnamed disposition records. Payloads
+  are never returned or written. Empty, oversized, or defective input returns a
+  structured failure. A model requests it with
+  `TOOL:mime_attachment_disposition:<raw>` for GPT-5.5 /
+  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need safe routing
+  metadata without attachment content.
 - `mime_multipart`: parses a raw MIME message via stdlib `email` and returns
   JSON summaries of each part (`content_type`, `charset`, `size`, `payload
   preview`). Empty or oversized input returns a structured failure. A model
@@ -515,6 +523,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
 - [HTML Table CSV Tool Guide](docs/guides/HTML_TABLE_CSV_TOOL_GUIDE.md)
 - [MIME Attachment Names Tool Guide](docs/guides/MIME_ATTACHMENT_NAMES_TOOL_GUIDE.md)
+- [MIME Attachment Disposition Tool Guide](docs/guides/MIME_ATTACHMENT_DISPOSITION_TOOL_GUIDE.md)
 - [MIME Multipart Tool Guide](docs/guides/MIME_MULTIPART_TOOL_GUIDE.md)
 - [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
 - [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
