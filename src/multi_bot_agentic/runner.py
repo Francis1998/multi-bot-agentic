@@ -347,6 +347,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.line_number import LineNumberTool
     from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
     from multi_bot_agentic.tools.mime_attachment_ctypes import MimeAttachmentCtypesTool
+    from multi_bot_agentic.tools.mime_attachment_disposition import MimeAttachmentDispositionTool
     from multi_bot_agentic.tools.mime_attachment_names import MimeAttachmentNamesTool
     from multi_bot_agentic.tools.mime_attachment_sizes import MimeAttachmentSizesTool
     from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
@@ -396,6 +397,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "json_unflatten": JsonUnflattenTool(),
         "text_center_lines": TextCenterLinesTool(),
         "mime_attachment_ctypes": MimeAttachmentCtypesTool(),
+        "mime_attachment_disposition": MimeAttachmentDispositionTool(),
         "jwt_decode": JwtDecodeTool(),
         "line_number": LineNumberTool(),
         "redact": RedactionTool(),
