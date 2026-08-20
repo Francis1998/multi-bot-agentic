@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `json_patch_apply` safe tool for bounded RFC 6902 `add`/`remove`/`replace`/`move`/`copy`/`test` operations (max 20_000 chars, 200 operations); guide + demo GIF.
 - Added the `text_margin_lines` safe tool for left/right ASCII margins on non-empty lines (max 20_000 chars); guide + demo GIF.
 - Added the `json_diff_paths` safe tool for returning sorted dotted/bracket paths that differ between two JSON documents (max 20_000 chars per document, 2000 paths); guide + demo GIF.
 - Added the `mime_attachment_disposition` safe tool for listing MIME Content-Disposition filenames and attachment/inline disposition types without returning payloads (max 20_000 chars); guide + demo GIF.
