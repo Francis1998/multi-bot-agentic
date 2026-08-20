@@ -43,6 +43,7 @@ from multi_bot_agentic.tools.line_number import LineNumberTool
 from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
 from multi_bot_agentic.tools.mime_attachment_ctypes import MimeAttachmentCtypesTool
 from multi_bot_agentic.tools.mime_attachment_disposition import MimeAttachmentDispositionTool
+from multi_bot_agentic.tools.mime_attachment_encoding import MimeAttachmentEncodingTool
 from multi_bot_agentic.tools.mime_attachment_names import MimeAttachmentNamesTool
 from multi_bot_agentic.tools.mime_attachment_sizes import MimeAttachmentSizesTool
 from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
@@ -120,6 +121,7 @@ __all__ = [
     "MarkdownTableTool",
     "MimeAttachmentCtypesTool",
     "MimeAttachmentDispositionTool",
+    "MimeAttachmentEncodingTool",
     "MimeAttachmentNamesTool",
     "MimeAttachmentSizesTool",
     "MimeMultipartTool",
