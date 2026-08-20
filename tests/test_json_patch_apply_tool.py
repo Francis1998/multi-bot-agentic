@@ -140,8 +140,10 @@ def test_json_patch_apply_rejects_empty_malformed_nonfinite_and_ambiguous_input(
 def test_json_patch_apply_enforces_character_operation_and_output_bounds() -> None:
     """Documents, patch arrays, operation counts, and output stay bounded."""
 
-    ok_text, content_text, metadata_text = _run(text=" " * 20_001, patch="[]")
-    ok_patch, content_patch, metadata_patch = _run(text="{}", patch=" " * 20_001)
+    oversized_text = json.dumps("x" * 20_000)
+    oversized_patch = "[" + (" " * 20_000) + "]"
+    ok_text, content_text, metadata_text = _run(text=oversized_text, patch="[]")
+    ok_patch, content_patch, metadata_patch = _run(text="{}", patch=oversized_patch)
     too_many = [{"op": "test", "path": "", "value": {}}] * 201
     ok_many, content_many, metadata_many = _run(text="{}", patch=too_many)
     ok_output, content_output, metadata_output = _run(
@@ -150,9 +152,9 @@ def test_json_patch_apply_enforces_character_operation_and_output_bounds() -> No
     )
 
     assert ok_text is False and "text exceeds" in content_text
-    assert metadata_text["chars"] == 20_001
+    assert metadata_text["chars"] == len(oversized_text)
     assert ok_patch is False and "patch exceeds" in content_patch
-    assert metadata_patch["chars"] == 20_001
+    assert metadata_patch["chars"] == len(oversized_patch)
     assert ok_many is False and "max_operations=200" in content_many
     assert metadata_many["operations"] == 201
     assert ok_output is False and "output exceeds" in content_output
