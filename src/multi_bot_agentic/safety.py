@@ -58,6 +58,7 @@ class SafetyPolicy:
             "json_flatten",
             "json_format",
             "json_merge_patch",
+            "json_patch_apply",
             "json_path",
             "json_pointer",
             "json_query",

@@ -614,4 +614,10 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
   Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need compact change
   routing without echoing both documents.
 
+- `json_patch_apply`: applies bounded RFC 6902 JSON Patch arrays with
+  `add`/`remove`/`replace`/`move`/`copy`/`test` operations via stdlib only.
+  Supply `text`+`patch`, or split one directive payload on `<<<JSON_PATCH>>>`;
+  documents are capped at 20,000 characters and patches at 200 operations for
+  GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+
 - `text_margin_lines`: adds left/right ASCII margins to non-empty lines for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.

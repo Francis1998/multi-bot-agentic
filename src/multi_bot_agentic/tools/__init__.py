@@ -33,6 +33,7 @@ from multi_bot_agentic.tools.json_diff_paths import JsonDiffPathsTool
 from multi_bot_agentic.tools.json_flatten import JsonFlattenTool
 from multi_bot_agentic.tools.json_format import JsonFormatTool
 from multi_bot_agentic.tools.json_merge_patch import JsonMergePatchTool
+from multi_bot_agentic.tools.json_patch_apply import JsonPatchApplyTool
 from multi_bot_agentic.tools.json_path import JsonPathTool
 from multi_bot_agentic.tools.json_pointer import JsonPointerTool
 from multi_bot_agentic.tools.json_query import JsonQueryTool
@@ -108,6 +109,7 @@ __all__ = [
     "JsonFlattenTool",
     "JsonFormatTool",
     "JsonMergePatchTool",
+    "JsonPatchApplyTool",
     "JsonPathTool",
     "JsonPointerTool",
     "JsonQueryTool",

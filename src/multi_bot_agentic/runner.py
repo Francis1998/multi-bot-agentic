@@ -340,6 +340,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.json_flatten import JsonFlattenTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
     from multi_bot_agentic.tools.json_merge_patch import JsonMergePatchTool
+    from multi_bot_agentic.tools.json_patch_apply import JsonPatchApplyTool
     from multi_bot_agentic.tools.json_path import JsonPathTool
     from multi_bot_agentic.tools.json_pointer import JsonPointerTool
     from multi_bot_agentic.tools.json_query import JsonQueryTool
@@ -394,6 +395,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "calculator": CalculatorTool(),
         "json_format": JsonFormatTool(),
         "json_merge_patch": JsonMergePatchTool(),
+        "json_patch_apply": JsonPatchApplyTool(),
         "json_path": JsonPathTool(),
         "json_pointer": JsonPointerTool(),
         "json_query": JsonQueryTool(),
