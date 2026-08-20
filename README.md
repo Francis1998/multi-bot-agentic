@@ -472,6 +472,12 @@ PLACEHOLDER
   `TOOL:mime_attachment_disposition:<raw>` for GPT-5.5 /
   Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need safe routing
   metadata without attachment content.
+- `mime_attachment_encoding`: parses bounded raw MIME and returns only named
+  attachment `filename`/`encoding` objects. Content-Transfer-Encoding tokens
+  are normalized, missing values default to `7bit`, and payloads are never
+  decoded or returned. A model requests it with
+  `TOOL:mime_attachment_encoding:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 workers.
 - `mime_multipart`: parses a raw MIME message via stdlib `email` and returns
   JSON summaries of each part (`content_type`, `charset`, `size`, `payload
   preview`). Empty or oversized input returns a structured failure. A model

@@ -4,6 +4,7 @@
 
 ### Added
 - Added the `text_justify_lines` safe tool for left/right/center/full line justification (default width 80, max 500, max 20_000 chars); guide + demo GIF.
+- Added the `mime_attachment_encoding` safe tool for listing named MIME attachment Content-Transfer-Encoding values without decoding or returning payloads (max 20_000 chars); guide + demo GIF.
 - Added the `json_patch_apply` safe tool for bounded RFC 6902 `add`/`remove`/`replace`/`move`/`copy`/`test` operations (max 20_000 chars, 200 operations); guide + demo GIF.
 - Added the `text_margin_lines` safe tool for left/right ASCII margins on non-empty lines (max 20_000 chars); guide + demo GIF.
 - Added the `json_diff_paths` safe tool for returning sorted dotted/bracket paths that differ between two JSON documents (max 20_000 chars per document, 2000 paths); guide + demo GIF.

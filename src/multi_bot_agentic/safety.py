@@ -66,6 +66,7 @@ class SafetyPolicy:
             "text_center_lines",
             "mime_attachment_ctypes",
             "mime_attachment_disposition",
+            "mime_attachment_encoding",
             "jwt_decode",
             "line_number",
             "markdown_table",
