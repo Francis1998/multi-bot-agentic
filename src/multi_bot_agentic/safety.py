@@ -83,6 +83,7 @@ class SafetyPolicy:
             "text_case",
             "text_dedent",
             "text_indent",
+            "text_justify_lines",
             "text_margin_lines",
             "text_outdent",
             "text_pad_lines",

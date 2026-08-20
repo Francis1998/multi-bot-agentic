@@ -57,6 +57,7 @@ from multi_bot_agentic.tools.text_case import TextCaseTool
 from multi_bot_agentic.tools.text_center_lines import TextCenterLinesTool
 from multi_bot_agentic.tools.text_dedent import TextDedentTool
 from multi_bot_agentic.tools.text_indent import TextIndentTool
+from multi_bot_agentic.tools.text_justify_lines import TextJustifyLinesTool
 from multi_bot_agentic.tools.text_margin_lines import TextMarginLinesTool
 from multi_bot_agentic.tools.text_outdent import TextOutdentTool
 from multi_bot_agentic.tools.text_pad_lines import TextPadLinesTool
@@ -134,6 +135,7 @@ __all__ = [
     "TextCenterLinesTool",
     "TextDedentTool",
     "TextIndentTool",
+    "TextJustifyLinesTool",
     "TextMarginLinesTool",
     "TextOutdentTool",
     "TextPadLinesTool",
