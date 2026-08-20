@@ -620,4 +620,10 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
   documents are capped at 20,000 characters and patches at 200 operations for
   GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
 
+- `text_justify_lines`: formats bounded non-empty lines with left, right,
+  center, or full justification at widths up to 500 while preserving line
+  endings and never truncating content. It supports `text` options or the
+  `<<<TEXT_JUSTIFY_LINES>>>` sentinel for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 workers.
+
 - `text_margin_lines`: adds left/right ASCII margins to non-empty lines for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.

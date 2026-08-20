@@ -364,6 +364,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.text_center_lines import TextCenterLinesTool
     from multi_bot_agentic.tools.text_dedent import TextDedentTool
     from multi_bot_agentic.tools.text_indent import TextIndentTool
+    from multi_bot_agentic.tools.text_justify_lines import TextJustifyLinesTool
     from multi_bot_agentic.tools.text_margin_lines import TextMarginLinesTool
     from multi_bot_agentic.tools.text_outdent import TextOutdentTool
     from multi_bot_agentic.tools.text_pad_lines import TextPadLinesTool
@@ -409,6 +410,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "hash": HashTool(),
         "hex_encode": HexEncodeTool(),
         "base64": Base64Tool(),
+        "text_justify_lines": TextJustifyLinesTool(),
         "text_margin_lines": TextMarginLinesTool(),
         "text_outdent": TextOutdentTool(),
         "text_pad_lines": TextPadLinesTool(),
