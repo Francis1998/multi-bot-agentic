@@ -156,7 +156,8 @@ def test_json_patch_apply_enforces_character_operation_and_output_bounds() -> No
     assert ok_many is False and "max_operations=200" in content_many
     assert metadata_many["operations"] == 201
     assert ok_output is False and "output exceeds" in content_output
-    assert metadata_output["chars"] > 20_000
+    output_chars = metadata_output["chars"]
+    assert isinstance(output_chars, int) and output_chars > 20_000
 
 
 def test_json_patch_apply_is_registered_and_allowed(tmp_path: Path) -> None:
