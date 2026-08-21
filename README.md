@@ -268,6 +268,10 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   failure. A model requests it with `TOOL:csv_pivot:<csv>` for GPT-5.5 /
   Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic
   tabular reshape before the next turn.
+- `csv_stack`: vertically concatenates CSV documents that share an identical
+  header, accepting a `csvs` list or `text` split by `<<<CSV_STACK>>>`. It
+  rejects malformed input, mismatched headers, uneven rows, and bounded-size
+  violations for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
 - `csv_tsv`: converts between CSV and TSV text for agent handoffs
   (`direction`: `csv_to_tsv` default or `tsv_to_csv`). Parsing and serialization
   use stdlib `csv` only; an optional single-character `delimiter` overrides the

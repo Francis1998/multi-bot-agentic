@@ -40,6 +40,7 @@ class SafetyPolicy:
             "csv_pivot",
             "csv_select_columns",
             "csv_sort",
+            "csv_stack",
             "csv_tsv",
             "csv_unique",
             "datetime",
