@@ -632,4 +632,9 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
   `<<<TEXT_JUSTIFY_LINES>>>` sentinel for GPT-5.5 / Claude Sonnet 4.6 /
   Gemini 3.x / Kimi K2 workers.
 
+- `text_slug_lines`: slugifies every bounded document line independently while
+  preserving original line endings. It supports configurable separators,
+  casing, empty-line handling, and the `<<<TEXT_SLUG_LINES>>>` sentinel for
+  GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+
 - `text_margin_lines`: adds left/right ASCII margins to non-empty lines for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.

@@ -62,6 +62,7 @@ from multi_bot_agentic.tools.text_justify_lines import TextJustifyLinesTool
 from multi_bot_agentic.tools.text_margin_lines import TextMarginLinesTool
 from multi_bot_agentic.tools.text_outdent import TextOutdentTool
 from multi_bot_agentic.tools.text_pad_lines import TextPadLinesTool
+from multi_bot_agentic.tools.text_slug_lines import TextSlugLinesTool
 from multi_bot_agentic.tools.text_sort_lines import TextSortLinesTool
 from multi_bot_agentic.tools.text_squeeze_ws import TextSqueezeWsTool
 from multi_bot_agentic.tools.text_truncate import TextTruncateTool
@@ -141,6 +142,7 @@ __all__ = [
     "TextMarginLinesTool",
     "TextOutdentTool",
     "TextPadLinesTool",
+    "TextSlugLinesTool",
     "TextSortLinesTool",
     "TextSqueezeWsTool",
     "TextTruncateTool",

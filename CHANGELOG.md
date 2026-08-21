@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `text_slug_lines` safe tool for per-line ASCII slugification with preserved line endings and configurable separator/casing/empty-line handling (max 20_000 chars); guide + demo GIF.
 - Added the `text_justify_lines` safe tool for left/right/center/full line justification (default width 80, max 500, max 20_000 chars); guide + demo GIF.
 - Added the `mime_attachment_encoding` safe tool for listing named MIME attachment Content-Transfer-Encoding values without decoding or returning payloads (max 20_000 chars); guide + demo GIF.
 - Added the `json_patch_apply` safe tool for bounded RFC 6902 `add`/`remove`/`replace`/`move`/`copy`/`test` operations (max 20_000 chars, 200 operations); guide + demo GIF.

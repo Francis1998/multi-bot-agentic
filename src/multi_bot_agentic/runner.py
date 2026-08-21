@@ -369,6 +369,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.text_margin_lines import TextMarginLinesTool
     from multi_bot_agentic.tools.text_outdent import TextOutdentTool
     from multi_bot_agentic.tools.text_pad_lines import TextPadLinesTool
+    from multi_bot_agentic.tools.text_slug_lines import TextSlugLinesTool
     from multi_bot_agentic.tools.text_sort_lines import TextSortLinesTool
     from multi_bot_agentic.tools.text_squeeze_ws import TextSqueezeWsTool
     from multi_bot_agentic.tools.text_truncate import TextTruncateTool
@@ -416,6 +417,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "text_margin_lines": TextMarginLinesTool(),
         "text_outdent": TextOutdentTool(),
         "text_pad_lines": TextPadLinesTool(),
+        "text_slug_lines": TextSlugLinesTool(),
         "url_encode": UrlEncodeTool(),
         "url_parse": UrlParseTool(),
         "uuid4": Uuid4Tool(),

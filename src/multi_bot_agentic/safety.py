@@ -88,6 +88,7 @@ class SafetyPolicy:
             "text_margin_lines",
             "text_outdent",
             "text_pad_lines",
+            "text_slug_lines",
             "text_sort_lines",
             "text_squeeze_ws",
             "text_wrap",
