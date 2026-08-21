@@ -351,6 +351,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.mime_attachment_ctypes import MimeAttachmentCtypesTool
     from multi_bot_agentic.tools.mime_attachment_disposition import MimeAttachmentDispositionTool
     from multi_bot_agentic.tools.mime_attachment_encoding import MimeAttachmentEncodingTool
+    from multi_bot_agentic.tools.mime_attachment_filenames_unique import MimeAttachmentFilenamesUniqueTool
     from multi_bot_agentic.tools.mime_attachment_names import MimeAttachmentNamesTool
     from multi_bot_agentic.tools.mime_attachment_sizes import MimeAttachmentSizesTool
     from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
@@ -394,6 +395,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "echo": EchoTool(),
         "json_diff_paths": JsonDiffPathsTool(),
         "json_flatten": JsonFlattenTool(),
+        "mime_attachment_filenames_unique": MimeAttachmentFilenamesUniqueTool(),
         "readonly_file": ReadOnlyFileTool(root=root),
         "calculator": CalculatorTool(),
         "json_format": JsonFormatTool(),

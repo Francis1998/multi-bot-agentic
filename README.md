@@ -473,6 +473,7 @@ PLACEHOLDER
   Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need safe routing
   metadata without attachment content.
 - `mime_attachment_encoding`: parses bounded raw MIME and returns only named
+- `mime_attachment_filenames_unique`: maps duplicate MIME attachment filenames to unique names (`file-2.pdf`); no payloads. A model requests it with `TOOL:mime_attachment_filenames_unique:<raw>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
   attachment `filename`/`encoding` objects. Content-Transfer-Encoding tokens
   are normalized, missing values default to `7bit`, and payloads are never
   decoded or returned. A model requests it with
