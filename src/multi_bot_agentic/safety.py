@@ -93,6 +93,7 @@ class SafetyPolicy:
             "text_slug_lines",
             "text_sort_lines",
             "text_squeeze_ws",
+            "text_title_lines",
             "text_wrap",
             "toml_format",
             "toml_json",

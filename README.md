@@ -541,6 +541,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
 - [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
 - [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
+- [Text Title Lines Tool Guide](docs/guides/TEXT_TITLE_LINES_TOOL_GUIDE.md)
 - [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
 - [Text Squeeze Whitespace Tool Guide](docs/guides/TEXT_SQUEEZE_WS_TOOL_GUIDE.md)
 - [Text Indent Tool Guide](docs/guides/TEXT_INDENT_TOOL_GUIDE.md)
@@ -641,5 +642,10 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
   preserving original line endings. It supports configurable separators,
   casing, empty-line handling, and the `<<<TEXT_SLUG_LINES>>>` sentinel for
   GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+
+- `text_title_lines`: title-cases every bounded document line independently while
+  preserving original line endings. It supports `skip_empty`, `lowercase_first`, and the
+  `<<<TEXT_TITLE_LINES>>>` sentinel for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 workers.
 
 - `text_margin_lines`: adds left/right ASCII margins to non-empty lines for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
