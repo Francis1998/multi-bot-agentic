@@ -472,6 +472,10 @@ PLACEHOLDER
   Payloads are never returned or written. A model requests it with
   `TOOL:mime_attachment_sizes:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
   Gemini 3.x / Kimi K2 workers that need safe attachment size metadata.
+- `mime_attachment_cid_map`: parses bounded raw MIME and returns a JSON map of Content-ID
+  tokens to attachment `filename`/`content_type` objects without payloads. A model
+  requests it with `TOOL:mime_attachment_cid_map:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 workers.
 - `mime_attachment_disposition`: parses bounded raw MIME with stdlib `email`
   and returns only Content-Disposition `filename`/`disposition` objects for
   attachment and inline parts, including unnamed disposition records. Payloads
@@ -539,6 +543,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [HTML Markdown Tool Guide](docs/guides/HTML_MARKDOWN_TOOL_GUIDE.md)
 - [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
 - [HTML Table CSV Tool Guide](docs/guides/HTML_TABLE_CSV_TOOL_GUIDE.md)
+- [MIME Attachment CID Map Tool Guide](docs/guides/MIME_ATTACHMENT_CID_MAP_TOOL_GUIDE.md)
 - [MIME Attachment Names Tool Guide](docs/guides/MIME_ATTACHMENT_NAMES_TOOL_GUIDE.md)
 - [MIME Attachment Disposition Tool Guide](docs/guides/MIME_ATTACHMENT_DISPOSITION_TOOL_GUIDE.md)
 - [MIME Multipart Tool Guide](docs/guides/MIME_MULTIPART_TOOL_GUIDE.md)
