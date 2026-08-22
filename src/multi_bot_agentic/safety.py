@@ -43,6 +43,7 @@ class SafetyPolicy:
             "csv_stack",
             "csv_tsv",
             "csv_unique",
+            "csv_window",
             "datetime",
             "diff",
             "duration",

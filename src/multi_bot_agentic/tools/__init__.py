@@ -17,6 +17,7 @@ from multi_bot_agentic.tools.csv_sort import CsvSortTool
 from multi_bot_agentic.tools.csv_stack import CsvStackTool
 from multi_bot_agentic.tools.csv_tsv import CsvTsvTool
 from multi_bot_agentic.tools.csv_unique import CsvUniqueTool
+from multi_bot_agentic.tools.csv_window import CsvWindowTool
 from multi_bot_agentic.tools.datetime_normalize import DateTimeTool
 from multi_bot_agentic.tools.diff_text import DiffTool
 from multi_bot_agentic.tools.duration_parse import DurationTool
@@ -100,6 +101,7 @@ __all__ = [
     "CsvStackTool",
     "CsvTsvTool",
     "CsvUniqueTool",
+    "CsvWindowTool",
     "DateTimeTool",
     "DiffTool",
     "DurationTool",

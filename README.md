@@ -407,6 +407,10 @@ PLACEHOLDER
   requests it with `TOOL:csv_unique:<csv><<<CSV_UNIQUE>>>col1,col2` for
   GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need
   deterministic tabular deduplication.
+- `csv_window`: emits sliding windows of CSV data rows with the header preserved once
+  per window (`window_size` required; `step` default 1; optional `start_row`/`index`).
+  It rejects malformed input and bounded-size violations for GPT-5.5 /
+  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
 - `text_sort_lines`: sorts multi-line text ascending or descending (`order`
   default `asc`) with optional `unique` dedupe after sort. Empty, oversized, or
   unsupported-order requests return a structured failure. A model requests it
@@ -549,6 +553,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [CSV Select Columns Tool Guide](docs/guides/CSV_SELECT_COLUMNS_TOOL_GUIDE.md)
 - [CSV Sort Tool Guide](docs/guides/CSV_SORT_TOOL_GUIDE.md)
 - [CSV Unique Tool Guide](docs/guides/CSV_UNIQUE_TOOL_GUIDE.md)
+- [CSV Window Tool Guide](docs/guides/CSV_WINDOW_TOOL_GUIDE.md)
 - [Unicode Normalize Tool Guide](docs/guides/UNICODE_NORMALIZE_TOOL_GUIDE.md)
 - [UUID4 Tool Guide](docs/guides/UUID4_TOOL_GUIDE.md)
 - [Text Wrap Tool Guide](docs/guides/TEXT_WRAP_TOOL_GUIDE.md)
