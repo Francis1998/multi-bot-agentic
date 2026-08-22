@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- Added the `text_title_lines` safe tool for per-line title-casing with preserved line endings and optional lowercase-first handling (max 20_000 chars); guide + demo GIF.
 - Added the `csv_stack` safe tool for vertically concatenating CSV documents with identical headers (`csvs` list or `<<<CSV_STACK>>>`; max 20_000 chars, 500 rows, 64 columns); guide + demo GIF.
 - Added the `text_slug_lines` safe tool for per-line ASCII slugification with preserved line endings and configurable separator/casing/empty-line handling (max 20_000 chars); guide + demo GIF.
 - Added the `text_justify_lines` safe tool for left/right/center/full line justification (default width 80, max 500, max 20_000 chars); guide + demo GIF.
