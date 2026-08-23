@@ -359,6 +359,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.mime_attachment_names import MimeAttachmentNamesTool
     from multi_bot_agentic.tools.mime_attachment_sizes import MimeAttachmentSizesTool
     from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
+    from multi_bot_agentic.tools.mime_multipart_flatten import MimeMultipartFlattenTool
     from multi_bot_agentic.tools.mime_part_headers import MimePartHeadersTool
     from multi_bot_agentic.tools.redaction import RedactionTool
     from multi_bot_agentic.tools.regex_extract import RegexExtractTool
@@ -469,6 +470,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "mime_attachment_names": MimeAttachmentNamesTool(),
         "mime_attachment_sizes": MimeAttachmentSizesTool(),
         "mime_multipart": MimeMultipartTool(),
+        "mime_multipart_flatten": MimeMultipartFlattenTool(),
         "mime_part_headers": MimePartHeadersTool(),
         "template_render": TemplateRenderTool(),
         "toml_format": TomlFormatTool(),

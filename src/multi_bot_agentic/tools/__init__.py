@@ -52,6 +52,7 @@ from multi_bot_agentic.tools.mime_attachment_filenames_unique import MimeAttachm
 from multi_bot_agentic.tools.mime_attachment_names import MimeAttachmentNamesTool
 from multi_bot_agentic.tools.mime_attachment_sizes import MimeAttachmentSizesTool
 from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
+from multi_bot_agentic.tools.mime_multipart_flatten import MimeMultipartFlattenTool
 from multi_bot_agentic.tools.mime_part_headers import MimePartHeadersTool
 from multi_bot_agentic.tools.redaction import RedactionTool
 from multi_bot_agentic.tools.regex_extract import RegexExtractTool
@@ -137,6 +138,7 @@ __all__ = [
     "MimeAttachmentFilenamesUniqueTool",
     "MimeAttachmentNamesTool",
     "MimeAttachmentSizesTool",
+    "MimeMultipartFlattenTool",
     "MimeMultipartTool",
     "MimePartHeadersTool",
     "ReadOnlyFileTool",
