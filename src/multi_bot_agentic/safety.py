@@ -85,6 +85,7 @@ class SafetyPolicy:
             "spreadsheet_slice",
             "template_render",
             "text_case",
+            "text_collapse_blank",
             "text_center_lines",
             "text_dedent",
             "text_indent",

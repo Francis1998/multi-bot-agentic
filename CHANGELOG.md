@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `text_collapse_blank`: collapse consecutive blank lines to a bounded `max_blank` (default 1); sentinel `<<<TEXT_COLLAPSE_BLANK>>>`; guide `TEXT_COLLAPSE_BLANK_TOOL_GUIDE.md`.
 - Added the `mime_attachment_cid_map` safe tool for mapping MIME Content-ID tokens to attachment filename/content-type metadata without payloads (max 20_000 chars); guide + demo GIF.
 - Added the `csv_window` safe tool for sliding CSV row windows with a preserved header (`window_size`/`step`/`start_row`/`index`; max 20_000 chars, 500 rows, 64 columns); guide + demo GIF.
 - Added the `text_title_lines` safe tool for per-line title-casing with preserved line endings and optional lowercase-first handling (max 20_000 chars); guide + demo GIF.

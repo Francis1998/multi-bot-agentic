@@ -60,6 +60,7 @@ from multi_bot_agentic.tools.spreadsheet_slice import SpreadsheetSliceTool
 from multi_bot_agentic.tools.template_render import TemplateRenderTool
 from multi_bot_agentic.tools.text_case import TextCaseTool
 from multi_bot_agentic.tools.text_center_lines import TextCenterLinesTool
+from multi_bot_agentic.tools.text_collapse_blank import TextCollapseBlankTool
 from multi_bot_agentic.tools.text_dedent import TextDedentTool
 from multi_bot_agentic.tools.text_indent import TextIndentTool
 from multi_bot_agentic.tools.text_justify_lines import TextJustifyLinesTool
@@ -145,6 +146,7 @@ __all__ = [
     "TemplateRenderTool",
     "TextCaseTool",
     "TextCenterLinesTool",
+    "TextCollapseBlankTool",
     "TextDedentTool",
     "TextIndentTool",
     "TextJustifyLinesTool",
