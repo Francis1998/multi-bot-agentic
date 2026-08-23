@@ -42,6 +42,7 @@ class SafetyPolicy:
             "csv_sort",
             "csv_stack",
             "csv_tsv",
+            "csv_transpose",
             "csv_unique",
             "csv_window",
             "datetime",
