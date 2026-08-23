@@ -77,6 +77,7 @@ class SafetyPolicy:
             "mime_attachment_names",
             "mime_attachment_sizes",
             "mime_multipart",
+            "mime_multipart_flatten",
             "mime_part_headers",
             "readonly_file",
             "redact",

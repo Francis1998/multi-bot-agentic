@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `mime_multipart_flatten`: recursively flatten nested multipart MIME to leaf metadata JSON without payloads; guide `MIME_MULTIPART_FLATTEN_TOOL_GUIDE.md`.
 - `csv_transpose`: transpose CSV rows↔columns with padding; guide `CSV_TRANSPOSE_TOOL_GUIDE.md`.
 - `text_collapse_blank`: collapse consecutive blank lines to a bounded `max_blank` (default 1); sentinel `<<<TEXT_COLLAPSE_BLANK>>>`; guide `TEXT_COLLAPSE_BLANK_TOOL_GUIDE.md`.
 - Added the `mime_attachment_cid_map` safe tool for mapping MIME Content-ID tokens to attachment filename/content-type metadata without payloads (max 20_000 chars); guide + demo GIF.
