@@ -660,6 +660,15 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 - `text_margin_lines`: adds left/right ASCII margins to non-empty lines for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
 
+- `mime_multipart_flatten`: recursively flattens nested multipart MIME via
+  stdlib `email` into a JSON array of leaf-part metadata (`content_type`,
+  `filename`, `content_id`, `size`, `depth`), max 20_000 chars and 200 leaf
+  parts. Payload bytes are never returned. Empty, oversized, or malformed
+  input returns a structured failure. A model requests it with
+  `TOOL:mime_multipart_flatten:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
+  Gemini 3.x / Kimi K2 workers that need a safe inventory of nested email
+  parts, inspired by mail pipelines in popular agent frameworks.
+
 - `text_collapse_blank`: collapses runs of consecutive blank or
   whitespace-only lines to at most `max_blank` lines (default 1, range
   0..100) while preserving non-blank line endings. Supply `text`+`max_blank`,
