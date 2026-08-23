@@ -659,3 +659,12 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
   Kimi K2 workers.
 
 - `text_margin_lines`: adds left/right ASCII margins to non-empty lines for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+
+- `text_collapse_blank`: collapses runs of consecutive blank or
+  whitespace-only lines to at most `max_blank` lines (default 1, range
+  0..100) while preserving non-blank line endings. Supply `text`+`max_blank`,
+  or a single payload split on `<<<TEXT_COLLAPSE_BLANK>>>`. Empty, oversized,
+  or invalid `max_blank` requests return a structured failure. A model
+  requests it with `TOOL:text_collapse_blank:<text>` for GPT-5.5 / Claude
+  Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need to tidy noisy blank-line
+  runs before the next turn.
