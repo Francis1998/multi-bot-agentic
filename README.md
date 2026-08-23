@@ -660,6 +660,15 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 - `text_margin_lines`: adds left/right ASCII margins to non-empty lines for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
 
+- `csv_transpose`: transposes a CSV document so rows become columns via
+  stdlib `csv` (max 500 rows, 64 columns, 20_000 chars). The header row (when
+  present) naturally becomes the first column of the output. Short rows are
+  right-padded with empty cells before transposing. Empty, malformed, or
+  oversized requests return a structured failure. A model requests it with
+  `TOOL:csv_transpose:<csv>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 workers that need to flip spreadsheet-shaped tables, inspired by
+  spreadsheet transpose helpers in popular agent toolkits.
+
 - `text_collapse_blank`: collapses runs of consecutive blank or
   whitespace-only lines to at most `max_blank` lines (default 1, range
   0..100) while preserving non-blank line endings. Supply `text`+`max_blank`,
