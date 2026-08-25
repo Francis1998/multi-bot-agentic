@@ -671,6 +671,13 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 
 
+
+- `html_links_extract`: extracts HTML anchor `href`+`text` pairs as compact
+  JSON via stdlib `html.parser` (`max_links` default 100, range 1..500).
+  Documents containing `script`/`style` are rejected. Empty, link-less,
+  oversized, or invalid `max_links` requests return a structured failure. A
+  model requests it with `TOOL:html_links_extract:<html>` for GPT-5.5 /
+  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 research workers.
 - `markdown_toc`: builds a nested Markdown table of contents from ATX
   headings (`#`..`######`) up to `max_level` (default 3, range 1..6) with
   GitHub-like slug anchors. Supply `text`+`max_level`, or a payload split on
