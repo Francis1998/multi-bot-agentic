@@ -53,6 +53,7 @@ class SafetyPolicy:
             "hex_encode",
             "html_attr_extract",
             "html_entities",
+            "html_links_extract",
             "html_markdown",
             "html_strip",
             "html_table",

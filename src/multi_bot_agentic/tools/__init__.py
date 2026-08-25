@@ -28,6 +28,7 @@ from multi_bot_agentic.tools.hashing import HashTool
 from multi_bot_agentic.tools.hex_encode import HexEncodeTool
 from multi_bot_agentic.tools.html_attr_extract import HtmlAttrExtractTool
 from multi_bot_agentic.tools.html_entities import HtmlEntitiesTool
+from multi_bot_agentic.tools.html_links_extract import HtmlLinksExtractTool
 from multi_bot_agentic.tools.html_markdown import HtmlMarkdownTool
 from multi_bot_agentic.tools.html_strip import HtmlStripTool
 from multi_bot_agentic.tools.html_table import HtmlTableTool
@@ -117,6 +118,7 @@ __all__ = [
     "HexEncodeTool",
     "HtmlAttrExtractTool",
     "HtmlEntitiesTool",
+    "HtmlLinksExtractTool",
     "HtmlMarkdownTool",
     "HtmlStripTool",
     "HtmlTableCsvTool",

@@ -335,6 +335,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.hex_encode import HexEncodeTool
     from multi_bot_agentic.tools.html_attr_extract import HtmlAttrExtractTool
     from multi_bot_agentic.tools.html_entities import HtmlEntitiesTool
+    from multi_bot_agentic.tools.html_links_extract import HtmlLinksExtractTool
     from multi_bot_agentic.tools.html_markdown import HtmlMarkdownTool
     from multi_bot_agentic.tools.html_strip import HtmlStripTool
     from multi_bot_agentic.tools.html_table import HtmlTableTool
@@ -402,6 +403,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "content_type_sniff": ContentTypeSniffTool(),
         "csv_melt": CsvMeltTool(),
         "echo": EchoTool(),
+        "html_links_extract": HtmlLinksExtractTool(),
         "json_diff_paths": JsonDiffPathsTool(),
         "json_flatten": JsonFlattenTool(),
         "markdown_toc": MarkdownTocTool(),
