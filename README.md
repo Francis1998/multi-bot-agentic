@@ -670,6 +670,14 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
   parts, inspired by mail pipelines in popular agent frameworks.
 
 
+
+- `markdown_toc`: builds a nested Markdown table of contents from ATX
+  headings (`#`..`######`) up to `max_level` (default 3, range 1..6) with
+  GitHub-like slug anchors. Supply `text`+`max_level`, or a payload split on
+  `<<<MARKDOWN_TOC>>>`. Empty, heading-less, oversized, or invalid `max_level`
+  requests return a structured failure. A model requests it with
+  `TOOL:markdown_toc:<markdown>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 documentation workers.
 - `text_unique_lines`: deduplicates lines in first-seen order (optional `strip`,
   default true) while preserving original line endings. Supply `text`+`strip`,
   or a single payload split on `<<<TEXT_UNIQUE_LINES>>>`. Empty, oversized, or

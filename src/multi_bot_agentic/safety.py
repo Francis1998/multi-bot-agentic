@@ -69,6 +69,7 @@ class SafetyPolicy:
             "jwt_decode",
             "line_number",
             "markdown_table",
+            "markdown_toc",
             "mime_attachment_cid_map",
             "mime_attachment_ctypes",
             "mime_attachment_disposition",
