@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `text_unique_lines`: order-preserving line dedupe (optional strip); sentinel `<<<TEXT_UNIQUE_LINES>>>`; guide `TEXT_UNIQUE_LINES_TOOL_GUIDE.md`.
 - `mime_multipart_flatten`: recursively flatten nested multipart MIME to leaf metadata JSON without payloads; guide `MIME_MULTIPART_FLATTEN_TOOL_GUIDE.md`.
 - `csv_transpose`: transpose CSV rows↔columns with padding; guide `CSV_TRANSPOSE_TOOL_GUIDE.md`.
 - `text_collapse_blank`: collapse consecutive blank lines to a bounded `max_blank` (default 1); sentinel `<<<TEXT_COLLAPSE_BLANK>>>`; guide `TEXT_COLLAPSE_BLANK_TOOL_GUIDE.md`.

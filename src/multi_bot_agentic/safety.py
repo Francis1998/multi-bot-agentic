@@ -99,6 +99,7 @@ class SafetyPolicy:
             "text_sort_lines",
             "text_squeeze_ws",
             "text_title_lines",
+            "text_unique_lines",
             "text_wrap",
             "toml_format",
             "toml_json",
