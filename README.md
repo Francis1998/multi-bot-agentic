@@ -669,6 +669,13 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
   Gemini 3.x / Kimi K2 workers that need a safe inventory of nested email
   parts, inspired by mail pipelines in popular agent frameworks.
 
+
+- `text_unique_lines`: deduplicates lines in first-seen order (optional `strip`,
+  default true) while preserving original line endings. Supply `text`+`strip`,
+  or a single payload split on `<<<TEXT_UNIQUE_LINES>>>`. Empty, oversized, or
+  invalid `strip` requests return a structured failure. A model requests it with
+  `TOOL:text_unique_lines:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
+  Kimi K2 workers that need stable dedupe without sorting.
 - `text_collapse_blank`: collapses runs of consecutive blank or
   whitespace-only lines to at most `max_blank` lines (default 1, range
   0..100) while preserving non-blank line endings. Supply `text`+`max_blank`,

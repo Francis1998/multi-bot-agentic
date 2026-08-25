@@ -74,6 +74,7 @@ from multi_bot_agentic.tools.text_sort_lines import TextSortLinesTool
 from multi_bot_agentic.tools.text_squeeze_ws import TextSqueezeWsTool
 from multi_bot_agentic.tools.text_title_lines import TextTitleLinesTool
 from multi_bot_agentic.tools.text_truncate import TextTruncateTool
+from multi_bot_agentic.tools.text_unique_lines import TextUniqueLinesTool
 from multi_bot_agentic.tools.text_wrap import TextWrapTool
 from multi_bot_agentic.tools.toml_format import TomlFormatTool
 from multi_bot_agentic.tools.toml_json import TomlJsonTool
@@ -162,6 +163,7 @@ __all__ = [
     "TextSqueezeWsTool",
     "TextTitleLinesTool",
     "TextTruncateTool",
+    "TextUniqueLinesTool",
     "TextWrapTool",
     "TomlFormatTool",
     "TomlJsonTool",
