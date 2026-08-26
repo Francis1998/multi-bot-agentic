@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `semver_compare`: compare two SemVer versions (`-1`/`0`/`1` + human relation; sentinel `<<<SEMVER_COMPARE>>>`); guide `SEMVER_COMPARE_TOOL_GUIDE.md`.
 - `csv_fillna`: fill empty CSV cells with a constant (`fill_value`, optional `columns`; sentinel `<<<CSV_FILLNA>>>`); guide `CSV_FILLNA_TOOL_GUIDE.md`.
 - `ics_parse`: parse iCalendar VEVENT SUMMARY/DTSTART/DTEND/UID/LOCATION as JSON Lines (stdlib only; max 20_000 chars, 100 events); guide `ICS_PARSE_TOOL_GUIDE.md`.
 - `html_links_extract`: extract HTML anchor href+text as JSON (`max_links` default 100); rejects script/style; guide `HTML_LINKS_EXTRACT_TOOL_GUIDE.md`.

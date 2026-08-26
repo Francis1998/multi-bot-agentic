@@ -61,6 +61,7 @@ from multi_bot_agentic.tools.mime_part_headers import MimePartHeadersTool
 from multi_bot_agentic.tools.redaction import RedactionTool
 from multi_bot_agentic.tools.regex_extract import RegexExtractTool
 from multi_bot_agentic.tools.regex_replace import RegexReplaceTool
+from multi_bot_agentic.tools.semver_compare import SemverCompareTool
 from multi_bot_agentic.tools.slugify import SlugifyTool
 from multi_bot_agentic.tools.spreadsheet_slice import SpreadsheetSliceTool
 from multi_bot_agentic.tools.template_render import TemplateRenderTool
@@ -154,6 +155,7 @@ __all__ = [
     "RedactionTool",
     "RegexExtractTool",
     "RegexReplaceTool",
+    "SemverCompareTool",
     "SlugifyTool",
     "SpreadsheetSliceTool",
     "TemplateRenderTool",
