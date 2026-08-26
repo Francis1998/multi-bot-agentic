@@ -340,6 +340,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.html_strip import HtmlStripTool
     from multi_bot_agentic.tools.html_table import HtmlTableTool
     from multi_bot_agentic.tools.html_table_csv import HtmlTableCsvTool
+    from multi_bot_agentic.tools.ics_parse import IcsParseTool
     from multi_bot_agentic.tools.json_diff_paths import JsonDiffPathsTool
     from multi_bot_agentic.tools.json_flatten import JsonFlattenTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
@@ -472,6 +473,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "html_strip": HtmlStripTool(),
         "html_table": HtmlTableTool(),
         "html_table_csv": HtmlTableCsvTool(),
+        "ics_parse": IcsParseTool(),
         "markdown_table": MarkdownTableTool(),
         "mime_attachment_names": MimeAttachmentNamesTool(),
         "mime_attachment_sizes": MimeAttachmentSizesTool(),
