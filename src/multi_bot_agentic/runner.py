@@ -313,6 +313,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.checklist import ChecklistTool
     from multi_bot_agentic.tools.content_type_sniff import ContentTypeSniffTool
     from multi_bot_agentic.tools.csv_diff import CsvDiffTool
+    from multi_bot_agentic.tools.csv_fillna import CsvFillnaTool
     from multi_bot_agentic.tools.csv_filter import CsvFilterTool
     from multi_bot_agentic.tools.csv_groupby import CsvGroupbyTool
     from multi_bot_agentic.tools.csv_join import CsvJoinTool
@@ -402,6 +403,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     return {
         "checklist": ChecklistTool(),
         "content_type_sniff": ContentTypeSniffTool(),
+        "csv_fillna": CsvFillnaTool(),
         "csv_melt": CsvMeltTool(),
         "echo": EchoTool(),
         "html_links_extract": HtmlLinksExtractTool(),
