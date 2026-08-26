@@ -674,6 +674,7 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 
 - `html_links_extract`: extracts HTML anchor `href`+`text` pairs as compact
+- `csv_fillna`: fills empty CSV cells with a constant via stdlib `csv` (`fill_value` default empty string; optional `columns` subset). Supply `text`+`fill_value`, or a payload split on `<<<CSV_FILLNA>>>` (optional `<<<COLUMNS>>>col1,col2`). Empty, oversized, malformed, unknown-column, or over-bounds requests return a structured failure. A model requests it with `TOOL:csv_fillna:<csv>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic tabular fillna.
   JSON via stdlib `html.parser` (`max_links` default 100, range 1..500).
   Documents containing `script`/`style` are rejected. Empty, link-less,
   oversized, or invalid `max_links` requests return a structured failure. A
