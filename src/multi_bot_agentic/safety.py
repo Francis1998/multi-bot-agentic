@@ -87,6 +87,7 @@ class SafetyPolicy:
             "redact",
             "regex",
             "regex_replace",
+            "semver_compare",
             "slugify",
             "spreadsheet_slice",
             "template_render",
