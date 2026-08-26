@@ -543,6 +543,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [HTML Markdown Tool Guide](docs/guides/HTML_MARKDOWN_TOOL_GUIDE.md)
 - [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
 - [HTML Table CSV Tool Guide](docs/guides/HTML_TABLE_CSV_TOOL_GUIDE.md)
+- [ICS Parse Tool Guide](docs/guides/ICS_PARSE_TOOL_GUIDE.md)
 - [MIME Attachment CID Map Tool Guide](docs/guides/MIME_ATTACHMENT_CID_MAP_TOOL_GUIDE.md)
 - [MIME Attachment Names Tool Guide](docs/guides/MIME_ATTACHMENT_NAMES_TOOL_GUIDE.md)
 - [MIME Attachment Disposition Tool Guide](docs/guides/MIME_ATTACHMENT_DISPOSITION_TOOL_GUIDE.md)
@@ -678,6 +679,7 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
   oversized, or invalid `max_links` requests return a structured failure. A
   model requests it with `TOOL:html_links_extract:<html>` for GPT-5.5 /
   Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 research workers.
+- `ics_parse`: parses iCalendar (`.ics`) text and extracts VEVENT `SUMMARY`/`DTSTART`/`DTEND`/`UID`/`LOCATION` as JSON Lines via stdlib only (max 20_000 chars, 100 events). Empty, oversized, or VEVENT-less requests return a structured failure. A model requests it with `TOOL:ics_parse:<ics>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic calendar field extraction.
 - `markdown_toc`: builds a nested Markdown table of contents from ATX
   headings (`#`..`######`) up to `max_level` (default 3, range 1..6) with
   GitHub-like slug anchors. Supply `text`+`max_level`, or a payload split on
