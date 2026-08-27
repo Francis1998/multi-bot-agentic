@@ -186,6 +186,7 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   returns a structured failure. A model requests it with
   `TOOL:content_type_sniff:<payload>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini
   3.x / Kimi K2 workers that need a parser hint before the next step.
+- `cron_next`: returns the next N UTC fire times for a classic 5-field cron expression (`count` default 5, max 20; optional `from_iso`). Invalid fields return a structured failure. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 scheduling agents.
 - `echo`: safe text echo for adapter tests.
 - `readonly_file`: root-contained read-only file reader.
 - `calculator`: sandboxed arithmetic evaluator. It parses expressions into an AST
@@ -529,6 +530,7 @@ docs/                    architecture, safety, config, quickstart, demo
 - [Quickstart](docs/QUICKSTART.md)
 - [Configuration](docs/CONFIGURATION.md)
 - [Content Type Sniff Tool Guide](docs/guides/CONTENT_TYPE_SNIFF_TOOL_GUIDE.md)
+- [Cron Next Tool Guide](docs/guides/CRON_NEXT_TOOL_GUIDE.md)
 - [Safety](docs/SAFETY.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)

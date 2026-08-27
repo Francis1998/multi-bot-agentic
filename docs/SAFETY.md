@@ -26,6 +26,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 
 - `checklist`: deterministic launch checklist generator.
 - `content_type_sniff`: sniffs likely content type from a bounded text or base64 byte prefix (`json`, `xml`, `html`, `csv`, `tsv`, `markdown`, `plain`) and returns confidence; rejects empty/oversized input; never executes code or makes network requests.
+- `cron_next`: parses a 5-field cron expression and returns the next N UTC fire times as ISO-8601 lines (`count` default 5 max 20; optional `from_iso`); rejects invalid fields; stdlib only (no `croniter`); never executes code or makes network requests.
 - `echo`: safe deterministic echo tool for demos.
 - `readonly_file`: root-contained read-only file access.
 - `calculator`: sandboxed AST arithmetic; refuses non-real and non-finite results, bounds the exponent, and rejects results whose integer magnitude exceeds a fixed bit bound (stops nested power towers).
