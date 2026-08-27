@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `jsonl_parse`: parse JSON Lines into a pretty JSON array (`mode` objects|any; max 500 lines / 20_000 chars); guide `JSONL_PARSE_TOOL_GUIDE.md`.
 - `hmac_sign`: HMAC digest of text with a secret key (`sha256`/`sha1`/`sha512`; output hex|base64; never logs secret); guide `HMAC_SIGN_TOOL_GUIDE.md`.
 - `cron_next`: next N UTC fire times for a 5-field cron expression (`count` default 5 max 20; optional `from_iso`; stdlib only); guide `CRON_NEXT_TOOL_GUIDE.md`.
 - `semver_compare`: compare two SemVer versions (`-1`/`0`/`1` + human relation; sentinel `<<<SEMVER_COMPARE>>>`); guide `SEMVER_COMPARE_TOOL_GUIDE.md`.
