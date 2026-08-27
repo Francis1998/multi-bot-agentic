@@ -53,6 +53,7 @@ class SafetyPolicy:
             "echo",
             "hash",
             "hex_encode",
+            "hmac_sign",
             "html_attr_extract",
             "html_entities",
             "html_links_extract",

@@ -335,6 +335,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
     from multi_bot_agentic.tools.hashing import HashTool
     from multi_bot_agentic.tools.hex_encode import HexEncodeTool
+    from multi_bot_agentic.tools.hmac_sign import HmacSignTool
     from multi_bot_agentic.tools.html_attr_extract import HtmlAttrExtractTool
     from multi_bot_agentic.tools.html_entities import HtmlEntitiesTool
     from multi_bot_agentic.tools.html_links_extract import HtmlLinksExtractTool
@@ -409,6 +410,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "csv_fillna": CsvFillnaTool(),
         "csv_melt": CsvMeltTool(),
         "echo": EchoTool(),
+        "hmac_sign": HmacSignTool(),
         "html_links_extract": HtmlLinksExtractTool(),
         "json_diff_paths": JsonDiffPathsTool(),
         "json_flatten": JsonFlattenTool(),
