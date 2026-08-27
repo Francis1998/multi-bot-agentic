@@ -31,6 +31,7 @@ class SafetyPolicy:
             "calculator",
             "checklist",
             "content_type_sniff",
+            "cron_next",
             "csv",
             "csv_diff",
             "csv_fillna",
