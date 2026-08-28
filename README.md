@@ -205,6 +205,7 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   rejected rather than round-tripped into invalid output. A model requests it
   with `TOOL:json_format:{"b":1,"a":2}`, giving agents a safe way to verify and
   normalize JSON produced by earlier steps.
+- `uuid_nil`: returns the RFC 4122 nil UUID `00000000-0000-0000-0000-000000000000` (default) or the max UUID when `mode=max`. Useful as a placeholder id in crewAI / LangGraph-style agent pipelines. Unsupported modes return a structured failure. A model requests it with `TOOL:uuid_nil:` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need a stable sentinel identifier.
 - `yaml_format`: validates a constrained safe YAML subset and returns it
   canonicalized (sorted mapping keys, 2-space indentation). It supports block
   mappings/sequences, JSON-style flow collections, and finite scalar values
