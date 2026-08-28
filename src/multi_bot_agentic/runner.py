@@ -308,6 +308,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         Tool registry.
     """
 
+    from multi_bot_agentic.tools.base32_encode import Base32EncodeTool
     from multi_bot_agentic.tools.base64_codec import Base64Tool
     from multi_bot_agentic.tools.calculator import CalculatorTool
     from multi_bot_agentic.tools.checklist import ChecklistTool
@@ -438,6 +439,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "redact": RedactionTool(),
         "hash": HashTool(),
         "hex_encode": HexEncodeTool(),
+        "base32_encode": Base32EncodeTool(),
         "base64": Base64Tool(),
         "text_justify_lines": TextJustifyLinesTool(),
         "text_margin_lines": TextMarginLinesTool(),
