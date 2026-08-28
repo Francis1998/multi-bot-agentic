@@ -27,6 +27,7 @@ class SafetyPolicy:
     max_prompt_chars: int = 4000
     allowed_tools: frozenset[str] = frozenset(
         {
+            "base32_encode",
             "base64",
             "calculator",
             "checklist",
