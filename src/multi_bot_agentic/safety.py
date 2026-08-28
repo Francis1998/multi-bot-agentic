@@ -123,6 +123,7 @@ class SafetyPolicy:
             "yaml_format",
             "yaml_to_json",
             "zip_list",
+            "uuid_nil",
         }
     )
     cancellation_file: Path | None = None

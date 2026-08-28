@@ -93,6 +93,7 @@ from multi_bot_agentic.tools.url_encode import UrlEncodeTool
 from multi_bot_agentic.tools.url_parse import UrlParseTool
 from multi_bot_agentic.tools.uuid4 import Uuid4Tool
 from multi_bot_agentic.tools.uuid5 import Uuid5Tool
+from multi_bot_agentic.tools.uuid_nil import UuidNilTool
 from multi_bot_agentic.tools.xml_parse import XmlParseTool
 from multi_bot_agentic.tools.yaml_format import YamlFormatTool
 from multi_bot_agentic.tools.yaml_to_json import YamlToJsonTool
@@ -192,6 +193,7 @@ __all__ = [
     "UrlParseTool",
     "Uuid4Tool",
     "Uuid5Tool",
+    "UuidNilTool",
     "XmlParseTool",
     "YamlFormatTool",
     "YamlToJsonTool",
