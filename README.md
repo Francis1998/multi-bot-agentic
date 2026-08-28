@@ -282,6 +282,7 @@ All adapters normalize output into `ModelOutput`. The runner consumes that outpu
   requests it with `TOOL:csv_tsv:model,score`, giving agents a safe way to bridge
   CSV and TSV handoff snippets across GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
   Kimi K2 workers.
+- `xml_escape`: escapes or unescapes XML special characters (`&`, `<`, `>`) via stdlib `xml.sax.saxutils.escape`/`unescape` (`mode: escape|unescape`; default `escape`). Empty, oversized, or unsupported-mode requests return a structured failure. A model requests it with `TOOL:xml_escape:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic XML entity escaping.
 - `xml_parse`: parses XML via stdlib `xml.etree.ElementTree` into a compact
   indented text tree (tag names, `@attr=value` pairs, direct text nodes).
   Empty or oversized input, DOCTYPE/ENTITY declarations (XXE hardening), and

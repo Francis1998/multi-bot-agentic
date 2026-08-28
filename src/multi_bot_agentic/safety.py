@@ -119,6 +119,7 @@ class SafetyPolicy:
             "url_parse",
             "uuid4",
             "uuid5",
+            "xml_escape",
             "xml_parse",
             "yaml_format",
             "yaml_to_json",

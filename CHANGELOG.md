@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `xml_escape`: escape/unescape XML special chars via `xml.sax.saxutils` (`mode` escape|unescape; max 20_000 chars); guide `XML_ESCAPE_TOOL_GUIDE.md`.
 - `uuid_nil`: RFC 4122 nil UUID (or max when `mode=max`) for placeholder ids; guide `UUID_NIL_TOOL_GUIDE.md`.
 - `base32_encode`: encode/decode via stdlib Base32 (`mode` encode|decode; max 20_000 chars); guide `BASE32_ENCODE_TOOL_GUIDE.md`.
 - `jsonl_parse`: parse JSON Lines into a pretty JSON array (`mode` objects|any; max 500 lines / 20_000 chars); guide `JSONL_PARSE_TOOL_GUIDE.md`.
