@@ -36,6 +36,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `json_merge_patch`: applies RFC 7396 JSON Merge Patch via stdlib `json`; rejects empty/oversized/malformed input and over-deep merges; never executes code or makes network requests.
 - `text_outdent` — remove up to N leading spaces per non-empty line
 - `uuid_nil`: returns the RFC 4122 nil UUID `00000000-0000-0000-0000-000000000000` (or max UUID when `mode=max`); never executes code or makes network requests.
+- `ini_parse`: parses INI/CFG text into pretty JSON sections→keys via stdlib `configparser` (max 20_000 chars); never executes code or makes network requests.
 - `url_normalize`: normalizes a URL (lowercase scheme/host, drop default ports/fragments; optional `strip_trailing_slash`); never executes code or makes network requests.
 - `levenshtein`: returns classic Levenshtein edit distance between `a` and `b` (max 2000 chars each); never executes code or makes network requests.
 - `yaml_format`: validates and canonicalizes a constrained YAML subset (block mappings/sequences, JSON-style flow collections, scalar values); rejects anchors, aliases, tags, document markers, constructors, malformed indentation, oversized input, and non-finite numbers; never executes code.

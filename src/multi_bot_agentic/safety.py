@@ -63,6 +63,7 @@ class SafetyPolicy:
             "html_table",
             "html_table_csv",
             "ics_parse",
+            "ini_parse",
             "json_diff_paths",
             "json_flatten",
             "json_format",
