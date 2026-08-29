@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `url_normalize`: canonicalize URL scheme/host/ports/fragments; guide `URL_NORMALIZE_TOOL_GUIDE.md`.
 - `levenshtein`: classic edit distance between `a`/`b` (max 2000 chars); guide `LEVENSHTEIN_TOOL_GUIDE.md`.
 - `xml_escape`: escape/unescape XML special chars via `xml.sax.saxutils` (`mode` escape|unescape; max 20_000 chars); guide `XML_ESCAPE_TOOL_GUIDE.md`.
 - `uuid_nil`: RFC 4122 nil UUID (or max when `mode=max`) for placeholder ids; guide `UUID_NIL_TOOL_GUIDE.md`.
