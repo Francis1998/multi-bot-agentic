@@ -117,6 +117,7 @@ class SafetyPolicy:
             "tsv_format",
             "unicode_normalize",
             "url_encode",
+            "url_normalize",
             "url_parse",
             "uuid4",
             "uuid5",
