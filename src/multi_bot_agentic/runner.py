@@ -345,6 +345,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.html_table import HtmlTableTool
     from multi_bot_agentic.tools.html_table_csv import HtmlTableCsvTool
     from multi_bot_agentic.tools.ics_parse import IcsParseTool
+    from multi_bot_agentic.tools.ini_parse import IniParseTool
     from multi_bot_agentic.tools.json_diff_paths import JsonDiffPathsTool
     from multi_bot_agentic.tools.json_flatten import JsonFlattenTool
     from multi_bot_agentic.tools.json_format import JsonFormatTool
@@ -418,6 +419,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "echo": EchoTool(),
         "hmac_sign": HmacSignTool(),
         "html_links_extract": HtmlLinksExtractTool(),
+        "ini_parse": IniParseTool(),
         "json_diff_paths": JsonDiffPathsTool(),
         "json_flatten": JsonFlattenTool(),
         "jsonl_parse": JsonlParseTool(),
