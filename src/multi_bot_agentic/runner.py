@@ -376,6 +376,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.regex_replace import RegexReplaceTool
     from multi_bot_agentic.tools.semver_compare import SemverCompareTool
     from multi_bot_agentic.tools.slugify import SlugifyTool
+    from multi_bot_agentic.tools.soundex import SoundexTool
     from multi_bot_agentic.tools.spreadsheet_slice import SpreadsheetSliceTool
     from multi_bot_agentic.tools.template_render import TemplateRenderTool
     from multi_bot_agentic.tools.text_case import TextCaseTool
@@ -460,6 +461,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "uuid4": Uuid4Tool(),
         "uuid5": Uuid5Tool(),
         "slugify": SlugifyTool(),
+        "soundex": SoundexTool(),
         "datetime": DateTimeTool(),
         "duration": DurationTool(),
         "diff": DiffTool(),

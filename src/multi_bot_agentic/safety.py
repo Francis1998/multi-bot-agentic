@@ -95,6 +95,7 @@ class SafetyPolicy:
             "regex_replace",
             "semver_compare",
             "slugify",
+            "soundex",
             "spreadsheet_slice",
             "template_render",
             "text_case",

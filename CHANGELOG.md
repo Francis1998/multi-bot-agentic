@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `soundex`: American Soundex phonetic code for `text` (max 2000 chars); guide `SOUNDEX_TOOL_GUIDE.md`.
 - `ini_parse`: parse INI/CFG into pretty JSON via stdlib configparser; guide `INI_PARSE_TOOL_GUIDE.md`.
 - `url_normalize`: canonicalize URL scheme/host/ports/fragments; guide `URL_NORMALIZE_TOOL_GUIDE.md`.
 - `levenshtein`: classic edit distance between `a`/`b` (max 2000 chars); guide `LEVENSHTEIN_TOOL_GUIDE.md`.
