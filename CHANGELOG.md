@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `crc32`: unsigned CRC32 hex digest of UTF-8 text (max 100_000 chars); guide `CRC32_TOOL_GUIDE.md`.
 - `soundex`: American Soundex phonetic code for `text` (max 2000 chars); guide `SOUNDEX_TOOL_GUIDE.md`.
 - `ini_parse`: parse INI/CFG into pretty JSON via stdlib configparser; guide `INI_PARSE_TOOL_GUIDE.md`.
 - `url_normalize`: canonicalize URL scheme/host/ports/fragments; guide `URL_NORMALIZE_TOOL_GUIDE.md`.
