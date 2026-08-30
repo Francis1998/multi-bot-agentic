@@ -313,6 +313,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.calculator import CalculatorTool
     from multi_bot_agentic.tools.checklist import ChecklistTool
     from multi_bot_agentic.tools.content_type_sniff import ContentTypeSniffTool
+    from multi_bot_agentic.tools.crc32 import Crc32Tool
     from multi_bot_agentic.tools.cron_next import CronNextTool
     from multi_bot_agentic.tools.csv_diff import CsvDiffTool
     from multi_bot_agentic.tools.csv_fillna import CsvFillnaTool
@@ -415,6 +416,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "checklist": ChecklistTool(),
         "content_type_sniff": ContentTypeSniffTool(),
         "cron_next": CronNextTool(),
+        "crc32": Crc32Tool(),
         "csv_fillna": CsvFillnaTool(),
         "csv_melt": CsvMeltTool(),
         "echo": EchoTool(),

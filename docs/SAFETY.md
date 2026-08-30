@@ -27,6 +27,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `checklist`: deterministic launch checklist generator.
 - `content_type_sniff`: sniffs likely content type from a bounded text or base64 byte prefix (`json`, `xml`, `html`, `csv`, `tsv`, `markdown`, `plain`) and returns confidence; rejects empty/oversized input; never executes code or makes network requests.
 - `cron_next`: parses a 5-field cron expression and returns the next N UTC fire times as ISO-8601 lines (`count` default 5 max 20; optional `from_iso`); rejects invalid fields; stdlib only (no `croniter`); never executes code or makes network requests.
+- `crc32`: returns unsigned CRC32 hex digest of UTF-8 `text` (max 100_000 chars); never executes code or makes network requests.
 - `echo`: safe deterministic echo tool for demos.
 - `hmac_sign`: computes an HMAC digest of text with a secret key (`sha256` default, `sha1`, `sha512`; output `hex` or `base64`); max text 20_000 / key 1_024 chars; never logs the secret; never executes code or makes network requests.
 - `jsonl_parse`: parses JSON Lines into a pretty JSON array (`mode`: `objects` default or `any`; max 500 lines / 20_000 chars); rejects blank/invalid lines and non-objects in objects mode; never executes code or makes network requests.

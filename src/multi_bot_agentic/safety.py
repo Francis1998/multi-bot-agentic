@@ -33,6 +33,7 @@ class SafetyPolicy:
             "checklist",
             "content_type_sniff",
             "cron_next",
+            "crc32",
             "csv",
             "csv_diff",
             "csv_fillna",
