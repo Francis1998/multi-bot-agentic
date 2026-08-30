@@ -29,10 +29,7 @@ class SoundexTool:
     """Compute the American Soundex phonetic code for a string."""
 
     name = "soundex"
-    description = (
-        "Returns American Soundex phonetic code for text (max 2000 chars); "
-        "4-character code; no network."
-    )
+    description = "Returns American Soundex phonetic code for text (max 2000 chars); 4-character code; no network."
 
     def execute(self, invocation: ToolInvocation) -> ToolResult:
         """Return the Soundex code for ``text``.
