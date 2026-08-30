@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `JwtEncodeTool` (`jwt_encode`): HS256 JWT encode (stdlib hmac/hashlib/base64); companion to jwt_decode; no network. See `docs/guides/JWT_ENCODE_TOOL_GUIDE.md`.
 - `crc32`: unsigned CRC32 hex digest of UTF-8 text (max 100_000 chars); guide `CRC32_TOOL_GUIDE.md`.
 - `soundex`: American Soundex phonetic code for `text` (max 2000 chars); guide `SOUNDEX_TOOL_GUIDE.md`.
 - `ini_parse`: parse INI/CFG into pretty JSON via stdlib configparser; guide `INI_PARSE_TOOL_GUIDE.md`.

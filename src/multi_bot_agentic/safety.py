@@ -76,6 +76,7 @@ class SafetyPolicy:
             "json_unflatten",
             "jsonl_parse",
             "jwt_decode",
+            "jwt_encode",
             "levenshtein",
             "line_number",
             "markdown_table",
