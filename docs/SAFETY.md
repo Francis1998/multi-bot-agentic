@@ -68,6 +68,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `redact`: scrubs PII (email, phone, SSN, IPv4, IPv6) from text into typed placeholders.
 - `hash`: computes a hex digest of text (md5, sha1, sha256, sha512; default sha256).
 - `hex_encode`: encodes text to a hexadecimal string of its UTF-8 bytes (`text` plus optional `uppercase`, default false, or `<<<HEX_ENCODE>>>`); rejects empty/oversized input and invalid boolean settings; never executes code or makes network requests.
+- `base58`: encodes or decodes text via Bitcoin-alphabet Base58 (`mode`: `encode` default or `decode`; `text` or `data`; max 20_000 chars); rejects empty/oversized/invalid input; never executes code or makes network requests.
 - `base32_encode`: encodes or decodes text via stdlib `base64.b32encode`/`b32decode` (`mode`: `encode` default or `decode`; standard alphabet; max 20_000 chars); rejects empty/oversized/invalid input; never executes code or makes network requests.
 - `base64`: encodes text to Base64 or decodes Base64 to text (encode|decode; default encode).
 - `url_encode`: percent-encodes text via stdlib `urllib.parse.quote` (`text` plus optional `safe` default `/` and `plus` default false, or `<<<URL_ENCODE>>>`); rejects empty/oversized input and invalid boolean settings; never executes code or makes network requests.

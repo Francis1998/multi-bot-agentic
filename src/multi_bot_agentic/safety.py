@@ -28,6 +28,7 @@ class SafetyPolicy:
     allowed_tools: frozenset[str] = frozenset(
         {
             "base32_encode",
+            "base58",
             "base64",
             "calculator",
             "checklist",
