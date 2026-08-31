@@ -57,6 +57,7 @@ from multi_bot_agentic.tools.levenshtein import LevenshteinTool
 from multi_bot_agentic.tools.line_number import LineNumberTool
 from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
 from multi_bot_agentic.tools.markdown_toc import MarkdownTocTool
+from multi_bot_agentic.tools.metaphone import MetaphoneTool
 from multi_bot_agentic.tools.mime_attachment_cid_map import MimeAttachmentCidMapTool
 from multi_bot_agentic.tools.mime_attachment_ctypes import MimeAttachmentCtypesTool
 from multi_bot_agentic.tools.mime_attachment_disposition import MimeAttachmentDispositionTool
@@ -163,6 +164,7 @@ __all__ = [
     "LineNumberTool",
     "MarkdownTableTool",
     "MarkdownTocTool",
+    "MetaphoneTool",
     "MimeAttachmentCidMapTool",
     "MimeAttachmentCtypesTool",
     "MimeAttachmentDispositionTool",

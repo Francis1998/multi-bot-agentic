@@ -364,6 +364,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.line_number import LineNumberTool
     from multi_bot_agentic.tools.markdown_table import MarkdownTableTool
     from multi_bot_agentic.tools.markdown_toc import MarkdownTocTool
+    from multi_bot_agentic.tools.metaphone import MetaphoneTool
     from multi_bot_agentic.tools.mime_attachment_cid_map import MimeAttachmentCidMapTool
     from multi_bot_agentic.tools.mime_attachment_ctypes import MimeAttachmentCtypesTool
     from multi_bot_agentic.tools.mime_attachment_disposition import MimeAttachmentDispositionTool
@@ -467,6 +468,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "uuid4": Uuid4Tool(),
         "uuid5": Uuid5Tool(),
         "slugify": SlugifyTool(),
+        "metaphone": MetaphoneTool(),
         "soundex": SoundexTool(),
         "datetime": DateTimeTool(),
         "duration": DurationTool(),
