@@ -324,6 +324,7 @@ PLACEHOLDER
   oversized, or unsupported-algorithm requests return a structured failure. A
   model requests it with `TOOL:hash:<text>`, giving agents a deterministic
   fingerprint for deduplication, cache keys, or integrity checks between steps.
+- `base58`: encodes text to Bitcoin-alphabet Base58 or decodes Base58 back to text (`mode: encode|decode`; default `encode`; accepts `text` or `data`). Decoding requires valid Base58 that yields UTF-8; empty, oversized, unsupported-mode, or invalid payloads return a structured failure. A model requests it with `TOOL:base58:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need lookalike-safe opaque handoffs.
 - `base32_encode`: encodes text to standard Base32 or decodes Base32 back to text (`mode: encode|decode`; default `encode`) via stdlib `base64.b32encode`/`b32decode`. Decoding requires valid Base32 that yields UTF-8; empty, oversized, unsupported-mode, or invalid payloads return a structured failure. A model requests it with `TOOL:base32_encode:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic Base32 handoffs.
 - `base64`: encodes text to standard Base64 or decodes Base64 back to text
   (`operation: encode|decode`; default `encode`). Decoding validates the payload

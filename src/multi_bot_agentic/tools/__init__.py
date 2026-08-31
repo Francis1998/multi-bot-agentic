@@ -2,6 +2,7 @@
 
 from multi_bot_agentic.tools.base import ToolAdapter
 from multi_bot_agentic.tools.base32_encode import Base32EncodeTool
+from multi_bot_agentic.tools.base58 import Base58Tool
 from multi_bot_agentic.tools.base64_codec import Base64Tool
 from multi_bot_agentic.tools.calculator import CalculatorTool
 from multi_bot_agentic.tools.checklist import ChecklistTool
@@ -108,6 +109,7 @@ from multi_bot_agentic.tools.zip_list import ZipListTool
 
 __all__ = [
     "Base32EncodeTool",
+    "Base58Tool",
     "Base64Tool",
     "CalculatorTool",
     "ChecklistTool",
