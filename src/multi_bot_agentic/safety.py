@@ -99,7 +99,7 @@ class SafetyPolicy:
             "semver_compare",
             "slugify",
             "metaphone",
-        "soundex",
+            "soundex",
             "spreadsheet_slice",
             "template_render",
             "text_case",
