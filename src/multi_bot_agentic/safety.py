@@ -98,6 +98,7 @@ class SafetyPolicy:
             "regex_replace",
             "semver_compare",
             "slugify",
+            "metaphone",
             "soundex",
             "spreadsheet_slice",
             "template_render",

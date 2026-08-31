@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `metaphone`: classic Metaphone phonetic code tool (max 2000 chars); no network. See `docs/guides/METAPHONE_TOOL_GUIDE.md`.
 - `base58`: Bitcoin-alphabet Base58 encode/decode (`mode` encode|decode; `text` or `data`; max 20_000 chars); guide `BASE58_TOOL_GUIDE.md`.
 - `JwtEncodeTool` (`jwt_encode`): HS256 JWT encode (stdlib hmac/hashlib/base64); companion to jwt_decode; no network. See `docs/guides/JWT_ENCODE_TOOL_GUIDE.md`.
 - `crc32`: unsigned CRC32 hex digest of UTF-8 text (max 100_000 chars); guide `CRC32_TOOL_GUIDE.md`.
