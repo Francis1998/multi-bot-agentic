@@ -327,6 +327,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.csv_select_columns import CsvSelectColumnsTool
     from multi_bot_agentic.tools.csv_sort import CsvSortTool
     from multi_bot_agentic.tools.csv_stack import CsvStackTool
+    from multi_bot_agentic.tools.csv_to_json import CsvToJsonTool
     from multi_bot_agentic.tools.csv_transpose import CsvTransposeTool
     from multi_bot_agentic.tools.csv_tsv import CsvTsvTool
     from multi_bot_agentic.tools.csv_unique import CsvUniqueTool
@@ -420,6 +421,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "content_type_sniff": ContentTypeSniffTool(),
         "cron_next": CronNextTool(),
         "crc32": Crc32Tool(),
+        "csv_to_json": CsvToJsonTool(),
         "csv_fillna": CsvFillnaTool(),
         "csv_melt": CsvMeltTool(),
         "echo": EchoTool(),

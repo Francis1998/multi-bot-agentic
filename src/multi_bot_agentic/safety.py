@@ -35,6 +35,7 @@ class SafetyPolicy:
             "content_type_sniff",
             "cron_next",
             "crc32",
+            "csv_to_json",
             "csv",
             "csv_diff",
             "csv_fillna",

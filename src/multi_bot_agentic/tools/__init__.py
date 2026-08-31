@@ -20,6 +20,7 @@ from multi_bot_agentic.tools.csv_pivot import CsvPivotTool
 from multi_bot_agentic.tools.csv_select_columns import CsvSelectColumnsTool
 from multi_bot_agentic.tools.csv_sort import CsvSortTool
 from multi_bot_agentic.tools.csv_stack import CsvStackTool
+from multi_bot_agentic.tools.csv_to_json import CsvToJsonTool
 from multi_bot_agentic.tools.csv_transpose import CsvTransposeTool
 from multi_bot_agentic.tools.csv_tsv import CsvTsvTool
 from multi_bot_agentic.tools.csv_unique import CsvUniqueTool
@@ -128,6 +129,7 @@ __all__ = [
     "CsvSelectColumnsTool",
     "CsvSortTool",
     "CsvStackTool",
+    "CsvToJsonTool",
     "CsvTransposeTool",
     "CsvTsvTool",
     "CsvUniqueTool",
