@@ -311,6 +311,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.base32_encode import Base32EncodeTool
     from multi_bot_agentic.tools.base58 import Base58Tool
     from multi_bot_agentic.tools.base64_codec import Base64Tool
+    from multi_bot_agentic.tools.base85 import Base85Tool
     from multi_bot_agentic.tools.calculator import CalculatorTool
     from multi_bot_agentic.tools.checklist import ChecklistTool
     from multi_bot_agentic.tools.content_type_sniff import ContentTypeSniffTool
@@ -422,6 +423,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "base32_encode": Base32EncodeTool(),
         "base58": Base58Tool(),
         "base64": Base64Tool(),
+        "base85": Base85Tool(),
         "calculator": CalculatorTool(),
         "checklist": ChecklistTool(),
         "content_type_sniff": ContentTypeSniffTool(),
