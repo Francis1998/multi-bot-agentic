@@ -30,6 +30,7 @@ class SafetyPolicy:
             "base32_encode",
             "base58",
             "base64",
+            "base85",
             "calculator",
             "checklist",
             "content_type_sniff",
