@@ -93,6 +93,7 @@ class SafetyPolicy:
             "mime_multipart",
             "mime_multipart_flatten",
             "mime_part_headers",
+            "pluralize",
             "readonly_file",
             "redact",
             "regex",

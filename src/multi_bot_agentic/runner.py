@@ -376,6 +376,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
     from multi_bot_agentic.tools.mime_multipart_flatten import MimeMultipartFlattenTool
     from multi_bot_agentic.tools.mime_part_headers import MimePartHeadersTool
+    from multi_bot_agentic.tools.pluralize import PluralizeTool
     from multi_bot_agentic.tools.redaction import RedactionTool
     from multi_bot_agentic.tools.regex_extract import RegexExtractTool
     from multi_bot_agentic.tools.regex_replace import RegexReplaceTool
@@ -434,6 +435,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "levenshtein": LevenshteinTool(),
         "markdown_toc": MarkdownTocTool(),
         "mime_attachment_filenames_unique": MimeAttachmentFilenamesUniqueTool(),
+        "pluralize": PluralizeTool(),
         "readonly_file": ReadOnlyFileTool(root=root),
         "calculator": CalculatorTool(),
         "json_format": JsonFormatTool(),
