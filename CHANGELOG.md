@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `punycode`: Punycode/IDNA encode/decode (`mode` encode|decode; `text` or `domain`; max 2000 chars); guide `PUNYCODE_TOOL_GUIDE.md`.
 - `pluralize`: English pluralize/singularize (`mode` pluralize|singularize; `text` or `word`; common irregulars; max 2000 chars); guide `PLURALIZE_TOOL_GUIDE.md`.
 - `csv_to_json`: header-required CSV → JSON array-of-objects (capped); no network. See `docs/guides/CSV_TO_JSON_TOOL_GUIDE.md`.
 - `metaphone`: classic Metaphone phonetic code tool (max 2000 chars); no network. See `docs/guides/METAPHONE_TOOL_GUIDE.md`.
