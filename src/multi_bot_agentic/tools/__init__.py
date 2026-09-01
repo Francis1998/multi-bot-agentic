@@ -70,6 +70,7 @@ from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
 from multi_bot_agentic.tools.mime_multipart_flatten import MimeMultipartFlattenTool
 from multi_bot_agentic.tools.mime_part_headers import MimePartHeadersTool
 from multi_bot_agentic.tools.pluralize import PluralizeTool
+from multi_bot_agentic.tools.punycode import PunycodeTool
 from multi_bot_agentic.tools.redaction import RedactionTool
 from multi_bot_agentic.tools.regex_extract import RegexExtractTool
 from multi_bot_agentic.tools.regex_replace import RegexReplaceTool
@@ -179,6 +180,7 @@ __all__ = [
     "MimeMultipartTool",
     "MimePartHeadersTool",
     "PluralizeTool",
+    "PunycodeTool",
     "ReadOnlyFileTool",
     "RedactionTool",
     "RegexExtractTool",
