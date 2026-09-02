@@ -70,6 +70,7 @@ from multi_bot_agentic.tools.mime_attachment_sizes import MimeAttachmentSizesToo
 from multi_bot_agentic.tools.mime_multipart import MimeMultipartTool
 from multi_bot_agentic.tools.mime_multipart_flatten import MimeMultipartFlattenTool
 from multi_bot_agentic.tools.mime_part_headers import MimePartHeadersTool
+from multi_bot_agentic.tools.morse import MorseTool
 from multi_bot_agentic.tools.pluralize import PluralizeTool
 from multi_bot_agentic.tools.punycode import PunycodeTool
 from multi_bot_agentic.tools.redaction import RedactionTool
@@ -182,6 +183,7 @@ __all__ = [
     "MimeMultipartFlattenTool",
     "MimeMultipartTool",
     "MimePartHeadersTool",
+    "MorseTool",
     "PluralizeTool",
     "PunycodeTool",
     "ReadOnlyFileTool",

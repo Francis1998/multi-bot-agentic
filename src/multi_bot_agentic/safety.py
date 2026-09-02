@@ -95,6 +95,7 @@ class SafetyPolicy:
             "mime_multipart",
             "mime_multipart_flatten",
             "mime_part_headers",
+            "morse",
             "pluralize",
             "punycode",
             "readonly_file",
