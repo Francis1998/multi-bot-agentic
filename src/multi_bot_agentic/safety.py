@@ -101,6 +101,7 @@ class SafetyPolicy:
             "redact",
             "regex",
             "regex_replace",
+            "rot13",
             "semver_compare",
             "slugify",
             "soundex",
