@@ -382,6 +382,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.redaction import RedactionTool
     from multi_bot_agentic.tools.regex_extract import RegexExtractTool
     from multi_bot_agentic.tools.regex_replace import RegexReplaceTool
+    from multi_bot_agentic.tools.rot13 import Rot13Tool
     from multi_bot_agentic.tools.semver_compare import SemverCompareTool
     from multi_bot_agentic.tools.slugify import SlugifyTool
     from multi_bot_agentic.tools.soundex import SoundexTool
@@ -494,6 +495,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "redact": RedactionTool(),
         "regex": RegexExtractTool(),
         "regex_replace": RegexReplaceTool(),
+        "rot13": Rot13Tool(),
         "semver_compare": SemverCompareTool(),
         "slugify": SlugifyTool(),
         "soundex": SoundexTool(),
