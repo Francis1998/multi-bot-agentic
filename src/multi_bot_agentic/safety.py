@@ -82,6 +82,7 @@ class SafetyPolicy:
             "jwt_encode",
             "levenshtein",
             "line_number",
+            "luhn",
             "markdown_table",
             "markdown_toc",
             "metaphone",
