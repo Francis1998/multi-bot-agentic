@@ -42,6 +42,7 @@ from multi_bot_agentic.tools.html_markdown import HtmlMarkdownTool
 from multi_bot_agentic.tools.html_strip import HtmlStripTool
 from multi_bot_agentic.tools.html_table import HtmlTableTool
 from multi_bot_agentic.tools.html_table_csv import HtmlTableCsvTool
+from multi_bot_agentic.tools.iban_check import IbanCheckTool
 from multi_bot_agentic.tools.ics_parse import IcsParseTool
 from multi_bot_agentic.tools.ini_parse import IniParseTool
 from multi_bot_agentic.tools.json_diff_paths import JsonDiffPathsTool
@@ -158,6 +159,7 @@ __all__ = [
     "HtmlStripTool",
     "HtmlTableCsvTool",
     "HtmlTableTool",
+    "IbanCheckTool",
     "IcsParseTool",
     "IniParseTool",
     "JsonDiffPathsTool",

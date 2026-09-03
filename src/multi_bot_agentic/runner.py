@@ -349,6 +349,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.html_strip import HtmlStripTool
     from multi_bot_agentic.tools.html_table import HtmlTableTool
     from multi_bot_agentic.tools.html_table_csv import HtmlTableCsvTool
+    from multi_bot_agentic.tools.iban_check import IbanCheckTool
     from multi_bot_agentic.tools.ics_parse import IcsParseTool
     from multi_bot_agentic.tools.ini_parse import IniParseTool
     from multi_bot_agentic.tools.json_diff_paths import JsonDiffPathsTool
@@ -465,6 +466,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "html_strip": HtmlStripTool(),
         "html_table": HtmlTableTool(),
         "html_table_csv": HtmlTableCsvTool(),
+        "iban_check": IbanCheckTool(),
         "ics_parse": IcsParseTool(),
         "ini_parse": IniParseTool(),
         "json_diff_paths": JsonDiffPathsTool(),
