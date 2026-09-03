@@ -379,6 +379,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.mime_multipart_flatten import MimeMultipartFlattenTool
     from multi_bot_agentic.tools.mime_part_headers import MimePartHeadersTool
     from multi_bot_agentic.tools.morse import MorseTool
+    from multi_bot_agentic.tools.nato_phonetic import NatoPhoneticTool
     from multi_bot_agentic.tools.pluralize import PluralizeTool
     from multi_bot_agentic.tools.punycode import PunycodeTool
     from multi_bot_agentic.tools.redaction import RedactionTool
@@ -493,6 +494,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "mime_multipart_flatten": MimeMultipartFlattenTool(),
         "mime_part_headers": MimePartHeadersTool(),
         "morse": MorseTool(),
+        "nato_phonetic": NatoPhoneticTool(),
         "pluralize": PluralizeTool(),
         "punycode": PunycodeTool(),
         "readonly_file": ReadOnlyFileTool(root=root),

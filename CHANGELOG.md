@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `nato_phonetic`: NATO phonetic alphabet encode/decode (`mode` encode|decode; `text`; non-alpha passthrough; max 2000 chars); guide `NATO_PHONETIC_TOOL_GUIDE.md`.
 - `luhn`: Luhn validate/check-digit (`mode` validate|check_digit; `text` or `number`; max 2000 chars); guide `LUHN_TOOL_GUIDE.md`.
 - `morse`: International Morse encode/decode (`mode` encode|decode; `text` or `data`; max 20_000 chars); guide `MORSE_TOOL_GUIDE.md`.
 - `rot13`: ROT13 self-inverse transform (`text` or `data`; max 20_000 chars); guide `ROT13_TOOL_GUIDE.md`.
