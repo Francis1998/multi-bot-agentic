@@ -67,6 +67,7 @@ class SafetyPolicy:
             "html_strip",
             "html_table",
             "html_table_csv",
+            "iban_check",
             "ics_parse",
             "ini_parse",
             "json_diff_paths",
