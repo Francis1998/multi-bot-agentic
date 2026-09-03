@@ -31,6 +31,7 @@ class SafetyPolicy:
             "base58",
             "base64",
             "base85",
+            "caesar_cipher",
             "calculator",
             "checklist",
             "content_type_sniff",
