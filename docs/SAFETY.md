@@ -33,6 +33,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `hmac_sign`: computes an HMAC digest of text with a secret key (`sha256` default, `sha1`, `sha512`; output `hex` or `base64`); max text 20_000 / key 1_024 chars; never logs the secret; never executes code or makes network requests.
 - `jsonl_parse`: parses JSON Lines into a pretty JSON array (`mode`: `objects` default or `any`; max 500 lines / 20_000 chars); rejects blank/invalid lines and non-objects in objects mode; never executes code or makes network requests.
 - `readonly_file`: root-contained read-only file access.
+- `caesar_cipher`: applies a Caesar cipher shift to text (default shift 13); preserves upper/lower case; non-alpha chars pass through; max 20_000 chars; rejects empty/oversized/invalid shift; never executes code or makes network requests.
 - `calculator`: sandboxed AST arithmetic; refuses non-real and non-finite results, bounds the exponent, and rejects results whose integer magnitude exceeds a fixed bit bound (stops nested power towers).
 - `json_format`: JSON validation and canonicalization.
 - `json_merge_patch`: applies RFC 7396 JSON Merge Patch via stdlib `json`; rejects empty/oversized/malformed input and over-deep merges; never executes code or makes network requests.
