@@ -97,6 +97,7 @@ class SafetyPolicy:
             "mime_multipart_flatten",
             "mime_part_headers",
             "morse",
+            "nato_phonetic",
             "pluralize",
             "punycode",
             "readonly_file",
