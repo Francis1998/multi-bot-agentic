@@ -15,9 +15,7 @@ from multi_bot_agentic.tools.isbn13 import Isbn13Tool
 from multi_bot_agentic.models import ToolInvocation
 
 tool = Isbn13Tool()
-result = tool.execute(
-    ToolInvocation(tool_name="isbn13", arguments={"text": "978-0-306-40615-7"})
-)
+result = tool.execute(ToolInvocation(tool_name="isbn13", arguments={"text": "978-0-306-40615-7"}))
 assert result.content == "true"
 ```
 
