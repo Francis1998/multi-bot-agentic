@@ -107,6 +107,7 @@ class SafetyPolicy:
             "redact",
             "regex",
             "regex_replace",
+            "roman_numeral",
             "rot13",
             "semver_compare",
             "slugify",

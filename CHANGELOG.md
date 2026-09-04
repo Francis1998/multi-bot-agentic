@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `roman_numeral`: Roman encode/decode (`mode` encode|decode; `text`/`value`/`number`; 1..3999; max 2000 chars); guide `ROMAN_NUMERAL_TOOL_GUIDE.md`.
 - `isbn13`: ISBN-13 validate/check-digit (`mode` validate|check_digit; `text` or `isbn`; max 2000 chars); guide `ISBN13_TOOL_GUIDE.md`.
 - `iban_check`: IBAN mod-97 validation (`iban` or `text`; strips spaces/dashes; returns valid/invalid + country; max 2000 chars); guide `IBAN_CHECK_TOOL_GUIDE.md`.
 - `caesar_cipher`: Caesar cipher shift (`shift` default 13; preserves case; non-alpha passthrough; max 20_000 chars); guide `CAESAR_CIPHER_TOOL_GUIDE.md`.
