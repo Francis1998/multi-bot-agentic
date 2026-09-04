@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `isbn13`: ISBN-13 validate/check-digit (`mode` validate|check_digit; `text` or `isbn`; max 2000 chars); guide `ISBN13_TOOL_GUIDE.md`.
 - `iban_check`: IBAN mod-97 validation (`iban` or `text`; strips spaces/dashes; returns valid/invalid + country; max 2000 chars); guide `IBAN_CHECK_TOOL_GUIDE.md`.
 - `caesar_cipher`: Caesar cipher shift (`shift` default 13; preserves case; non-alpha passthrough; max 20_000 chars); guide `CAESAR_CIPHER_TOOL_GUIDE.md`.
 - `nato_phonetic`: NATO phonetic alphabet encode/decode (`mode` encode|decode; `text`; non-alpha passthrough; max 2000 chars); guide `NATO_PHONETIC_TOOL_GUIDE.md`.
