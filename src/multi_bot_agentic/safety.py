@@ -133,6 +133,7 @@ class SafetyPolicy:
             "toml_json",
             "truncate",
             "tsv_format",
+            "ulid",
             "unicode_normalize",
             "url_encode",
             "url_normalize",

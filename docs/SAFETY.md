@@ -40,6 +40,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `json_merge_patch`: applies RFC 7396 JSON Merge Patch via stdlib `json`; rejects empty/oversized/malformed input and over-deep merges; never executes code or makes network requests.
 - `text_outdent` — remove up to N leading spaces per non-empty line
 - `roman_numeral`: encode integers 1..3999 to Roman numerals or decode canonical Roman strings (`mode`: `encode` default or `decode`; `text`/`value`/`number`; max 2000 chars); rejects empty/oversized/out-of-range/non-canonical input; never executes code or makes network requests.
+- `ulid`: generate a Crockford-Base32 ULID or validate an existing one (`mode`: `generate` default or `validate`; `text`/`ulid`/`value` for validate; max 2000 chars); rejects empty/oversized/invalid mode; never executes code or makes network requests.
 - `uuid_nil`: returns the RFC 4122 nil UUID `00000000-0000-0000-0000-000000000000` (or max UUID when `mode=max`); never executes code or makes network requests.
 - `ini_parse`: parses INI/CFG text into pretty JSON sections→keys via stdlib `configparser` (max 20_000 chars); never executes code or makes network requests.
 - `url_normalize`: normalizes a URL (lowercase scheme/host, drop default ports/fragments; optional `strip_trailing_slash`); never executes code or makes network requests.

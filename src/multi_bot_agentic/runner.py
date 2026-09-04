@@ -414,6 +414,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.toml_format import TomlFormatTool
     from multi_bot_agentic.tools.toml_json import TomlJsonTool
     from multi_bot_agentic.tools.tsv_format import TsvFormatTool
+    from multi_bot_agentic.tools.ulid import UlidTool
     from multi_bot_agentic.tools.unicode_normalize import UnicodeNormalizeTool
     from multi_bot_agentic.tools.url_encode import UrlEncodeTool
     from multi_bot_agentic.tools.url_normalize import UrlNormalizeTool
@@ -534,6 +535,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "toml_json": TomlJsonTool(),
         "truncate": TextTruncateTool(),
         "tsv_format": TsvFormatTool(),
+        "ulid": UlidTool(),
         "unicode_normalize": UnicodeNormalizeTool(),
         "url_encode": UrlEncodeTool(),
         "url_normalize": UrlNormalizeTool(),
