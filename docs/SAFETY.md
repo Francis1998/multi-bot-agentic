@@ -31,6 +31,7 @@ Tools implement `ToolAdapter`. The default registry includes:
 - `csv_to_json`: returns unsigned CRC32 hex digest of UTF-8 `text` (max 100_000 chars); never executes code or makes network requests.
 - `echo`: safe deterministic echo tool for demos.
 - `hmac_sign`: computes an HMAC digest of text with a secret key (`sha256` default, `sha1`, `sha512`; output `hex` or `base64`); max text 20_000 / key 1_024 chars; never logs the secret; never executes code or makes network requests.
+- `isbn13`: validate an ISBN-13 (EAN-13) digit string or append a check digit (`mode`: `validate` default or `check_digit`; `text` or `isbn`; spaces/dashes stripped; max 2000 chars); rejects empty/non-digit/oversized/invalid mode; never executes code or makes network requests.
 - `jsonl_parse`: parses JSON Lines into a pretty JSON array (`mode`: `objects` default or `any`; max 500 lines / 20_000 chars); rejects blank/invalid lines and non-objects in objects mode; never executes code or makes network requests.
 - `readonly_file`: root-contained read-only file access.
 - `caesar_cipher`: applies a Caesar cipher shift to text (default shift 13); preserves upper/lower case; non-alpha chars pass through; max 20_000 chars; rejects empty/oversized/invalid shift; never executes code or makes network requests.
