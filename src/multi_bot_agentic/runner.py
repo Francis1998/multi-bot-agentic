@@ -339,6 +339,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
     from multi_bot_agentic.tools.duration_parse import DurationTool
     from multi_bot_agentic.tools.echo import EchoTool
     from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
+    from multi_bot_agentic.tools.geohash import GeohashTool
     from multi_bot_agentic.tools.hashing import HashTool
     from multi_bot_agentic.tools.hex_encode import HexEncodeTool
     from multi_bot_agentic.tools.hmac_sign import HmacSignTool
@@ -459,6 +460,7 @@ def build_default_tools(root: Path) -> dict[str, ToolAdapter]:
         "diff": DiffTool(),
         "duration": DurationTool(),
         "echo": EchoTool(),
+        "geohash": GeohashTool(),
         "hash": HashTool(),
         "hex_encode": HexEncodeTool(),
         "hmac_sign": HmacSignTool(),

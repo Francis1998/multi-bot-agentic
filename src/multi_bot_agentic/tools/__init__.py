@@ -32,6 +32,7 @@ from multi_bot_agentic.tools.diff_text import DiffTool
 from multi_bot_agentic.tools.duration_parse import DurationTool
 from multi_bot_agentic.tools.echo import EchoTool
 from multi_bot_agentic.tools.filesystem_readonly import ReadOnlyFileTool
+from multi_bot_agentic.tools.geohash import GeohashTool
 from multi_bot_agentic.tools.hashing import HashTool
 from multi_bot_agentic.tools.hex_encode import HexEncodeTool
 from multi_bot_agentic.tools.hmac_sign import HmacSignTool
@@ -152,6 +153,7 @@ __all__ = [
     "DiffTool",
     "DurationTool",
     "EchoTool",
+    "GeohashTool",
     "HashTool",
     "HexEncodeTool",
     "HmacSignTool",
