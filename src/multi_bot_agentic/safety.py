@@ -31,6 +31,7 @@ class SafetyPolicy:
             "base58",
             "base64",
             "base85",
+            "braille",
             "caesar_cipher",
             "calculator",
             "checklist",
