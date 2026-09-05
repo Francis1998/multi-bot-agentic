@@ -73,6 +73,7 @@ class SafetyPolicy:
             "ics_parse",
             "ini_parse",
             "isbn13",
+            "jaro_winkler",
             "json_diff_paths",
             "json_flatten",
             "json_format",
