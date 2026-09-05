@@ -71,8 +71,8 @@ class GeohashTool:
                 {"mode": "encode"},
             )
         try:
-            lat = float(raw_lat)  # type: ignore[arg-type]
-            lon = float(raw_lon)  # type: ignore[arg-type]
+            lat = float(str(raw_lat).strip())
+            lon = float(str(raw_lon).strip())
         except (TypeError, ValueError):
             return self._fail("lat and lon must be numeric", {"mode": "encode"})
         if not (-90.0 <= lat <= 90.0):
@@ -82,7 +82,7 @@ class GeohashTool:
 
         raw_precision = invocation.arguments.get("precision", _DEFAULT_PRECISION)
         try:
-            precision = int(raw_precision)  # type: ignore[arg-type]
+            precision = int(str(raw_precision).strip())
         except (TypeError, ValueError):
             return self._fail("precision must be an integer", {"mode": "encode"})
         if precision < _MIN_PRECISION or precision > _MAX_PRECISION:
