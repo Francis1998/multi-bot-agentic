@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `geohash`: encode lat/lon to geohash or decode geohash to lat/lon (`mode` encode|decode; precision 1..12); guide `GEOHASH_TOOL_GUIDE.md`.
 - `ulid`: ULID generate/validate (`mode` generate|validate; Crockford Base32 length 26; max 2000 chars); guide `ULID_TOOL_GUIDE.md`.
 - `roman_numeral`: Roman encode/decode (`mode` encode|decode; `text`/`value`/`number`; 1..3999; max 2000 chars); guide `ROMAN_NUMERAL_TOOL_GUIDE.md`.
 - `isbn13`: ISBN-13 validate/check-digit (`mode` validate|check_digit; `text` or `isbn`; max 2000 chars); guide `ISBN13_TOOL_GUIDE.md`.

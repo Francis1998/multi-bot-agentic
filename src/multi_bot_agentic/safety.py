@@ -57,6 +57,7 @@ class SafetyPolicy:
             "diff",
             "duration",
             "echo",
+            "geohash",
             "hash",
             "hex_encode",
             "hmac_sign",
