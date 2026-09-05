@@ -48,6 +48,7 @@ from multi_bot_agentic.tools.iban_check import IbanCheckTool
 from multi_bot_agentic.tools.ics_parse import IcsParseTool
 from multi_bot_agentic.tools.ini_parse import IniParseTool
 from multi_bot_agentic.tools.isbn13 import Isbn13Tool
+from multi_bot_agentic.tools.jaro_winkler import JaroWinklerTool
 from multi_bot_agentic.tools.json_diff_paths import JsonDiffPathsTool
 from multi_bot_agentic.tools.json_flatten import JsonFlattenTool
 from multi_bot_agentic.tools.json_format import JsonFormatTool
@@ -170,6 +171,7 @@ __all__ = [
     "IcsParseTool",
     "IniParseTool",
     "Isbn13Tool",
+    "JaroWinklerTool",
     "JsonDiffPathsTool",
     "JsonFlattenTool",
     "JsonFormatTool",

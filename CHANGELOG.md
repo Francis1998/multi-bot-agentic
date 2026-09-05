@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `jaro_winkler`: Jaro-Winkler similarity 0..1 between `a`/`b` (max 2000 chars each); guide `JARO_WINKLER_TOOL_GUIDE.md`.
 - `braille`: ASCII↔Unicode Braille encode/decode (`mode` encode|decode; U+2800 block; max 2000 chars); guide `BRAILLE_TOOL_GUIDE.md`.
 - `geohash`: encode lat/lon to geohash or decode geohash to lat/lon (`mode` encode|decode; precision 1..12); guide `GEOHASH_TOOL_GUIDE.md`.
 - `ulid`: ULID generate/validate (`mode` generate|validate; Crockford Base32 length 26; max 2000 chars); guide `ULID_TOOL_GUIDE.md`.
