@@ -29,6 +29,8 @@ def main() -> int:
         return report_command(args)
     if args.command == "resume":
         return resume_command(args)
+    if args.command == "eval":
+        return eval_command(args)
     parser.print_help()
     return 1
 
@@ -65,6 +67,14 @@ def build_parser() -> argparse.ArgumentParser:
     resume_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
     resume_parser.add_argument("--provider", default=None, help="fake, openai, claude_code, gemini, kimi")
     resume_parser.add_argument("--max-steps", type=int, default=None, help="maximum loop steps")
+    eval_parser = subparsers.add_parser("eval", help="run offline golden-path evaluation fixtures")
+    eval_parser.add_argument("--fixtures", type=Path, default=None, help="fixture directory")
+    eval_parser.add_argument(
+        "--event-log-dir",
+        type=Path,
+        default=Path("data/eval-logs"),
+        help="per-scenario sqlite dir",
+    )
     return parser
 
 
@@ -297,6 +307,46 @@ def build_run_report(events: list[EventRecord]) -> dict[str, Any]:
         elif event.event_type == "run_completed":
             report["answer"] = event.payload.get("answer")
     return {"runs": list(reports.values())}
+
+
+def eval_command(args: argparse.Namespace) -> int:
+    """Execute the eval subcommand.
+
+    Args:
+        args: Parsed arguments.
+
+    Returns:
+        Process exit code.
+    """
+
+    from multi_bot_agentic.eval import EvaluationHarness, default_fixture_dir, load_scenarios
+
+    fixture_dir = args.fixtures or default_fixture_dir()
+    scenarios = load_scenarios(fixture_dir)
+    report = EvaluationHarness(scenarios).run(root=Path.cwd(), event_log_dir=args.event_log_dir)
+    print(
+        json.dumps(
+            {
+                "pass_rate": report.pass_rate,
+                "mean_tool_sequence_score": report.mean_tool_sequence_score,
+                "mean_answer_score": report.mean_answer_score,
+                "scenarios": [
+                    {
+                        "scenario_id": item.scenario_id,
+                        "passed": item.passed,
+                        "tool_sequence_score": item.tool_sequence_score,
+                        "answer_score": item.answer_score,
+                        "actual_tools": list(item.actual_tools),
+                        "actual_answer": item.actual_answer,
+                        "details": item.details,
+                    }
+                    for item in report.scenarios
+                ],
+            },
+            indent=2,
+        )
+    )
+    return 0 if report.pass_rate == 1.0 else 2
 
 
 if __name__ == "__main__":

@@ -136,12 +136,11 @@ Set `MULTIBOT_CANCEL_FILE=/path/to/cancel`. If that file exists before the next 
 Credentials are read from environment variables and are never written to the event log. Event payloads store normalized provider output text and metadata, not secret values.
 
 
-## Checkpoint Resume
+## Offline Evaluation Harness
 
-Checkpoints persist observation text, step index, and lifecycle state already produced
-by an allowlisted run. Resume re-applies the same `SafetyPolicy` budgets, tool
-allowlists, and cancellation checks. Checkpoints do not expand tool access or bypass
-step limits.
+Eval fixtures run only through Fake/scripted providers and the existing tool
+allowlist. Scenarios cannot register new tools or raise step budgets above the
+configured `SafetyPolicy`.
 
 ## Known Limits
 

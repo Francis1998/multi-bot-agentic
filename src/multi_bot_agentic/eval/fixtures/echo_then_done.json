@@ -1,0 +1,11 @@
+{
+  "scenario_id": "echo_then_done",
+  "goal": "Echo a confirmation token",
+  "scripted_responses": [
+    "TOOL:echo:ready",
+    "DONE: echoed ready"
+  ],
+  "expected_tools": ["echo"],
+  "expected_answer_contains": "echoed",
+  "max_steps": 5
+}
