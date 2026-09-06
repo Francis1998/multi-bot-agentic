@@ -1,1 +1,0 @@
-{"request_id":"d22a16d0dddb4817afd2859b82a7c060","chosen_model":"gemini-3.5-flash","provider":"google","routing_strategy":"rule-based","rationale":"simple realtime prompt favors low latency","latency_ms":0.24340200002370693,"token_cost":0.000017000000000000003,"input_tokens":1,"output_tokens":16,"state":"RESPONDED"}
