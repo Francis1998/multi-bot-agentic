@@ -159,6 +159,7 @@ multi-bot-agentic report --event-log data/runs.sqlite
 - Deterministic decision engine with rationale traces.
 - State-machine lifecycle: created, observing, deciding, acting, succeeded, failed, cancelled.
 - Durable sqlite event log with replay.
+- Checkpoint resume for interrupted Observe-Decide-Act runs (event-log snapshots).
 - LLM adapters for GPT-5.5/OpenAI-compatible models, Claude Sonnet 4.6 via Claude Code CLI, Gemini 3.x, and Kimi K2/Moonshot.
 - Tool adapters with allowlisted execution, including deterministic checklist generation.
 - Safety controls for max steps, prompt bounds, cancellation, and timeouts.
@@ -532,6 +533,7 @@ docs/                    architecture, safety, config, quickstart, demo
 
 ## Documentation
 
+- [Checkpoint Resume Guide](docs/guides/CHECKPOINT_RESUME_GUIDE.md)
 - [Text Margin Lines Tool Guide](docs/guides/TEXT_MARGIN_LINES_TOOL_GUIDE.md)
 
 - [Quickstart](docs/QUICKSTART.md)

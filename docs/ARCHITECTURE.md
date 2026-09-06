@@ -69,3 +69,7 @@ Invalid transitions raise `InvalidTransitionError` and are covered by tests.
 ## Replay
 
 Replay reads sqlite events and prints them in sequence. Replay never calls providers or tools, so it is safe to run in CI and postmortems.
+
+## Checkpoint Resume
+
+After each successful Act, the runner writes a `CHECKPOINT` event capturing the goal, next step, state, and observations. `AgentRunner.resume(run_id)` reloads the latest snapshot and continues the loop without re-emitting `RUN_CREATED`. This is a thinner alternative to LangGraph checkpointers.
