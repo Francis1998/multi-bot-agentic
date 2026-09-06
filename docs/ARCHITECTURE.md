@@ -70,6 +70,10 @@ Invalid transitions raise `InvalidTransitionError` and are covered by tests.
 
 Replay reads sqlite events and prints them in sequence. Replay never calls providers or tools, so it is safe to run in CI and postmortems.
 
-## Evaluation Harness
+## Bot Handoff
 
-`multi_bot_agentic.eval` loads JSON fixtures, drives Fake/scripted LLM turns, and scores tool-sequence prefix match plus DONE answer fidelity. It is an offline CI harness, not a hosted experiment tracker.
+Optional `BotSpec` registries let the decision engine accept `HANDOFF:bot_id:summary`. The runner swaps `active_bot_id` and `SafetyPolicy.allowed_tools` without changing the ODA loop shape.
+
+## Checkpoint resume
+
+Durable checkpoint resume for ODA runs is available via `resume`.

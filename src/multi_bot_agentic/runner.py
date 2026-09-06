@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from uuid import uuid4
 
+from multi_bot_agentic.bots import BotSpec
 from multi_bot_agentic.checkpoint import load_latest_checkpoint, save_checkpoint
 from multi_bot_agentic.decision import DeterministicDecisionEngine
 from multi_bot_agentic.event_log import SQLiteEventLog
@@ -42,6 +43,8 @@ class AgentRunner:
         event_log: SQLiteEventLog,
         tools: dict[str, ToolAdapter],
         safety_policy: SafetyPolicy,
+        bots: dict[str, BotSpec] | None = None,
+        active_bot_id: str | None = None,
     ) -> None:
         """Initialize the runner.
 
@@ -50,13 +53,27 @@ class AgentRunner:
             event_log: Durable event log.
             tools: Registered tool adapters by name.
             safety_policy: Runtime safety controls.
+            bots: Optional registered bots for typed handoffs.
+            active_bot_id: Optional initially active bot id.
         """
 
         self.provider = provider
         self.event_log = event_log
         self.tools = tools
         self.safety_policy = safety_policy
-        self.decision_engine = DeterministicDecisionEngine(provider_name=provider.provider_name)
+        self.bots = dict(bots or {})
+        self.active_bot_id = active_bot_id
+        if self.active_bot_id is not None:
+            if self.active_bot_id not in self.bots:
+                raise ValueError(f"active_bot_id is not registered: {self.active_bot_id}")
+            self.safety_policy = replace(
+                self.safety_policy,
+                allowed_tools=self.bots[self.active_bot_id].allowed_tools,
+            )
+        self.decision_engine = DeterministicDecisionEngine(
+            provider_name=provider.provider_name,
+            bots=self.bots or None,
+        )
 
     def run(self, goal: str, run_id: str | None = None) -> RunResult:
         """Execute one bounded agent run.
@@ -120,6 +137,20 @@ class AgentRunner:
                         step + 1,
                         str(decision.payload.get("reason", "failed")),
                     )
+
+                if decision.action == "handoff":
+                    self._transition(selected_run_id, state_machine, RunState.ACTING)
+                    handoff_observation = self._handoff(selected_run_id, state_machine.state, decision)
+                    observations = (*observations, handoff_observation)
+                    save_checkpoint(
+                        self.event_log,
+                        run_id=selected_run_id,
+                        goal=goal,
+                        step=step + 1,
+                        state=state_machine.state,
+                        observations=observations,
+                    )
+                    continue
 
                 self._transition(selected_run_id, state_machine, RunState.ACTING)
                 new_observation = self._act(selected_run_id, state_machine.state, goal, observations, decision)
@@ -221,6 +252,48 @@ class AgentRunner:
             return self._fail(run_id, state_machine, self.safety_policy.max_steps, str(error))
 
         return self._fail(run_id, state_machine, self.safety_policy.max_steps, "step budget exhausted")
+
+    def _handoff(self, run_id: str, state: RunState, decision: Decision) -> Observation:
+        """Switch the active bot and scoped tool allowlist.
+
+        Args:
+            run_id: Run identifier.
+            state: Current state.
+            decision: Handoff decision.
+
+        Returns:
+            Observation describing the handoff.
+
+        Raises:
+            ValueError: If the target bot is missing or unregistered.
+        """
+
+        if decision.target is None:
+            raise ValueError("handoff decision requires a target bot id")
+        bot = self.bots.get(decision.target)
+        if bot is None:
+            raise ValueError(f"handoff target bot is not registered: {decision.target}")
+        previous = self.active_bot_id
+        self.active_bot_id = bot.bot_id
+        self.safety_policy = replace(self.safety_policy, allowed_tools=bot.allowed_tools)
+        summary = str(decision.payload.get("summary", ""))
+        self.event_log.append(
+            run_id,
+            state,
+            EventType.ACTION_RESULT,
+            {
+                "kind": "handoff",
+                "from_bot": previous,
+                "to_bot": bot.bot_id,
+                "summary": summary,
+                "allowed_tools": sorted(bot.allowed_tools),
+            },
+        )
+        return Observation(
+            source=f"handoff:{bot.bot_id}",
+            content=f"HANDED_OFF:{bot.bot_id}:{summary}",
+            metadata={"from_bot": previous, "to_bot": bot.bot_id, "summary": summary},
+        )
 
     def _act(
         self,

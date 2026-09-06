@@ -136,11 +136,11 @@ Set `MULTIBOT_CANCEL_FILE=/path/to/cancel`. If that file exists before the next 
 Credentials are read from environment variables and are never written to the event log. Event payloads store normalized provider output text and metadata, not secret values.
 
 
-## Offline Evaluation Harness
+## Typed Bot Handoffs
 
-Eval fixtures run only through Fake/scripted providers and the existing tool
-allowlist. Scenarios cannot register new tools or raise step budgets above the
-configured `SafetyPolicy`.
+Handoffs only succeed for bots registered in the runner registry. Destination
+bots receive a replaced tool allowlist; tools outside that frozenset remain
+blocked. Unknown bot ids fail closed.
 
 ## Known Limits
 
@@ -163,3 +163,7 @@ This repo does not expose a network service or remote terminal control. If adapt
 - `text_slug_lines`: slugifies each line independently with bounded Unicode-to-ASCII normalization (`separator` default `-`; `lowercase` and `skip_empty` default true; accepts `<<<TEXT_SLUG_LINES>>>`); preserves line endings and rejects invalid or oversized input/output; never executes code or makes network requests.
 - `text_title_lines`: title-cases each line independently (`skip_empty` default true; `lowercase_first` default false; accepts `<<<TEXT_TITLE_LINES>>>`); preserves line endings and rejects invalid or oversized input/output; never executes code or makes network requests.
 - `text_unique_lines`: deduplicates lines in first-seen order (optional `strip`, default true; accepts `<<<TEXT_UNIQUE_LINES>>>`); rejects empty/oversized/invalid input; never executes code or makes network requests.
+
+## Checkpoint resume
+
+Durable checkpoint resume for ODA runs is available via `resume`.

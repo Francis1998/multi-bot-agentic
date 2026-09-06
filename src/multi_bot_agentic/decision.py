@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from multi_bot_agentic.bots import BotSpec
 from multi_bot_agentic.models import Decision, Observation, RationaleTrace
 from multi_bot_agentic.safety import SafetyPolicy
 
@@ -13,6 +14,7 @@ class DeterministicDecisionEngine:
     """Rule-based decision engine with rationale traces."""
 
     provider_name: str
+    bots: dict[str, BotSpec] | None = None
 
     def decide(
         self,
@@ -70,6 +72,18 @@ class DeterministicDecisionEngine:
                     explanation="The latest observation is a tool result, so the provider must consume it.",
                 ),
             )
+        if latest_observation.source.startswith("handoff:"):
+            return Decision(
+                action="call_llm",
+                target=self.provider_name,
+                payload={"reason": "handoff summary needs model continuation"},
+                rationale=RationaleTrace(
+                    rule_id="handoff.needs-continuation",
+                    observations_used=(latest_observation.observation_id,),
+                    rejected_actions=("call_tool", "finish", "handoff"),
+                    explanation="A bot handoff occurred, so the provider must continue under the new bot scope.",
+                ),
+            )
 
         latest_model_output = _latest_observation_by_prefix(observations, "llm:")
         if latest_model_output is None:
@@ -124,6 +138,46 @@ class DeterministicDecisionEngine:
                     observations_used=(latest_model_output.observation_id,),
                     rejected_actions=("finish", "call_llm"),
                     explanation="The latest model output requested an allowlisted tool action.",
+                ),
+            )
+
+        if latest_model_output.content.startswith("HANDOFF:"):
+            parsed_handoff = _parse_handoff_request(latest_model_output.content)
+            if parsed_handoff is None:
+                return Decision(
+                    action="call_llm",
+                    target=self.provider_name,
+                    payload={"reason": "malformed handoff request"},
+                    rationale=RationaleTrace(
+                        rule_id="model.malformed-handoff-request",
+                        observations_used=(latest_model_output.observation_id,),
+                        rejected_actions=("finish", "call_tool", "handoff"),
+                        explanation="The provider requested a handoff without a valid bot id and summary.",
+                    ),
+                )
+            bot_id, summary = parsed_handoff
+            registered = self.bots or {}
+            if bot_id not in registered:
+                return Decision(
+                    action="fail",
+                    target=None,
+                    payload={"reason": f"unknown bot for handoff: {bot_id}"},
+                    rationale=RationaleTrace(
+                        rule_id="model.unknown-handoff-bot",
+                        observations_used=(latest_model_output.observation_id,),
+                        rejected_actions=("finish", "call_tool", "handoff", "call_llm"),
+                        explanation="The provider requested a handoff to an unregistered bot.",
+                    ),
+                )
+            return Decision(
+                action="handoff",
+                target=bot_id,
+                payload={"summary": summary},
+                rationale=RationaleTrace(
+                    rule_id="model.requested-handoff",
+                    observations_used=(latest_model_output.observation_id,),
+                    rejected_actions=("finish", "call_tool", "call_llm"),
+                    explanation="The latest model output requested a handoff to a registered bot.",
                 ),
             )
 
@@ -192,3 +246,23 @@ def _parse_tool_request(content: str) -> tuple[str, str] | None:
     if not tool_name or not text.strip():
         return None
     return tool_name, text
+
+
+def _parse_handoff_request(content: str) -> tuple[str, str] | None:
+    """Parse a `HANDOFF:bot_id:summary` model output.
+
+    Args:
+        content: Model output text.
+
+    Returns:
+        Bot id and summary text, or None when the directive is malformed.
+    """
+
+    parts = content.split(":", maxsplit=2)
+    if len(parts) != 3:
+        return None
+    _, bot_id, summary = parts
+    bot_id = bot_id.strip()
+    if not bot_id or not summary.strip():
+        return None
+    return bot_id, summary
