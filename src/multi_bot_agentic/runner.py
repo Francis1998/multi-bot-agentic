@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
+from multi_bot_agentic.checkpoint import load_latest_checkpoint, save_checkpoint
 from multi_bot_agentic.decision import DeterministicDecisionEngine
 from multi_bot_agentic.event_log import SQLiteEventLog
 from multi_bot_agentic.lifecycle import InvalidTransitionError, RunStateMachine
@@ -123,11 +124,103 @@ class AgentRunner:
                 self._transition(selected_run_id, state_machine, RunState.ACTING)
                 new_observation = self._act(selected_run_id, state_machine.state, goal, observations, decision)
                 observations = (*observations, new_observation)
+                save_checkpoint(
+                    self.event_log,
+                    run_id=selected_run_id,
+                    goal=goal,
+                    step=step + 1,
+                    state=state_machine.state,
+                    observations=observations,
+                )
 
         except (InvalidTransitionError, SafetyError, OSError, RuntimeError, ValueError) as error:
             return self._fail(selected_run_id, state_machine, self.safety_policy.max_steps, str(error))
 
         return self._fail(selected_run_id, state_machine, self.safety_policy.max_steps, "step budget exhausted")
+
+    def resume(self, run_id: str) -> RunResult:
+        """Resume a run from its latest checkpoint.
+
+        Args:
+            run_id: Existing run identifier.
+
+        Returns:
+            Final run result after continuation.
+
+        Raises:
+            ValueError: If no checkpoint exists for ``run_id``.
+        """
+
+        snapshot = load_latest_checkpoint(self.event_log, run_id)
+        if snapshot is None:
+            raise ValueError(f"no checkpoint found for run_id={run_id}")
+        if not snapshot.goal.strip():
+            raise ValueError(f"checkpoint for run_id={run_id} is missing a goal")
+        if not snapshot.observations:
+            raise ValueError(f"checkpoint for run_id={run_id} has no observations")
+
+        self.safety_policy.validate_goal(snapshot.goal)
+        state_machine = RunStateMachine()
+        observations = snapshot.observations
+        start_step = max(0, snapshot.step)
+
+        try:
+            for step in range(start_step, self.safety_policy.max_steps):
+                self.safety_policy.validate_step(step)
+                if self.safety_policy.is_cancelled():
+                    return self._cancel(run_id, state_machine, step, "cancellation requested")
+
+                self._transition(run_id, state_machine, RunState.OBSERVING)
+                for observation in observations:
+                    self.event_log.append(
+                        run_id,
+                        state_machine.state,
+                        EventType.OBSERVATION,
+                        observation.to_dict(),
+                    )
+
+                self._transition(run_id, state_machine, RunState.DECIDING)
+                decision = self.decision_engine.decide(observations, step, self.safety_policy)
+                self.event_log.append(
+                    run_id,
+                    state_machine.state,
+                    EventType.DECISION,
+                    decision.to_dict(),
+                )
+
+                if decision.action == "finish":
+                    return self._succeed(run_id, state_machine, step + 1, decision)
+                if decision.action == "cancel":
+                    return self._cancel(
+                        run_id,
+                        state_machine,
+                        step + 1,
+                        str(decision.payload.get("reason", "cancelled")),
+                    )
+                if decision.action == "fail":
+                    return self._fail(
+                        run_id,
+                        state_machine,
+                        step + 1,
+                        str(decision.payload.get("reason", "failed")),
+                    )
+
+                self._transition(run_id, state_machine, RunState.ACTING)
+                new_observation = self._act(run_id, state_machine.state, snapshot.goal, observations, decision)
+                observations = (*observations, new_observation)
+                save_checkpoint(
+                    self.event_log,
+                    run_id=run_id,
+                    goal=snapshot.goal,
+                    step=step + 1,
+                    state=state_machine.state,
+                    observations=observations,
+                )
+
+        except (InvalidTransitionError, SafetyError, OSError, RuntimeError, ValueError) as error:
+            return self._fail(run_id, state_machine, self.safety_policy.max_steps, str(error))
+
+        return self._fail(run_id, state_machine, self.safety_policy.max_steps, "step budget exhausted")
 
     def _act(
         self,

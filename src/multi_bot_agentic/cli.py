@@ -27,6 +27,8 @@ def main() -> int:
         return replay_command(args)
     if args.command == "report":
         return report_command(args)
+    if args.command == "resume":
+        return resume_command(args)
     parser.print_help()
     return 1
 
@@ -57,6 +59,12 @@ def build_parser() -> argparse.ArgumentParser:
     report_parser = subparsers.add_parser("report", help="summarize one or more event-log runs")
     report_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
     report_parser.add_argument("--run-id", default=None, help="optional run id")
+
+    resume_parser = subparsers.add_parser("resume", help="resume a run from its latest checkpoint")
+    resume_parser.add_argument("--run-id", required=True, help="run id to resume")
+    resume_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
+    resume_parser.add_argument("--provider", default=None, help="fake, openai, claude_code, gemini, kimi")
+    resume_parser.add_argument("--max-steps", type=int, default=None, help="maximum loop steps")
     return parser
 
 
@@ -138,6 +146,48 @@ def report_command(args: argparse.Namespace) -> int:
     finally:
         event_log.close()
     return 0
+
+
+def resume_command(args: argparse.Namespace) -> int:
+    """Execute the resume subcommand.
+
+    Args:
+        args: Parsed arguments.
+
+    Returns:
+        Process exit code.
+    """
+
+    config = AppConfig.from_env(
+        provider=args.provider,
+        event_log=args.event_log,
+        max_steps=args.max_steps,
+    )
+    event_log = SQLiteEventLog(config.event_log)
+    try:
+        runner = AgentRunner(
+            provider=build_llm_adapter(config.provider),
+            event_log=event_log,
+            tools=build_default_tools(root=Path.cwd()),
+            safety_policy=config.safety,
+        )
+        result = runner.resume(run_id=args.run_id)
+        print(
+            json.dumps(
+                {
+                    "run_id": result.run_id,
+                    "state": result.state.value,
+                    "answer": result.answer,
+                    "steps": result.steps,
+                    "event_log": str(config.event_log),
+                    "resumed": True,
+                },
+                indent=2,
+            )
+        )
+        return 0 if result.state.value == "succeeded" else 2
+    finally:
+        event_log.close()
 
 
 def format_event(event: EventRecord, output_format: str) -> str:

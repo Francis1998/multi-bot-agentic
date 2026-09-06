@@ -32,6 +32,7 @@ class EventType(str, Enum):
     RUN_COMPLETED = "run_completed"
     RUN_FAILED = "run_failed"
     RUN_CANCELLED = "run_cancelled"
+    CHECKPOINT = "checkpoint"
 
 
 DecisionAction = Literal["call_llm", "call_tool", "finish", "fail", "cancel"]
