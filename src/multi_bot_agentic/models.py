@@ -35,7 +35,7 @@ class EventType(str, Enum):
     CHECKPOINT = "checkpoint"
 
 
-DecisionAction = Literal["call_llm", "call_tool", "finish", "fail", "cancel"]
+DecisionAction = Literal["call_llm", "call_tool", "handoff", "finish", "fail", "cancel"]
 
 
 @dataclass(frozen=True)

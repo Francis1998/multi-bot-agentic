@@ -3,7 +3,7 @@
 ## Unreleased
 
 ### Added
-- Offline evaluation harness: fixture-driven Fake/scripted LLM scoring for tool sequences and DONE answers (`multi_bot_agentic.eval`, CLI `eval`, guide `EVAL_HARNESS_GUIDE.md`). Gap vs LangSmith/CrewAI: local-only, no hosted traces or LLM-as-judge.
+- Typed bot handoff: `BotSpec` registry, `HANDOFF:bot_id:summary` decision parsing, runner allowlist swap, unknown-bot rejection (guide `BOT_HANDOFF_GUIDE.md`). Gap vs CrewAI/AutoGen/LangGraph: thin directive handoff without a separate crew/graph runtime.
 - `jaro_winkler`: Jaro-Winkler similarity 0..1 between `a`/`b` (max 2000 chars each); guide `JARO_WINKLER_TOOL_GUIDE.md`.
 - `braille`: ASCII↔Unicode Braille encode/decode (`mode` encode|decode; U+2800 block; max 2000 chars); guide `BRAILLE_TOOL_GUIDE.md`.
 - `geohash`: encode lat/lon to geohash or decode geohash to lat/lon (`mode` encode|decode; precision 1..12); guide `GEOHASH_TOOL_GUIDE.md`.
@@ -113,3 +113,7 @@
   selected 1-based table index, into markdown or CSV with bounded chars, rows,
   columns, and structured metadata for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
   Kimi K2 agent workflows.
+
+## Checkpoint resume
+
+Durable checkpoint resume for ODA runs is available via `resume`.
