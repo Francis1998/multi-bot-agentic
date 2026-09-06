@@ -67,7 +67,6 @@ def build_parser() -> argparse.ArgumentParser:
     resume_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
     resume_parser.add_argument("--provider", default=None, help="fake, openai, claude_code, gemini, kimi")
     resume_parser.add_argument("--max-steps", type=int, default=None, help="maximum loop steps")
-
     eval_parser = subparsers.add_parser("eval", help="run offline golden-path evaluation fixtures")
     eval_parser.add_argument("--fixtures", type=Path, default=None, help="fixture directory")
     eval_parser.add_argument(
@@ -348,116 +347,6 @@ def eval_command(args: argparse.Namespace) -> int:
         )
     )
     return 0 if report.pass_rate == 1.0 else 2
-
-
-def format_event(event: EventRecord, output_format: str) -> str:
-    """Format one event for replay output.
-
-    Args:
-        event: Event to format.
-        output_format: Output format name.
-
-    Returns:
-        Formatted event string.
-    """
-
-    if output_format == "json":
-        return json.dumps(event_to_dict(event), sort_keys=True)
-    if output_format == "text":
-        return format_event_text(event)
-    raise ValueError(f"unsupported output format: {output_format}")
-
-
-def event_to_dict(event: EventRecord) -> dict[str, Any]:
-    """Convert an event record into a JSON-serializable dictionary.
-
-    Args:
-        event: Event record.
-
-    Returns:
-        Dictionary representation of the event.
-    """
-
-    return {
-        "run_id": event.run_id,
-        "seq": event.seq,
-        "timestamp": event.timestamp,
-        "event_type": event.event_type,
-        "state": event.state,
-        "payload": event.payload,
-    }
-
-
-def format_event_text(event: EventRecord) -> str:
-    """Format one event as a compact human-readable timeline row.
-
-    Args:
-        event: Event record.
-
-    Returns:
-        Human-readable event row.
-    """
-
-    detail = ""
-    if event.event_type == "decision":
-        rationale = event.payload.get("rationale", {})
-        if isinstance(rationale, dict):
-            detail = f" action={event.payload.get('action')} rule={rationale.get('rule_id')}"
-    elif event.event_type == "action_result":
-        detail = f" kind={event.payload.get('kind')}"
-        tool_name = event.payload.get("tool")
-        if tool_name is not None:
-            detail += f" target={tool_name}"
-    elif event.event_type in {"run_completed", "run_failed", "run_cancelled"}:
-        detail = f" result={event.payload}"
-    return f"{event.seq:03d} {event.state:<10} {event.event_type}{detail}"
-
-
-def build_run_report(events: list[EventRecord]) -> dict[str, Any]:
-    """Build a structured summary from durable event records.
-
-    Args:
-        events: Event records.
-
-    Returns:
-        Report dictionary grouped by run id.
-    """
-
-    reports: dict[str, dict[str, Any]] = {}
-    for event in events:
-        report = reports.setdefault(
-            event.run_id,
-            {
-                "run_id": event.run_id,
-                "final_state": event.state,
-                "event_count": 0,
-                "decisions": [],
-                "tool_calls": [],
-                "answer": None,
-            },
-        )
-        report["final_state"] = event.state
-        report["event_count"] += 1
-        if event.event_type == "decision":
-            rationale = event.payload.get("rationale", {})
-            report["decisions"].append(
-                {
-                    "action": event.payload.get("action"),
-                    "target": event.payload.get("target"),
-                    "rule_id": rationale.get("rule_id") if isinstance(rationale, dict) else None,
-                }
-            )
-        elif event.event_type == "action_result" and event.payload.get("kind") == "tool":
-            report["tool_calls"].append(
-                {
-                    "tool": event.payload.get("tool"),
-                    "ok": event.payload.get("ok"),
-                }
-            )
-        elif event.event_type == "run_completed":
-            report["answer"] = event.payload.get("answer")
-    return {"runs": list(reports.values())}
-
 
 
 if __name__ == "__main__":
