@@ -1,0 +1,11 @@
+{
+  "scenario_id": "checklist_happy_path",
+  "goal": "Create an agent launch checklist",
+  "scripted_responses": [
+    "TOOL:checklist:Create an agent launch checklist",
+    "DONE: launch checklist ready"
+  ],
+  "expected_tools": ["checklist"],
+  "expected_answer": "launch checklist ready",
+  "max_steps": 5
+}
