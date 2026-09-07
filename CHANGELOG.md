@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `SharedBlackboard`: cross-bot key/value scratchpad with revision tracking and size caps (CrewAI/AutoGen shared-memory gap). See `docs/guides/SHARED_BLACKBOARD_GUIDE.md`.
 - Parallel fan-out: `ParallelFanOut` / `FanOutTask` / `FanOutResult` with order-preserving `ThreadPoolExecutor` batches and `merge_answers` (guide `PARALLEL_FANOUT_GUIDE.md`). Gap vs CrewAI/AutoGen crews and LangGraph parallel nodes: callable workers, no graph runtime.
 - HITL approval gate: `HitlApprovalGate` / `ApprovalRequest` / `ApprovalDecision` with file-backed `request`/`resolve`/`poll` for sensitive tools (guide `HITL_APPROVAL_GATE_GUIDE.md`). Gap vs LangGraph interrupt and CrewAI/AutoGen human-input nodes: JSON files, no runner rewiring required for v1.
 - Typed bot handoff: `BotSpec` registry, `HANDOFF:bot_id:summary` decision parsing, runner allowlist swap, unknown-bot rejection (guide `BOT_HANDOFF_GUIDE.md`). Gap vs CrewAI/AutoGen/LangGraph: thin directive handoff without a separate crew/graph runtime.
