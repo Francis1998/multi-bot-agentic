@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- HITL approval gate: `HitlApprovalGate` / `ApprovalRequest` / `ApprovalDecision` with file-backed `request`/`resolve`/`poll` for sensitive tools (guide `HITL_APPROVAL_GATE_GUIDE.md`). Gap vs LangGraph interrupt and CrewAI/AutoGen human-input nodes: JSON files, no runner rewiring required for v1.
 - Typed bot handoff: `BotSpec` registry, `HANDOFF:bot_id:summary` decision parsing, runner allowlist swap, unknown-bot rejection (guide `BOT_HANDOFF_GUIDE.md`). Gap vs CrewAI/AutoGen/LangGraph: thin directive handoff without a separate crew/graph runtime.
 - `jaro_winkler`: Jaro-Winkler similarity 0..1 between `a`/`b` (max 2000 chars each); guide `JARO_WINKLER_TOOL_GUIDE.md`.
 - `braille`: ASCII↔Unicode Braille encode/decode (`mode` encode|decode; U+2800 block; max 2000 chars); guide `BRAILLE_TOOL_GUIDE.md`.
