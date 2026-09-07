@@ -85,3 +85,7 @@ Optional `BotSpec` registries let the decision engine accept `HANDOFF:bot_id:sum
 ## Checkpoint resume
 
 Durable checkpoint resume for ODA runs is available via `resume`.
+
+## SharedBlackboard
+
+In-process typed scratchpad for multi-bot coordination with revision counters and size caps. See `docs/guides/SHARED_BLACKBOARD_GUIDE.md`.
