@@ -161,6 +161,7 @@ multi-bot-agentic report --event-log data/runs.sqlite
 - Durable sqlite event log with replay.
 - Typed multi-bot handoffs with per-bot tool allowlists.
 - HITL approval gate for sensitive tools via durable JSON request files.
+- Parallel fan-out helpers for capped, order-preserving multi-bot task batches.
 - LLM adapters for GPT-5.5/OpenAI-compatible models, Claude Sonnet 4.6 via Claude Code CLI, Gemini 3.x, and Kimi K2/Moonshot.
 - Tool adapters with allowlisted execution, including deterministic checklist generation.
 - Safety controls for max steps, prompt bounds, cancellation, and timeouts.
@@ -536,6 +537,7 @@ docs/                    architecture, safety, config, quickstart, demo
 
 - [Typed Bot Handoff Guide](docs/guides/BOT_HANDOFF_GUIDE.md)
 - [HITL Approval Gate Guide](docs/guides/HITL_APPROVAL_GATE_GUIDE.md)
+- [Parallel Fan-Out Guide](docs/guides/PARALLEL_FANOUT_GUIDE.md)
 - [Text Margin Lines Tool Guide](docs/guides/TEXT_MARGIN_LINES_TOOL_GUIDE.md)
 
 - [Quickstart](docs/QUICKSTART.md)
@@ -720,6 +722,10 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 ## HITL approval gate
 
 `HitlApprovalGate` persists pending/approved/rejected tool approvals as JSON under an approval directory for operator review.
+
+## Parallel fan-out
+
+`ParallelFanOut` runs capped task batches via `ThreadPoolExecutor`, preserves input order, and merges successful answers without requiring `AgentRunner` LLM calls.
 
 ## Checkpoint resume
 

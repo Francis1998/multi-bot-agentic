@@ -78,6 +78,10 @@ Optional `BotSpec` registries let the decision engine accept `HANDOFF:bot_id:sum
 
 `HitlApprovalGate` optionally pauses sensitive tool calls behind file-backed JSON approvals (`pending`/`approved`/`rejected`). v1 is caller-driven and does not require runner rewiring.
 
+## Parallel Fan-Out
+
+`ParallelFanOut` optionally fans capped tasks across a thread pool with caller-supplied workers. Results preserve input order; worker exceptions map to `ok=False` without a graph runtime.
+
 ## Checkpoint resume
 
 Durable checkpoint resume for ODA runs is available via `resume`.
