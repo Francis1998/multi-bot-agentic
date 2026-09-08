@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ConversationSummarizer`: extractive head/tail + keyword rolling summary for long multi-bot transcripts (CrewAI/LangChain summary-memory gap). See `docs/guides/CONVERSATION_SUMMARIZER_GUIDE.md`.
 - `RateLimitedToolRunner`: per-tool sliding-window rate limit around `ToolAdapter.execute` with retry_after (CrewAI/AutoGen concurrency gap). See `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`.
 - `SharedBlackboard`: cross-bot key/value scratchpad with revision tracking and size caps (CrewAI/AutoGen shared-memory gap). See `docs/guides/SHARED_BLACKBOARD_GUIDE.md`.
 - Parallel fan-out: `ParallelFanOut` / `FanOutTask` / `FanOutResult` with order-preserving `ThreadPoolExecutor` batches and `merge_answers` (guide `PARALLEL_FANOUT_GUIDE.md`). Gap vs CrewAI/AutoGen crews and LangGraph parallel nodes: callable workers, no graph runtime.
