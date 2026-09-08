@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `RateLimitedToolRunner`: per-tool sliding-window rate limit around `ToolAdapter.execute` with retry_after (CrewAI/AutoGen concurrency gap). See `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`.
 - `SharedBlackboard`: cross-bot key/value scratchpad with revision tracking and size caps (CrewAI/AutoGen shared-memory gap). See `docs/guides/SHARED_BLACKBOARD_GUIDE.md`.
 - Parallel fan-out: `ParallelFanOut` / `FanOutTask` / `FanOutResult` with order-preserving `ThreadPoolExecutor` batches and `merge_answers` (guide `PARALLEL_FANOUT_GUIDE.md`). Gap vs CrewAI/AutoGen crews and LangGraph parallel nodes: callable workers, no graph runtime.
 - HITL approval gate: `HitlApprovalGate` / `ApprovalRequest` / `ApprovalDecision` with file-backed `request`/`resolve`/`poll` for sensitive tools (guide `HITL_APPROVAL_GATE_GUIDE.md`). Gap vs LangGraph interrupt and CrewAI/AutoGen human-input nodes: JSON files, no runner rewiring required for v1.
