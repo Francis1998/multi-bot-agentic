@@ -732,3 +732,4 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 Durable checkpoint resume for ODA runs is available via `resume`.
 
 - **SharedBlackboard**: typed cross-bot scratchpad with revision caps — see `docs/guides/SHARED_BLACKBOARD_GUIDE.md`
+- **RateLimitedToolRunner**: per-tool sliding-window call budget — see `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`
