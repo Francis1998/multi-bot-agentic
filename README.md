@@ -734,3 +734,4 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **SharedBlackboard**: typed cross-bot scratchpad with revision caps — see `docs/guides/SHARED_BLACKBOARD_GUIDE.md`
 - **RateLimitedToolRunner**: per-tool sliding-window call budget — see `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`
 - **ConversationSummarizer**: extractive rolling summary (head/tail + keywords) — see `docs/guides/CONVERSATION_SUMMARIZER_GUIDE.md`
+- **ToolResultSchemaValidator**: validate ToolResult before observe — see `docs/guides/TOOL_RESULT_SCHEMA_VALIDATOR_GUIDE.md`
