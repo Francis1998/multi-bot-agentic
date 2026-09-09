@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolCircuitBreaker`: per-tool closed/open/half-open failure isolation (LangGraph/CrewAI gap). See `docs/guides/TOOL_CIRCUIT_BREAKER_GUIDE.md`.
 - `BudgetedStepPlanner`: token/cost-aware step caps before LLM calls (LangGraph unbounded-loop gap). See `docs/guides/BUDGETED_STEP_PLANNER_GUIDE.md`.
 - `ToolResultSchemaValidator`: post-tool result schema guard (required metadata keys + type checks). See `docs/guides/TOOL_RESULT_SCHEMA_VALIDATOR_GUIDE.md`.
 - `ConversationSummarizer`: extractive head/tail + keyword rolling summary for long multi-bot transcripts (CrewAI/LangChain summary-memory gap). See `docs/guides/CONVERSATION_SUMMARIZER_GUIDE.md`.
