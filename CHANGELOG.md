@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `BudgetedStepPlanner`: token/cost-aware step caps before LLM calls (LangGraph unbounded-loop gap). See `docs/guides/BUDGETED_STEP_PLANNER_GUIDE.md`.
 - `ToolResultSchemaValidator`: post-tool result schema guard (required metadata keys + type checks). See `docs/guides/TOOL_RESULT_SCHEMA_VALIDATOR_GUIDE.md`.
 - `ConversationSummarizer`: extractive head/tail + keyword rolling summary for long multi-bot transcripts (CrewAI/LangChain summary-memory gap). See `docs/guides/CONVERSATION_SUMMARIZER_GUIDE.md`.
 - `RateLimitedToolRunner`: per-tool sliding-window rate limit around `ToolAdapter.execute` with retry_after (CrewAI/AutoGen concurrency gap). See `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`.
