@@ -20,9 +20,7 @@ Works with **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2** agent loops.
 ```python
 from multi_bot_agentic.observation_redactor import ObservationRedactor
 
-result = ObservationRedactor().redact(
-    "ping ada@example.com with Bearer abc.sk-abcdefghijklmnopqrst"
-)
+result = ObservationRedactor().redact("ping ada@example.com with Bearer abc.sk-abcdefghijklmnopqrst")
 assert "[EMAIL]" in result.redacted_text
 assert result.redaction_count >= 1
 print(result.categories)
