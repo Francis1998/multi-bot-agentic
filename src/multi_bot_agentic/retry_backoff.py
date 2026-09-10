@@ -127,7 +127,7 @@ class ToolRetryBackoffPolicy:
         for attempt in range(1, self._max_attempts + 1):
             try:
                 return fn()
-            except Exception as exc:  # noqa: BLE001 - policy must catch tool failures
+            except Exception as exc:
                 last_exc = exc
                 decision = self.next_delay(attempt)
                 if not decision.should_retry:
