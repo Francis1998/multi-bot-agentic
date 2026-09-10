@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `EventLogCompactor`: bounded head/tail compaction for long event lists/JSONL (LangSmith/Langfuse retention gap). See `docs/guides/EVENT_LOG_COMPACTOR_GUIDE.md`.
 - `ToolRetryBackoffPolicy`: jittered exponential retries for transient tool failures (distinct from circuit breaker; LangGraph/CrewAI gap). See `docs/guides/TOOL_RETRY_BACKOFF_GUIDE.md`.
 - `ObservationRedactor`: scrub emails/phones/SSN-like/API tokens from observations before event logs (AutoGen/CrewAI gap). See `docs/guides/OBSERVATION_REDACTOR_GUIDE.md`.
 - `ToolCircuitBreaker`: per-tool closed/open/half-open failure isolation (LangGraph/CrewAI gap). See `docs/guides/TOOL_CIRCUIT_BREAKER_GUIDE.md`.
