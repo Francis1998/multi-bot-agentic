@@ -740,3 +740,4 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **BudgetedStepPlanner**: token/cost-aware step caps before LLM calls — see `docs/guides/BUDGETED_STEP_PLANNER_GUIDE.md`
 - **ToolRetryBackoffPolicy**: jittered exponential tool retries — see `docs/guides/TOOL_RETRY_BACKOFF_GUIDE.md`
 - **EventLogCompactor**: bounded head/tail event-log compaction — see `docs/guides/EVENT_LOG_COMPACTOR_GUIDE.md`
+- **SpeculativeToolPrefetch**: speculative next-tool ranking (never executes) — see `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`

@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `SpeculativeToolPrefetch`: rank likely next tools without executing (LangGraph parallel-node / CrewAI async gap). See `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`.
 - `EventLogCompactor`: bounded head/tail compaction for long event lists/JSONL (LangSmith/Langfuse retention gap). See `docs/guides/EVENT_LOG_COMPACTOR_GUIDE.md`.
 - `ToolRetryBackoffPolicy`: jittered exponential retries for transient tool failures (distinct from circuit breaker; LangGraph/CrewAI gap). See `docs/guides/TOOL_RETRY_BACKOFF_GUIDE.md`.
 - `ObservationRedactor`: scrub emails/phones/SSN-like/API tokens from observations before event logs (AutoGen/CrewAI gap). See `docs/guides/OBSERVATION_REDACTOR_GUIDE.md`.
