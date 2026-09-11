@@ -54,8 +54,12 @@ def test_nested_paths() -> None:
     assert items[1]["note"] == "safe"
     assert "auth.api_key" in result.redacted_keys
     assert "items[0].password" in result.redacted_keys
-    assert original["auth"]["api_key"] == "k"
-    assert original["items"][0]["password"] == "x"
+    orig_auth = original["auth"]
+    orig_items = original["items"]
+    assert isinstance(orig_auth, dict)
+    assert isinstance(orig_items, list)
+    assert orig_auth["api_key"] == "k"
+    assert orig_items[0]["password"] == "x"
 
 
 def test_redaction_count() -> None:
