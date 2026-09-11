@@ -733,6 +733,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 
 - **SharedBlackboard**: typed cross-bot scratchpad with revision caps — see `docs/guides/SHARED_BLACKBOARD_GUIDE.md`
 - **RateLimitedToolRunner**: per-tool sliding-window call budget — see `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`
+- **AdaptiveConcurrencyLimiter**: global in-flight tool cap with adaptive shrink — see `docs/guides/ADAPTIVE_CONCURRENCY_LIMITER_GUIDE.md`
 - **ToolCircuitBreaker**: per-tool failure isolation (closed/open/half-open) — see `docs/guides/TOOL_CIRCUIT_BREAKER_GUIDE.md`
 - **ObservationRedactor**: PII/token scrub before event logs — see `docs/guides/OBSERVATION_REDACTOR_GUIDE.md`
 - **ToolArgumentSanitizer**: scrub secrets from tool args before execute — see `docs/guides/TOOL_ARGUMENT_SANITIZER_GUIDE.md`
