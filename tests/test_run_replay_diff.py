@@ -96,13 +96,12 @@ def test_rejects_non_sequence() -> None:
 
     with pytest.raises(TypeError, match="left_events"):
         RunReplayDiff().diff({"event_type": "x"}, [])  # type: ignore[arg-type]
-
     with pytest.raises(TypeError, match="right_events"):
-        RunReplayDiff().diff([], "nope")  # type: ignore[arg-type]
+        RunReplayDiff().diff([], "nope")
 
 
 def test_rejects_bad_event_item() -> None:
     """Non-mapping event items raise TypeError."""
 
     with pytest.raises(TypeError, match="left\\[0\\]"):
-        RunReplayDiff().diff([42], [])  # type: ignore[list-item]
+        RunReplayDiff().diff([42], [])

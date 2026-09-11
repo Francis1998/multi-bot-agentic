@@ -10,8 +10,9 @@ run-to-run drift diffs.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Final, Mapping, Sequence
+from typing import Any, Final
 
 _TIMESTAMP_KEYS: Final[frozenset[str]] = frozenset(
     {
@@ -181,9 +182,9 @@ def _as_mapping(event: Mapping[str, Any] | Any, *, index: int, side: str) -> Map
     # EventRecord-like: expose event_type / state / payload attributes.
     if all(hasattr(event, attr) for attr in ("event_type", "state", "payload")):
         return {
-            "event_type": getattr(event, "event_type"),
-            "state": getattr(event, "state"),
-            "payload": getattr(event, "payload"),
+            "event_type": event.event_type,
+            "state": event.state,
+            "payload": event.payload,
             "timestamp": getattr(event, "timestamp", None),
         }
     raise TypeError(f"{side}[{index}] must be a mapping or EventRecord-like object")
