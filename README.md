@@ -735,6 +735,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **RateLimitedToolRunner**: per-tool sliding-window call budget — see `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`
 - **ToolCircuitBreaker**: per-tool failure isolation (closed/open/half-open) — see `docs/guides/TOOL_CIRCUIT_BREAKER_GUIDE.md`
 - **ObservationRedactor**: PII/token scrub before event logs — see `docs/guides/OBSERVATION_REDACTOR_GUIDE.md`
+- **ToolArgumentSanitizer**: scrub secrets from tool args before execute — see `docs/guides/TOOL_ARGUMENT_SANITIZER_GUIDE.md`
 - **ConversationSummarizer**: extractive rolling summary (head/tail + keywords) — see `docs/guides/CONVERSATION_SUMMARIZER_GUIDE.md`
 - **ToolResultSchemaValidator**: validate ToolResult before observe — see `docs/guides/TOOL_RESULT_SCHEMA_VALIDATOR_GUIDE.md`
 - **BudgetedStepPlanner**: token/cost-aware step caps before LLM calls — see `docs/guides/BUDGETED_STEP_PLANNER_GUIDE.md`
