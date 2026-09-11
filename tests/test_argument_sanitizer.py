@@ -44,10 +44,14 @@ def test_nested_paths() -> None:
         "items": [{"password": "x"}, {"note": "safe"}],
     }
     result = ToolArgumentSanitizer().sanitize(original)
-    assert result.arguments["auth"]["api_key"] == "[REDACTED]"
-    assert result.arguments["auth"]["user"] == "ada"
-    assert result.arguments["items"][0]["password"] == "[REDACTED]"
-    assert result.arguments["items"][1]["note"] == "safe"
+    auth = result.arguments["auth"]
+    items = result.arguments["items"]
+    assert isinstance(auth, dict)
+    assert isinstance(items, list)
+    assert auth["api_key"] == "[REDACTED]"
+    assert auth["user"] == "ada"
+    assert items[0]["password"] == "[REDACTED]"
+    assert items[1]["note"] == "safe"
     assert "auth.api_key" in result.redacted_keys
     assert "items[0].password" in result.redacted_keys
     assert original["auth"]["api_key"] == "k"
