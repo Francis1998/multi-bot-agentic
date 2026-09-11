@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `RunReplayDiff`: compare two event-log runs for drift on event_type/state/payload while ignoring timestamps (AutoGen/CrewAI run-to-run drift gap; distinct from EventLogCompactor). See `docs/guides/RUN_REPLAY_DIFF_GUIDE.md`.
 - `ToolArgumentSanitizer`: scrub secrets from tool args dicts before execute (AutoGen/CrewAI raw-args gap; distinct from ObservationRedactor). See `docs/guides/TOOL_ARGUMENT_SANITIZER_GUIDE.md`.
 - `SpeculativeToolPrefetch`: rank likely next tools without executing (LangGraph parallel-node / CrewAI async gap). See `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`.
 - `EventLogCompactor`: bounded head/tail compaction for long event lists/JSONL (LangSmith/Langfuse retention gap). See `docs/guides/EVENT_LOG_COMPACTOR_GUIDE.md`.
