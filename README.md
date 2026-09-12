@@ -731,6 +731,7 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 Durable checkpoint resume for ODA runs is available via `resume`.
 
+- **ToolResultTruncator**: soft mid-string cap for oversized tool results before LLM context — see `docs/guides/TOOL_RESULT_TRUNCATOR_GUIDE.md`
 - **SharedBlackboard**: typed cross-bot scratchpad with revision caps — see `docs/guides/SHARED_BLACKBOARD_GUIDE.md`
 - **RateLimitedToolRunner**: per-tool sliding-window call budget — see `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`
 - **AdaptiveConcurrencyLimiter**: global in-flight tool cap with adaptive shrink — see `docs/guides/ADAPTIVE_CONCURRENCY_LIMITER_GUIDE.md`
