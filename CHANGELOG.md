@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `BotHandoffReceiptStore`: see `docs/guides/BOT_HANDOFF_RECEIPT_GUIDE.md`.
 - `DeadLetterToolQueue` (`src/multi_bot_agentic/dead_letter_tool_queue.py`): offline HITL feature. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/DEAD_LETTER_TOOL_QUEUE_GUIDE.md`.
 - `ToolResultTruncator`: soft mid-string truncation for oversized tool result strings before LLM context (AutoGen/CrewAI/LangGraph unbounded payload gap; distinct from user-facing `truncate` tool). See `docs/guides/TOOL_RESULT_TRUNCATOR_GUIDE.md`.
 - `AdaptiveConcurrencyLimiter`: global in-flight tool cap with optional adaptive shrink on errors (AutoGen unbounded fanout gap; distinct from RateLimitedToolRunner / ParallelFanOut). See `docs/guides/ADAPTIVE_CONCURRENCY_LIMITER_GUIDE.md`.
