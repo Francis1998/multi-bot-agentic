@@ -6,6 +6,8 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 
 ![multi-bot-agentic animated demo](docs/demo.gif)
 
+![DeadLetterToolQueue](assets/demo/dead-letter-tool-queue.gif)
+
 ## Why It Exists
 
 Most agent demos let the LLM decide everything. This repo takes the production-minded path:
@@ -745,3 +747,5 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **EventLogCompactor**: bounded head/tail event-log compaction — see `docs/guides/EVENT_LOG_COMPACTOR_GUIDE.md`
 - **RunReplayDiff**: run-to-run event-log drift diff (ignores timestamps) — see `docs/guides/RUN_REPLAY_DIFF_GUIDE.md`
 - **SpeculativeToolPrefetch**: speculative next-tool ranking (never executes) — see `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`
+
+| Gap vs popular stacks for `DeadLetterToolQueue` | Missing local HITL control | `DeadLetterToolQueue` adds offline HITL-safe behavior for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 |
