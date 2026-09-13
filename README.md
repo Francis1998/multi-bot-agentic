@@ -10,6 +10,8 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 
 ![BotHandoffReceiptStore](assets/demo/bot-handoff-receipt.gif)
 
+![ToolCallIdempotencyCache](assets/demo/tool-call-idempotency-cache.gif)
+
 ## Why It Exists
 
 Most agent demos let the LLM decide everything. This repo takes the production-minded path:
@@ -735,6 +737,7 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 Durable checkpoint resume for ODA runs is available via `resume`.
 
+- **ToolCallIdempotencyCache**: hash-keyed tool result replay for retries — see `docs/guides/TOOL_CALL_IDEMPOTENCY_CACHE_GUIDE.md`
 - **ToolResultTruncator**: soft mid-string cap for oversized tool results before LLM context — see `docs/guides/TOOL_RESULT_TRUNCATOR_GUIDE.md`
 - **SharedBlackboard**: typed cross-bot scratchpad with revision caps — see `docs/guides/SHARED_BLACKBOARD_GUIDE.md`
 - **RateLimitedToolRunner**: per-tool sliding-window call budget — see `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`
@@ -750,5 +753,6 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **RunReplayDiff**: run-to-run event-log drift diff (ignores timestamps) — see `docs/guides/RUN_REPLAY_DIFF_GUIDE.md`
 - **SpeculativeToolPrefetch**: speculative next-tool ranking (never executes) — see `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`
 
+| Gap filled by `ToolCallIdempotencyCache` | Missing local tool idempotency | `ToolCallIdempotencyCache` — see `docs/guides/TOOL_CALL_IDEMPOTENCY_CACHE_GUIDE.md` |
 | Gap vs popular stacks for `DeadLetterToolQueue` | Missing local HITL control | `DeadLetterToolQueue` adds offline HITL-safe behavior for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 |
 | Gap filled by `BotHandoffReceiptStore` | Missing structured bot handoff audit | `BotHandoffReceiptStore` — see `docs/guides/BOT_HANDOFF_RECEIPT_GUIDE.md` |
