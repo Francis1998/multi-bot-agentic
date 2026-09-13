@@ -10,6 +10,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 
 ![BotHandoffReceiptStore](assets/demo/bot-handoff-receipt.gif)
 
+![StickyBotAffinityStore](assets/demo/sticky-bot-affinity.gif)
 ![RunDeadlineWatchdog](assets/demo/run-deadline-watchdog.gif)
 ![ToolCallIdempotencyCache](assets/demo/tool-call-idempotency-cache.gif)
 
@@ -738,6 +739,7 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 Durable checkpoint resume for ODA runs is available via `resume`.
 
+- **StickyBotAffinityStore**: session→bot sticky affinity for multi-bot continuity — see `docs/guides/STICKY_BOT_AFFINITY_GUIDE.md`
 - **RunDeadlineWatchdog**: advisory wall-clock run deadline (remaining/expired) — see `docs/guides/RUN_DEADLINE_WATCHDOG_GUIDE.md`
 - **ToolCallIdempotencyCache**: hash-keyed tool result replay for retries — see `docs/guides/TOOL_CALL_IDEMPOTENCY_CACHE_GUIDE.md`
 - **ToolResultTruncator**: soft mid-string cap for oversized tool results before LLM context — see `docs/guides/TOOL_RESULT_TRUNCATOR_GUIDE.md`
@@ -755,6 +757,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **RunReplayDiff**: run-to-run event-log drift diff (ignores timestamps) — see `docs/guides/RUN_REPLAY_DIFF_GUIDE.md`
 - **SpeculativeToolPrefetch**: speculative next-tool ranking (never executes) — see `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`
 
+| Gap filled by `StickyBotAffinityStore` | Missing sticky session→bot pin | `StickyBotAffinityStore` — see `docs/guides/STICKY_BOT_AFFINITY_GUIDE.md` |
 | Gap filled by `RunDeadlineWatchdog` | Missing wall-clock advisory deadline | `RunDeadlineWatchdog` — see `docs/guides/RUN_DEADLINE_WATCHDOG_GUIDE.md` |
 | Gap filled by `ToolCallIdempotencyCache` | Missing local tool idempotency | `ToolCallIdempotencyCache` — see `docs/guides/TOOL_CALL_IDEMPOTENCY_CACHE_GUIDE.md` |
 | Gap vs popular stacks for `DeadLetterToolQueue` | Missing local HITL control | `DeadLetterToolQueue` adds offline HITL-safe behavior for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 |
