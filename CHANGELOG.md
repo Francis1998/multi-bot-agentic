@@ -3,11 +3,8 @@
 ## Unreleased
 
 ### Added
-<<<<<<< HEAD
-- `ConversationTurnBudgetGuard` (`src/multi_bot_agentic/turn_budget.py`): Max turns per session advisory/hard gate. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONVERSATION_TURN_BUDGET_GUIDE.md`.
-=======
 - `CriticBotVerdictGate` (`src/multi_bot_agentic/critic_verdict.py`): Critic accept/revise/reject verdict gate. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_BOT_VERDICT_GUIDE.md`.
->>>>>>> a4068df (feat: CriticBotVerdictGate accept/revise/reject critic pattern)
+- `ConversationTurnBudgetGuard` (`src/multi_bot_agentic/turn_budget.py`): Max turns per session advisory/hard gate. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONVERSATION_TURN_BUDGET_GUIDE.md`.
 - `ToolPermissionAllowlist` (`src/multi_bot_agentic/tool_permission.py`): Per-bot tool ACL allow/deny gate. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_PERMISSION_ALLOWLIST_GUIDE.md`.
 - `StickyBotAffinityStore` (`src/multi_bot_agentic/sticky_bot_affinity.py`): pin session_id→bot_id for multi-bot continuity. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/STICKY_BOT_AFFINITY_GUIDE.md`.
 - `RunDeadlineWatchdog` (`src/multi_bot_agentic/run_deadline.py`): advisory wall-clock deadline with remaining/expired status (never kills processes). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/RUN_DEADLINE_WATCHDOG_GUIDE.md`.
