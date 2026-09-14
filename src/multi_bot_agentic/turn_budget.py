@@ -97,10 +97,7 @@ class ConversationTurnBudgetGuard:
         sid = self._require_session(session_id)
         current = self._counts.get(sid, 0)
         if self._mode == "hard" and current >= self._max_turns:
-            raise RuntimeError(
-                f"turn budget exhausted for session {sid!r}: "
-                f"{current}/{self._max_turns}"
-            )
+            raise RuntimeError(f"turn budget exhausted for session {sid!r}: {current}/{self._max_turns}")
         self._counts[sid] = current + 1
         return self._status(sid)
 
