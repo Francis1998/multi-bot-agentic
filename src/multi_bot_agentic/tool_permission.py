@@ -128,11 +128,7 @@ class ToolPermissionAllowlist:
                 reason="explicit grant",
             )
         if self._default_deny or tools is not None:
-            reason = (
-                "tool not in bot allowlist"
-                if tools is not None
-                else "default deny (no grants for bot)"
-            )
+            reason = "tool not in bot allowlist" if tools is not None else "default deny (no grants for bot)"
             return ToolPermissionResult(
                 bot_id=bid,
                 tool_name=tool,
