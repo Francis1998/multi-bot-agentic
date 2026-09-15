@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolCallLatencyTracker` (`src/multi_bot_agentic/tool_latency.py`): Per-tool latency samples with advisory p50/p95 (never kills tools). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_CALL_LATENCY_TRACKER_GUIDE.md`.
 - `CriticBotVerdictGate` (`src/multi_bot_agentic/critic_verdict.py`): Critic accept/revise/reject verdict gate. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_BOT_VERDICT_GUIDE.md`.
 - `ConversationTurnBudgetGuard` (`src/multi_bot_agentic/turn_budget.py`): Max turns per session advisory/hard gate. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONVERSATION_TURN_BUDGET_GUIDE.md`.
 - `ToolPermissionAllowlist` (`src/multi_bot_agentic/tool_permission.py`): Per-bot tool ACL allow/deny gate. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_PERMISSION_ALLOWLIST_GUIDE.md`.

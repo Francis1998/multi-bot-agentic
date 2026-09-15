@@ -10,6 +10,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 
 ![BotHandoffReceiptStore](assets/demo/bot-handoff-receipt.gif)
 
+![ToolCallLatencyTracker](assets/demo/tool-call-latency-tracker.gif)
 ![CriticBotVerdictGate](assets/demo/critic-bot-verdict.gif)
 ![ConversationTurnBudgetGuard](assets/demo/conversation-turn-budget.gif)
 ![ToolPermissionAllowlist](assets/demo/tool-permission-allowlist.gif)
@@ -742,6 +743,7 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 Durable checkpoint resume for ODA runs is available via `resume`.
 
+- **ToolCallLatencyTracker**: Per-tool latency samples with advisory p50/p95 — see `docs/guides/TOOL_CALL_LATENCY_TRACKER_GUIDE.md`
 - **CriticBotVerdictGate**: Critic accept/revise/reject verdict gate — see `docs/guides/CRITIC_BOT_VERDICT_GUIDE.md`
 - **ConversationTurnBudgetGuard**: Max turns per session advisory/hard gate — see `docs/guides/CONVERSATION_TURN_BUDGET_GUIDE.md`
 - **ToolPermissionAllowlist**: Per-bot tool ACL allow/deny gate — see `docs/guides/TOOL_PERMISSION_ALLOWLIST_GUIDE.md`
@@ -763,6 +765,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **RunReplayDiff**: run-to-run event-log drift diff (ignores timestamps) — see `docs/guides/RUN_REPLAY_DIFF_GUIDE.md`
 - **SpeculativeToolPrefetch**: speculative next-tool ranking (never executes) — see `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`
 
+| Gap filled by `ToolCallLatencyTracker` | Missing local per-tool p50/p95 latency | `ToolCallLatencyTracker` — see `docs/guides/TOOL_CALL_LATENCY_TRACKER_GUIDE.md` |
 | Gap filled by `CriticBotVerdictGate` | Missing critic accept/revise/reject gate | `CriticBotVerdictGate` — see `docs/guides/CRITIC_BOT_VERDICT_GUIDE.md` |
 | Gap filled by `ConversationTurnBudgetGuard` | Missing per-session turn budget | `ConversationTurnBudgetGuard` — see `docs/guides/CONVERSATION_TURN_BUDGET_GUIDE.md` |
 | Gap filled by `ToolPermissionAllowlist` | Missing per-bot tool ACL | `ToolPermissionAllowlist` — see `docs/guides/TOOL_PERMISSION_ALLOWLIST_GUIDE.md` |
