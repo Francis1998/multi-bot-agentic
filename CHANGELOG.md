@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `SessionTtlExpirer` (`src/multi_bot_agentic/session_ttl.py`): Per-session idle TTL with advisory/hard expiry (resets on activity). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SESSION_TTL_EXPIRER_GUIDE.md`.
 - `ToolCallLatencyTracker` (`src/multi_bot_agentic/tool_latency.py`): Per-tool latency samples with advisory p50/p95 (never kills tools). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_CALL_LATENCY_TRACKER_GUIDE.md`.
 - `CriticBotVerdictGate` (`src/multi_bot_agentic/critic_verdict.py`): Critic accept/revise/reject verdict gate. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_BOT_VERDICT_GUIDE.md`.
 - `ConversationTurnBudgetGuard` (`src/multi_bot_agentic/turn_budget.py`): Max turns per session advisory/hard gate. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONVERSATION_TURN_BUDGET_GUIDE.md`.
