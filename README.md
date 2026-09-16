@@ -10,6 +10,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 
 ![BotHandoffReceiptStore](assets/demo/bot-handoff-receipt.gif)
 
+![ToolCallQuotaGuard](assets/demo/tool-call-quota-guard.gif)
 ![BotSkillTagRouter](assets/demo/bot-skill-tag-router.gif)
 ![SessionTokenBudgetLedger](assets/demo/session-token-budget-ledger.gif)
 ![BotVoteConsensusAggregator](assets/demo/bot-vote-consensus-aggregator.gif)
@@ -747,6 +748,7 @@ Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
 
 Durable checkpoint resume for ODA runs is available via `resume`.
 
+- **ToolCallQuotaGuard**: Per-tool call quota per session advisory/hard deny — see `docs/guides/TOOL_CALL_QUOTA_GUARD_GUIDE.md`
 - **BotSkillTagRouter**: Route tasks to bots by skill-tag overlap ranking — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md`
 - **SessionTokenBudgetLedger**: Soft/hard cumulative token budget per session — see `docs/guides/SESSION_TOKEN_BUDGET_LEDGER_GUIDE.md`
 - **BotVoteConsensusAggregator**: Majority/plurality vote across bot answers — see `docs/guides/BOT_VOTE_CONSENSUS_AGGREGATOR_GUIDE.md`
@@ -773,6 +775,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **RunReplayDiff**: run-to-run event-log drift diff (ignores timestamps) — see `docs/guides/RUN_REPLAY_DIFF_GUIDE.md`
 - **SpeculativeToolPrefetch**: speculative next-tool ranking (never executes) — see `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`
 
+| Gap filled by `ToolCallQuotaGuard` | Missing per-session per-tool call quota | `ToolCallQuotaGuard` — see `docs/guides/TOOL_CALL_QUOTA_GUARD_GUIDE.md` |
 | Gap filled by `BotSkillTagRouter` | Missing skill-tag overlap bot router | `BotSkillTagRouter` — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md` |
 | Gap filled by `SessionTokenBudgetLedger` | Missing per-session soft/hard cumulative token ledger | `SessionTokenBudgetLedger` — see `docs/guides/SESSION_TOKEN_BUDGET_LEDGER_GUIDE.md` |
 | Gap filled by `BotVoteConsensusAggregator` | Missing majority/plurality bot consensus | `BotVoteConsensusAggregator` — see `docs/guides/BOT_VOTE_CONSENSUS_AGGREGATOR_GUIDE.md` |
