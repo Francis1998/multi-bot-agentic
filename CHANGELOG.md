@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `BotSkillTagRouter` (`src/multi_bot_agentic/bot_skill_router.py`): Route tasks to best bot_id by skill-tag overlap (ranked matches / winner). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md`.
 - `SessionTokenBudgetLedger` (`src/multi_bot_agentic/session_token_budget.py`): Soft/hard cumulative token budget per session (ok/soft/hard status; never kills processes). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SESSION_TOKEN_BUDGET_LEDGER_GUIDE.md`.
 - `BotVoteConsensusAggregator` (`src/multi_bot_agentic/bot_vote.py`): Majority/plurality vote across bot answers for HITL consensus. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_VOTE_CONSENSUS_AGGREGATOR_GUIDE.md`.
 - `SessionTtlExpirer` (`src/multi_bot_agentic/session_ttl.py`): Per-session idle TTL with advisory/hard expiry (resets on activity). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SESSION_TTL_EXPIRER_GUIDE.md`.
