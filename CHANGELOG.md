@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `HitlEscalationCooldownGate` (`src/multi_bot_agentic/hitl_escalation_cooldown.py`): Cooldown after HITL deny/reject to block immediate re-escalation (advisory/hard; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_ESCALATION_COOLDOWN_GATE_GUIDE.md`.
 - `BotTurnFairnessScheduler` (`src/multi_bot_agentic/bot_turn_fairness.py`): Per-session least-served bot turn fairness with advisory/hard skew cap (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_TURN_FAIRNESS_SCHEDULER_GUIDE.md`.
 - `ToolCallQuotaGuard` (`src/multi_bot_agentic/tool_call_quota.py`): Per-tool call quota per session with advisory/hard deny after N calls (never network I/O). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_CALL_QUOTA_GUARD_GUIDE.md`.
 - `BotSkillTagRouter` (`src/multi_bot_agentic/bot_skill_router.py`): Route tasks to best bot_id by skill-tag overlap (ranked matches / winner). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md`.
