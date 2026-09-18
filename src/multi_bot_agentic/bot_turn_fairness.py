@@ -146,11 +146,11 @@ class BotTurnFairnessScheduler:
         return self._counts.pop(sid, None) is not None
 
     def _would_allow(self, session_id: str, bot_id: str, eligible: list[str]) -> bool:
+        """Allow bots whose current count is within max_skew of the minimum."""
+
         counts = {bot: self._counts.get(session_id, {}).get(bot, 0) for bot in eligible}
-        projected = dict(counts)
-        projected[bot_id] = projected.get(bot_id, 0) + 1
-        values = list(projected.values())
-        return (max(values) - min(values)) <= self._max_skew
+        minimum = min(counts.values()) if counts else 0
+        return counts.get(bot_id, 0) <= minimum + self._max_skew
 
     def _snapshot(self, session_id: str, eligible: list[str]) -> FairnessSnapshot:
         counts = {bot: self._counts.get(session_id, {}).get(bot, 0) for bot in eligible}
