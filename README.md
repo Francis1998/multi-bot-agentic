@@ -13,6 +13,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![ToolCallQuotaGuard](assets/demo/tool-call-quota-guard.gif)
 ![BotTurnFairnessScheduler](assets/demo/bot-turn-fairness-scheduler.gif)
 ![HitlEscalationCooldownGate](assets/demo/hitl-escalation-cooldown-gate.gif)
+![ToolResultFingerprintDeduper](assets/demo/tool-result-fingerprint-deduper.gif)
 ![BotSkillTagRouter](assets/demo/bot-skill-tag-router.gif)
 ![SessionTokenBudgetLedger](assets/demo/session-token-budget-ledger.gif)
 ![BotVoteConsensusAggregator](assets/demo/bot-vote-consensus-aggregator.gif)
@@ -752,6 +753,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 
 - **ToolCallQuotaGuard**: Per-tool call quota per session advisory/hard deny — see `docs/guides/TOOL_CALL_QUOTA_GUARD_GUIDE.md`
 - **HitlEscalationCooldownGate**: Cooldown after HITL deny/reject to block immediate re-escalation (advisory/hard; never network I/O) — see `docs/guides/HITL_ESCALATION_COOLDOWN_GATE_GUIDE.md`
+- **ToolResultFingerprintDeduper**: Fingerprint-hash tool-result dedupe per session to avoid re-injecting identical observations (never network I/O) — see `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md`
 - **BotSkillTagRouter**: Route tasks to bots by skill-tag overlap ranking — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md`
 - **SessionTokenBudgetLedger**: Soft/hard cumulative token budget per session — see `docs/guides/SESSION_TOKEN_BUDGET_LEDGER_GUIDE.md`
 - **BotVoteConsensusAggregator**: Majority/plurality vote across bot answers — see `docs/guides/BOT_VOTE_CONSENSUS_AGGREGATOR_GUIDE.md`
@@ -780,6 +782,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 
 | Gap filled by `ToolCallQuotaGuard` | Missing per-session per-tool call quota | `ToolCallQuotaGuard` — see `docs/guides/TOOL_CALL_QUOTA_GUARD_GUIDE.md` |
 | Gap filled by `BotTurnFairnessScheduler` | Missing turn fairness across bots | `BotTurnFairnessScheduler` — see `docs/guides/BOT_TURN_FAIRNESS_SCHEDULER_GUIDE.md` |
+| Gap filled by `ToolResultFingerprintDeduper` | Missing tool-result fingerprint dedupe | `ToolResultFingerprintDeduper` — see `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md` |
 | Gap filled by `HitlEscalationCooldownGate` | Missing HitlEscalationCooldownGate capability | `HitlEscalationCooldownGate` — see `docs/guides/HITL_ESCALATION_COOLDOWN_GATE_GUIDE.md` |
 | Gap filled by `BotSkillTagRouter` | Missing skill-tag overlap bot router | `BotSkillTagRouter` — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md` |
 | Gap filled by `SessionTokenBudgetLedger` | Missing per-session soft/hard cumulative token ledger | `SessionTokenBudgetLedger` — see `docs/guides/SESSION_TOKEN_BUDGET_LEDGER_GUIDE.md` |

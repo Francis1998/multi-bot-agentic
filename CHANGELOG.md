@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolResultFingerprintDeduper` (`src/multi_bot_agentic/tool_result_deduper.py`): Fingerprint-hash tool-result dedupe per session to avoid re-injecting identical observations (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md`.
 - `HitlEscalationCooldownGate` (`src/multi_bot_agentic/hitl_escalation_cooldown.py`): Cooldown after HITL deny/reject to block immediate re-escalation (advisory/hard; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_ESCALATION_COOLDOWN_GATE_GUIDE.md`.
 - `BotTurnFairnessScheduler` (`src/multi_bot_agentic/bot_turn_fairness.py`): Per-session least-served bot turn fairness with advisory/hard skew cap (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_TURN_FAIRNESS_SCHEDULER_GUIDE.md`.
 - `ToolCallQuotaGuard` (`src/multi_bot_agentic/tool_call_quota.py`): Per-tool call quota per session with advisory/hard deny after N calls (never network I/O). Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_CALL_QUOTA_GUARD_GUIDE.md`.
