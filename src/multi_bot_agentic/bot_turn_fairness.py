@@ -123,7 +123,6 @@ class BotTurnFairnessScheduler:
             raise ValueError("eligible_bot_ids must be non-empty")
         if bot not in bots:
             raise ValueError("bot_id must be in eligible_bot_ids")
-        snap = self._snapshot(sid, bots)
         if self._mode == "hard" and not self._would_allow(sid, bot, bots):
             raise RuntimeError(
                 f"turn fairness skew exceeded for session {sid!r} bot {bot!r}: max_skew={self._max_skew}"
