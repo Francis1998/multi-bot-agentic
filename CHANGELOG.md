@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `BlackboardEntryTtlEvictor` (`src/multi_bot_agentic/blackboard_ttl.py`): Per-key TTL tracking/eviction for shared blackboard entries (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_ENTRY_TTL_EVICTOR_GUIDE.md`.
 - `PlanStepDependencyResolver` (`src/multi_bot_agentic/plan_step_dependency.py`): Topological plan-step ordering with cycle/missing-dep detection (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLAN_STEP_DEPENDENCY_RESOLVER_GUIDE.md`.
 - `BotRoleConflictDetector` (`src/multi_bot_agentic/bot_role_conflict.py`): Exclusive role-tag collision detector per session (advisory/hard; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_ROLE_CONFLICT_DETECTOR_GUIDE.md`.
 - `ToolResultFingerprintDeduper` (`src/multi_bot_agentic/tool_result_deduper.py`): Fingerprint-hash tool-result dedupe per session to avoid re-injecting identical observations (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md`.
