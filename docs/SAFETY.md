@@ -10,6 +10,7 @@
 - **Cancellation**: a cancellation file can stop a run before the next action.
 - **Tool allowlist**: tools must be registered and allowed by policy.
 - **Rationale traces**: every decision records matched rule IDs, inputs used, and rejected actions.
+- **PlanStepDependencyResolver**: plan ordering is advisory structure only; never executes steps or contacts providers.
 - **BotRoleConflictDetector**: exclusive role claims are advisory/hard gates only; never executes tools or contacts providers.
 
 ## What The LLM Can And Cannot Do
