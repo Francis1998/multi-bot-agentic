@@ -16,6 +16,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![BotRoleConflictDetector](assets/demo/bot-role-conflict-detector.gif)
 ![PlanStepDependencyResolver](assets/demo/plan-step-dependency-resolver.gif)
 ![BlackboardEntryTtlEvictor](assets/demo/blackboard-entry-ttl-evictor.gif)
+![BotHeartbeatLivenessWatchdog](assets/demo/bot-heartbeat-liveness-watchdog.gif)
 ![ToolResultFingerprintDeduper](assets/demo/tool-result-fingerprint-deduper.gif)
 ![BotSkillTagRouter](assets/demo/bot-skill-tag-router.gif)
 ![SessionTokenBudgetLedger](assets/demo/session-token-budget-ledger.gif)
@@ -759,6 +760,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **BotRoleConflictDetector**: Exclusive role-tag collision detector (advisory/hard; never network I/O) — see `docs/guides/BOT_ROLE_CONFLICT_DETECTOR_GUIDE.md`
 - **PlanStepDependencyResolver**: Topological plan-step ordering with cycle detection — see `docs/guides/PLAN_STEP_DEPENDENCY_RESOLVER_GUIDE.md`
 - **BlackboardEntryTtlEvictor**: Per-key TTL eviction for shared blackboard entries — see `docs/guides/BLACKBOARD_ENTRY_TTL_EVICTOR_GUIDE.md`
+- **BotHeartbeatLivenessWatchdog**: Per-bot heartbeat liveness (alive/stale/unknown) — see `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md`
 - **ToolResultFingerprintDeduper**: Fingerprint-hash tool-result dedupe per session to avoid re-injecting identical observations (never network I/O) — see `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md`
 - **BotSkillTagRouter**: Route tasks to bots by skill-tag overlap ranking — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md`
 - **SessionTokenBudgetLedger**: Soft/hard cumulative token budget per session — see `docs/guides/SESSION_TOKEN_BUDGET_LEDGER_GUIDE.md`
@@ -791,6 +793,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 | Gap filled by `BotRoleConflictDetector` | Missing exclusive role-collision detection | `BotRoleConflictDetector` — see `docs/guides/BOT_ROLE_CONFLICT_DETECTOR_GUIDE.md` |
 | Gap filled by `PlanStepDependencyResolver` | Missing explicit plan-step dependency resolver | `PlanStepDependencyResolver` — see `docs/guides/PLAN_STEP_DEPENDENCY_RESOLVER_GUIDE.md` |
 | Gap filled by `BlackboardEntryTtlEvictor` | Missing per-entry blackboard TTL eviction | `BlackboardEntryTtlEvictor` — see `docs/guides/BLACKBOARD_ENTRY_TTL_EVICTOR_GUIDE.md` |
+| Gap filled by `BotHeartbeatLivenessWatchdog` | Missing per-bot heartbeat liveness | `BotHeartbeatLivenessWatchdog` — see `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md` |
 | Gap filled by `ToolResultFingerprintDeduper` | Missing tool-result fingerprint dedupe | `ToolResultFingerprintDeduper` — see `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md` |
 | Gap filled by `HitlEscalationCooldownGate` | Missing HitlEscalationCooldownGate capability | `HitlEscalationCooldownGate` — see `docs/guides/HITL_ESCALATION_COOLDOWN_GATE_GUIDE.md` |
 | Gap filled by `BotSkillTagRouter` | Missing skill-tag overlap bot router | `BotSkillTagRouter` — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md` |
