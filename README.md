@@ -18,6 +18,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![BlackboardEntryTtlEvictor](assets/demo/blackboard-entry-ttl-evictor.gif)
 ![BotHeartbeatLivenessWatchdog](assets/demo/bot-heartbeat-liveness-watchdog.gif)
 ![SharedBlackboardWriteLease](assets/demo/shared-blackboard-write-lease.gif)
+![FanInBarrierGate](assets/demo/fan-in-barrier-gate.gif)
 ![ToolResultFingerprintDeduper](assets/demo/tool-result-fingerprint-deduper.gif)
 ![BotSkillTagRouter](assets/demo/bot-skill-tag-router.gif)
 ![SessionTokenBudgetLedger](assets/demo/session-token-budget-ledger.gif)
@@ -763,6 +764,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **BlackboardEntryTtlEvictor**: Per-key TTL eviction for shared blackboard entries — see `docs/guides/BLACKBOARD_ENTRY_TTL_EVICTOR_GUIDE.md`
 - **BotHeartbeatLivenessWatchdog**: Per-bot heartbeat liveness (alive/stale/unknown) — see `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md`
 - **SharedBlackboardWriteLease**: Exclusive time-bounded blackboard write leases — see `docs/guides/SHARED_BLACKBOARD_WRITE_LEASE_GUIDE.md`
+- **FanInBarrierGate**: Fan-in barrier releasing after N distinct bot arrivals — see `docs/guides/FAN_IN_BARRIER_GATE_GUIDE.md`
 - **ToolResultFingerprintDeduper**: Fingerprint-hash tool-result dedupe per session to avoid re-injecting identical observations (never network I/O) — see `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md`
 - **BotSkillTagRouter**: Route tasks to bots by skill-tag overlap ranking — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md`
 - **SessionTokenBudgetLedger**: Soft/hard cumulative token budget per session — see `docs/guides/SESSION_TOKEN_BUDGET_LEDGER_GUIDE.md`
@@ -797,6 +799,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 | Gap filled by `BlackboardEntryTtlEvictor` | Missing per-entry blackboard TTL eviction | `BlackboardEntryTtlEvictor` — see `docs/guides/BLACKBOARD_ENTRY_TTL_EVICTOR_GUIDE.md` |
 | Gap filled by `BotHeartbeatLivenessWatchdog` | Missing per-bot heartbeat liveness | `BotHeartbeatLivenessWatchdog` — see `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md` |
 | Gap filled by `SharedBlackboardWriteLease` | Missing exclusive blackboard write leases | `SharedBlackboardWriteLease` — see `docs/guides/SHARED_BLACKBOARD_WRITE_LEASE_GUIDE.md` |
+| Gap filled by `FanInBarrierGate` | Missing explicit fan-in barrier gate | `FanInBarrierGate` — see `docs/guides/FAN_IN_BARRIER_GATE_GUIDE.md` |
 | Gap filled by `ToolResultFingerprintDeduper` | Missing tool-result fingerprint dedupe | `ToolResultFingerprintDeduper` — see `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md` |
 | Gap filled by `HitlEscalationCooldownGate` | Missing HitlEscalationCooldownGate capability | `HitlEscalationCooldownGate` — see `docs/guides/HITL_ESCALATION_COOLDOWN_GATE_GUIDE.md` |
 | Gap filled by `BotSkillTagRouter` | Missing skill-tag overlap bot router | `BotSkillTagRouter` — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md` |
