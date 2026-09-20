@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from datetime import datetime, timedelta, timezone
 import pytest
 
 from multi_bot_agentic.blackboard_write_lease import SharedBlackboardWriteLease
@@ -71,4 +71,3 @@ def test_module_has_no_httpx_import() -> None:
 
     src = Path(feature_mod.__file__).read_text(encoding="utf-8")
     assert "httpx" not in src
-
