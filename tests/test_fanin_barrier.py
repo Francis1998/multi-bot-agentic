@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from pathlib import Path
 
 import pytest
 
@@ -57,9 +57,11 @@ def test_invalid_required_raises() -> None:
         FanInBarrierGate(required=0)
 
 
-def test_no_network_calls() -> None:
-    """Gate never performs HTTP calls."""
+def test_module_has_no_httpx_import() -> None:
+    """Feature module must not import httpx (offline-only)."""
 
-    with patch("httpx.Client", MagicMock()) as client_cls:
-        FanInBarrierGate().arrive("b", "a")
-        client_cls.assert_not_called()
+    import multi_bot_agentic.fanin_barrier as feature_mod
+
+    src = Path(feature_mod.__file__).read_text(encoding="utf-8")
+    assert "httpx" not in src
+
