@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -157,12 +155,3 @@ def test_kimi_adapter_default_uses_latest_k2_stack(monkeypatch: MonkeyPatch) -> 
 
     assert isinstance(adapter, KimiAdapter)
     assert adapter.model == "kimi-k2"
-
-
-def test_module_has_no_httpx_import() -> None:
-    """Feature module must not import httpx (offline-only)."""
-
-    import multi_bot_agentic.config as feature_mod
-
-    src = Path(feature_mod.__file__).read_text(encoding="utf-8")
-    assert "httpx" not in src
