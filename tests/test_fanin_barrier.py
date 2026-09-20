@@ -64,4 +64,3 @@ def test_module_has_no_httpx_import() -> None:
 
     src = Path(feature_mod.__file__).read_text(encoding="utf-8")
     assert "httpx" not in src
-
