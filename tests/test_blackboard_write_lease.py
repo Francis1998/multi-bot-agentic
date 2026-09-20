@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from pathlib import Path
 
+from datetime import datetime, timedelta, timezone
 import pytest
 
 from multi_bot_agentic.blackboard_write_lease import SharedBlackboardWriteLease
@@ -64,9 +64,11 @@ def test_invalid_mode_raises() -> None:
         SharedBlackboardWriteLease(mode="soft")
 
 
-def test_no_network_calls() -> None:
-    """Lease manager never performs HTTP calls."""
+def test_module_has_no_httpx_import() -> None:
+    """Feature module must not import httpx (offline-only)."""
 
-    with patch("httpx.Client", MagicMock()) as client_cls:
-        SharedBlackboardWriteLease().acquire("k", "b")
-        client_cls.assert_not_called()
+    import multi_bot_agentic.blackboard_write_lease as feature_mod
+
+    src = Path(feature_mod.__file__).read_text(encoding="utf-8")
+    assert "httpx" not in src
+
