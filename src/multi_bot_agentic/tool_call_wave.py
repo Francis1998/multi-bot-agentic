@@ -10,6 +10,7 @@ network I/O.
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 
@@ -50,7 +51,7 @@ class ToolCallWaveScheduler:
 
     def plan(
         self,
-        tools: dict[str, list[str]] | dict[str, tuple[str, ...]],
+        tools: Mapping[str, Sequence[str]],
     ) -> ToolCallWavePlan:
         """Plan waves from ``tool_id -> dependency tool ids``.
 
