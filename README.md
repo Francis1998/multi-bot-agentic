@@ -20,6 +20,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![SharedBlackboardWriteLease](assets/demo/shared-blackboard-write-lease.gif)
 ![FanInBarrierGate](assets/demo/fan-in-barrier-gate.gif)
 ![ToolCallWaveScheduler](assets/demo/tool-call-wave-scheduler.gif)
+![DeterministicRunSeedGuard](assets/demo/deterministic-run-seed-guard.gif)
 ![ToolResultFingerprintDeduper](assets/demo/tool-result-fingerprint-deduper.gif)
 ![BotSkillTagRouter](assets/demo/bot-skill-tag-router.gif)
 ![SessionTokenBudgetLedger](assets/demo/session-token-budget-ledger.gif)
@@ -765,6 +766,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **BlackboardEntryTtlEvictor**: Per-key TTL eviction for shared blackboard entries — see `docs/guides/BLACKBOARD_ENTRY_TTL_EVICTOR_GUIDE.md`
 - **BotHeartbeatLivenessWatchdog**: Per-bot heartbeat liveness (alive/stale/unknown) — see `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md`
 - **SharedBlackboardWriteLease**: Exclusive time-bounded blackboard write leases — see `docs/guides/SHARED_BLACKBOARD_WRITE_LEASE_GUIDE.md`
+- **DeterministicRunSeedGuard**: Pin/validate deterministic run seeds for reproducible multi-bot runs — see `docs/guides/DETERMINISTIC_RUN_SEED_GUARD_GUIDE.md`
 - **ToolCallWaveScheduler**: Dependency-depth parallel tool-call waves — see `docs/guides/TOOL_CALL_WAVE_SCHEDULER_GUIDE.md`
 - **FanInBarrierGate**: Fan-in barrier releasing after N distinct bot arrivals — see `docs/guides/FAN_IN_BARRIER_GATE_GUIDE.md`
 - **ToolResultFingerprintDeduper**: Fingerprint-hash tool-result dedupe per session to avoid re-injecting identical observations (never network I/O) — see `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md`
@@ -794,6 +796,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **RunReplayDiff**: run-to-run event-log drift diff (ignores timestamps) — see `docs/guides/RUN_REPLAY_DIFF_GUIDE.md`
 - **SpeculativeToolPrefetch**: speculative next-tool ranking (never executes) — see `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`
 
+| Gap filled by `DeterministicRunSeedGuard` | Missing explicit run-seed reproducibility guard | `DeterministicRunSeedGuard` — see `docs/guides/DETERMINISTIC_RUN_SEED_GUARD_GUIDE.md` |
 | Gap filled by `ToolCallQuotaGuard` | Missing per-session per-tool call quota | `ToolCallQuotaGuard` — see `docs/guides/TOOL_CALL_QUOTA_GUARD_GUIDE.md` |
 | Gap filled by `BotTurnFairnessScheduler` | Missing turn fairness across bots | `BotTurnFairnessScheduler` — see `docs/guides/BOT_TURN_FAIRNESS_SCHEDULER_GUIDE.md` |
 | Gap filled by `BotRoleConflictDetector` | Missing exclusive role-collision detection | `BotRoleConflictDetector` — see `docs/guides/BOT_ROLE_CONFLICT_DETECTOR_GUIDE.md` |
