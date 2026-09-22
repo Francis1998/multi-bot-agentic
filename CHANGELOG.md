@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolCallWaveScheduler` (`src/multi_bot_agentic/tool_call_wave.py`): Dependency-depth parallel tool-call waves (advisory/hard; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_CALL_WAVE_SCHEDULER_GUIDE.md`.
 - `BotHeartbeatLivenessWatchdog` (`src/multi_bot_agentic/bot_heartbeat.py`): Per-bot heartbeat liveness (alive/stale/unknown; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md`.
 - `SharedBlackboardWriteLease` (`src/multi_bot_agentic/blackboard_write_lease.py`): Exclusive time-bounded blackboard write leases (advisory/hard; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_BLACKBOARD_WRITE_LEASE_GUIDE.md`.
 - `FanInBarrierGate` (`src/multi_bot_agentic/fanin_barrier.py`): Fan-in barrier releasing after N distinct bot arrivals (advisory/hard; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/FAN_IN_BARRIER_GATE_GUIDE.md`.
