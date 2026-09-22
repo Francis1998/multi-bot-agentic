@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ConsensusConfidenceBandAdvisor` (`src/multi_bot_agentic/consensus_confidence_band.py`): Map winning vote share into HITL confidence bands (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_CONFIDENCE_BAND_ADVISOR_GUIDE.md`.
 - `DeterministicRunSeedGuard` (`src/multi_bot_agentic/deterministic_run_seed.py`): Pin/validate deterministic run seeds for reproducible multi-bot runs (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/DETERMINISTIC_RUN_SEED_GUARD_GUIDE.md`.
 - `ToolCallWaveScheduler` (`src/multi_bot_agentic/tool_call_wave.py`): Dependency-depth parallel tool-call waves (advisory/hard; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_CALL_WAVE_SCHEDULER_GUIDE.md`.
 - `BotHeartbeatLivenessWatchdog` (`src/multi_bot_agentic/bot_heartbeat.py`): Per-bot heartbeat liveness (alive/stale/unknown; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md`.
