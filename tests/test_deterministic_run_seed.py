@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -49,8 +50,9 @@ def test_unpinned_raises() -> None:
 def test_invalid_seed_type_raises() -> None:
     """Non-int seed raises ValueError."""
 
+    bad_seed: Any = True
     with pytest.raises(ValueError, match="seed"):
-        DeterministicRunSeedGuard().pin("run-1", True)  # type: ignore[arg-type]
+        DeterministicRunSeedGuard().pin("run-1", bad_seed)
 
 
 def test_module_has_no_httpx_import() -> None:
