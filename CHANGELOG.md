@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `DebateRoundLimiter` (`src/multi_bot_agentic/debate_round_limiter.py`): Cap multi-bot debate rounds with HITL exhaust bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded debate loops. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/DEBATE_ROUND_LIMITER_GUIDE.md`.
 - `ConsensusConfidenceBandAdvisor` (`src/multi_bot_agentic/consensus_confidence_band.py`): Map winning vote share into HITL confidence bands (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_CONFIDENCE_BAND_ADVISOR_GUIDE.md`.
 - `DeterministicRunSeedGuard` (`src/multi_bot_agentic/deterministic_run_seed.py`): Pin/validate deterministic run seeds for reproducible multi-bot runs (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/DETERMINISTIC_RUN_SEED_GUARD_GUIDE.md`.
 - `ToolCallWaveScheduler` (`src/multi_bot_agentic/tool_call_wave.py`): Dependency-depth parallel tool-call waves (advisory/hard; never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_CALL_WAVE_SCHEDULER_GUIDE.md`.
