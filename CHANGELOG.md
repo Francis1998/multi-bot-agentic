@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolOutputSchemaGate` (`src/multi_bot_agentic/tool_output_schema_gate.py`): Gate tool outputs against required keys with HITL pass/fail (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool-result schema checks. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_OUTPUT_SCHEMA_GATE_GUIDE.md`.
 - `BotIdleTimeoutEvictor` (`src/multi_bot_agentic/bot_idle_timeout.py`): Evict idle bots with HITL timeout bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph idle worker cleanup. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_IDLE_TIMEOUT_EVICTOR_GUIDE.md`.
 - `DebateRoundLimiter` (`src/multi_bot_agentic/debate_round_limiter.py`): Cap multi-bot debate rounds with HITL exhaust bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded debate loops. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/DEBATE_ROUND_LIMITER_GUIDE.md`.
 - `ConsensusConfidenceBandAdvisor` (`src/multi_bot_agentic/consensus_confidence_band.py`): Map winning vote share into HITL confidence bands (never network I/O) Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_CONFIDENCE_BAND_ADVISOR_GUIDE.md`.
