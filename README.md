@@ -21,6 +21,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![FanInBarrierGate](assets/demo/fan-in-barrier-gate.gif)
 ![ToolCallWaveScheduler](assets/demo/tool-call-wave-scheduler.gif)
 ![DeterministicRunSeedGuard](assets/demo/deterministic-run-seed-guard.gif)
+![DebateRoundLimiter](assets/demo/debate-round-limiter.gif)
 ![ConsensusConfidenceBandAdvisor](assets/demo/consensus-confidence-band-advisor.gif)
 ![ToolResultFingerprintDeduper](assets/demo/tool-result-fingerprint-deduper.gif)
 ![BotSkillTagRouter](assets/demo/bot-skill-tag-router.gif)
@@ -767,6 +768,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **BlackboardEntryTtlEvictor**: Per-key TTL eviction for shared blackboard entries — see `docs/guides/BLACKBOARD_ENTRY_TTL_EVICTOR_GUIDE.md`
 - **BotHeartbeatLivenessWatchdog**: Per-bot heartbeat liveness (alive/stale/unknown) — see `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md`
 - **SharedBlackboardWriteLease**: Exclusive time-bounded blackboard write leases — see `docs/guides/SHARED_BLACKBOARD_WRITE_LEASE_GUIDE.md`
+- **DebateRoundLimiter**: Cap multi-bot debate rounds with HITL exhaust bands — see `docs/guides/DEBATE_ROUND_LIMITER_GUIDE.md`
 - **ConsensusConfidenceBandAdvisor**: Map winning vote share into HITL confidence bands — see `docs/guides/CONSENSUS_CONFIDENCE_BAND_ADVISOR_GUIDE.md`
 - **DeterministicRunSeedGuard**: Pin/validate deterministic run seeds for reproducible multi-bot runs — see `docs/guides/DETERMINISTIC_RUN_SEED_GUARD_GUIDE.md`
 - **ToolCallWaveScheduler**: Dependency-depth parallel tool-call waves — see `docs/guides/TOOL_CALL_WAVE_SCHEDULER_GUIDE.md`
