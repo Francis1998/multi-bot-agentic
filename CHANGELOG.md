@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `SharedMemoryQuotaGuard` (`src/multi_bot_agentic/shared_memory_quota.py`): Per-bot shared-blackboard write quota with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded shared-state writes. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_MEMORY_QUOTA_GUARD_GUIDE.md`.
 - `VoteTieBreakPolicy` (`src/multi_bot_agentic/vote_tie_break.py`): Deterministic vote tie-break with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph voting ties. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/VOTE_TIE_BREAK_POLICY_GUIDE.md`.
 - `CriticPassBudgetLimiter` (`src/multi_bot_agentic/critic_pass_budget.py`): Cap critic re-pass loops with HITL exhaust bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded critic revisions. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_PASS_BUDGET_LIMITER_GUIDE.md`.
 - `ToolOutputSchemaGate` (`src/multi_bot_agentic/tool_output_schema_gate.py`): Gate tool outputs against required keys with HITL pass/fail (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool-result schema checks. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_OUTPUT_SCHEMA_GATE_GUIDE.md`.
