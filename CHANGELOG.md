@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolArgByteBudgetGuard` (`src/multi_bot_agentic/tool_arg_byte_budget.py`): Cap serialized tool-argument bytes with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded tool-arg payloads. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_ARG_BYTE_BUDGET_GUARD_GUIDE.md`.
 - `SharedMemoryQuotaGuard` (`src/multi_bot_agentic/shared_memory_quota.py`): Per-bot shared-blackboard write quota with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded shared-state writes. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_MEMORY_QUOTA_GUARD_GUIDE.md`.
 - `VoteTieBreakPolicy` (`src/multi_bot_agentic/vote_tie_break.py`): Deterministic vote tie-break with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph voting ties. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/VOTE_TIE_BREAK_POLICY_GUIDE.md`.
 - `CriticPassBudgetLimiter` (`src/multi_bot_agentic/critic_pass_budget.py`): Cap critic re-pass loops with HITL exhaust bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded critic revisions. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_PASS_BUDGET_LIMITER_GUIDE.md`.
