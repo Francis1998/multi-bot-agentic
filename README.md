@@ -23,6 +23,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![DeterministicRunSeedGuard](assets/demo/deterministic-run-seed-guard.gif)
 ![CriticPassBudgetLimiter](assets/demo/critic-pass-budget-limiter.gif)
 ![VoteTieBreakPolicy](assets/demo/vote-tie-break-policy.gif)
+![BotSpawnBudgetLimiter](assets/demo/bot-spawn-budget-limiter.gif)
 ![CriticVerdictDiversityGate](assets/demo/critic-verdict-diversity-gate.gif)
 ![ToolArgByteBudgetGuard](assets/demo/tool-arg-byte-budget-guard.gif)
 ![SharedMemoryQuotaGuard](assets/demo/shared-memory-quota-guard.gif)
@@ -775,6 +776,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **SharedBlackboardWriteLease**: Exclusive time-bounded blackboard write leases — see `docs/guides/SHARED_BLACKBOARD_WRITE_LEASE_GUIDE.md`
 - **CriticPassBudgetLimiter**: Cap critic re-pass loops with HITL exhaust bands — see `docs/guides/CRITIC_PASS_BUDGET_LIMITER_GUIDE.md`
 - **VoteTieBreakPolicy**: Deterministic multi-bot vote tie-break with HITL bands — see `docs/guides/VOTE_TIE_BREAK_POLICY_GUIDE.md`
+- **BotSpawnBudgetLimiter**: Cap dynamic bot spawns per session with HITL bands — see `docs/guides/BOT_SPAWN_BUDGET_LIMITER_GUIDE.md`
 - **CriticVerdictDiversityGate**: Flag echo-chamber critic verdicts with HITL bands — see `docs/guides/CRITIC_VERDICT_DIVERSITY_GATE_GUIDE.md`
 - **ToolArgByteBudgetGuard**: Cap serialized tool-argument bytes with HITL bands — see `docs/guides/TOOL_ARG_BYTE_BUDGET_GUARD_GUIDE.md`
 - **SharedMemoryQuotaGuard**: Per-bot shared-blackboard write quota with HITL bands — see `docs/guides/SHARED_MEMORY_QUOTA_GUARD_GUIDE.md`
