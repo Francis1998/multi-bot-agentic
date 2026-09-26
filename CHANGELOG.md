@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `AgentHandoffDepthLimiter` (`src/multi_bot_agentic/agent_handoff_depth.py`): Cap chained bot-to-bot handoff depth with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded nested handoffs. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_HANDOFF_DEPTH_LIMITER_GUIDE.md`.
 - `BotSpawnBudgetLimiter` (`src/multi_bot_agentic/bot_spawn_budget.py`): Cap dynamic bot spawns per session with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded agent spawning. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BOT_SPAWN_BUDGET_LIMITER_GUIDE.md`.
 - `CriticVerdictDiversityGate` (`src/multi_bot_agentic/critic_verdict_diversity.py`): Flag low-diversity / echo-chamber critic verdicts with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic echo chambers. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_VERDICT_DIVERSITY_GATE_GUIDE.md`.
 - `ToolArgByteBudgetGuard` (`src/multi_bot_agentic/tool_arg_byte_budget.py`): Cap serialized tool-argument bytes with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded tool-arg payloads. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_ARG_BYTE_BUDGET_GUARD_GUIDE.md`.
