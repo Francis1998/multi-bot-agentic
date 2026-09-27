@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `PlannerReplanBudgetLimiter` (`src/multi_bot_agentic/planner_replan_budget.py`): Cap planner replan attempts with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded replans. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_REPLAN_BUDGET_LIMITER_GUIDE.md`.
 - `OrchestratorStallWatchdog` (`src/multi_bot_agentic/orchestrator_stall_watchdog.py`): Flag stalled orchestrator loops from seconds-since-progress with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph stuck orchestrators. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORCHESTRATOR_STALL_WATCHDOG_GUIDE.md`.
 - `ConsensusQuorumFloorGuard` (`src/multi_bot_agentic/consensus_quorum_floor.py`): Require a minimum yes-vote floor before consensus with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph thin-quorum consensus. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_QUORUM_FLOOR_GUARD_GUIDE.md`.
 - `AgentHandoffDepthLimiter` (`src/multi_bot_agentic/agent_handoff_depth.py`): Cap chained bot-to-bot handoff depth with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph unbounded nested handoffs. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_HANDOFF_DEPTH_LIMITER_GUIDE.md`.
