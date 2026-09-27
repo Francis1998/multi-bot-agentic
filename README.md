@@ -28,6 +28,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![ConsensusQuorumFloorGuard](assets/demo/consensus-quorum-floor-guard.gif)
 ![OrchestratorStallWatchdog](assets/demo/orchestrator-stall-watchdog.gif)
 ![PlannerReplanBudgetLimiter](assets/demo/planner-replan-budget-limiter.gif)
+![SharedMemoryConflictBandGuard](assets/demo/shared-memory-conflict-band-guard.gif)
 
 ![CriticVerdictDiversityGate](assets/demo/critic-verdict-diversity-gate.gif)
 ![ToolArgByteBudgetGuard](assets/demo/tool-arg-byte-budget-guard.gif)
@@ -785,6 +786,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **AgentHandoffDepthLimiter**: Cap chained bot handoff depth with HITL bands — see `docs/guides/AGENT_HANDOFF_DEPTH_LIMITER_GUIDE.md`
 - **ConsensusQuorumFloorGuard**: Require min yes-votes before consensus with HITL bands — see `docs/guides/CONSENSUS_QUORUM_FLOOR_GUARD_GUIDE.md`
 
+- **SharedMemoryConflictBandGuard**: Flag shared-memory version skew with HITL bands — see `docs/guides/SHARED_MEMORY_CONFLICT_BAND_GUARD_GUIDE.md`
 - **PlannerReplanBudgetLimiter**: Cap planner replan attempts with HITL bands — see `docs/guides/PLANNER_REPLAN_BUDGET_LIMITER_GUIDE.md`
 - **OrchestratorStallWatchdog**: Flag stalled orchestrator loops with HITL bands — see `docs/guides/ORCHESTRATOR_STALL_WATCHDOG_GUIDE.md`
 - **CriticVerdictDiversityGate**: Flag echo-chamber critic verdicts with HITL bands — see `docs/guides/CRITIC_VERDICT_DIVERSITY_GATE_GUIDE.md`
