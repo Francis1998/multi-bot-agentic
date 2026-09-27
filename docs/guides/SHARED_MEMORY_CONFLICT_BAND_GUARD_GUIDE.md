@@ -14,9 +14,7 @@ Distinct from `SharedMemoryQuotaGuard` and `SharedBlackboardWriteLease`.
 ```python
 from multi_bot_agentic.shared_memory_conflict_band import SharedMemoryConflictBandGuard
 
-status = SharedMemoryConflictBandGuard().check(
-    "s1", key="plan", local_version=1, remote_version=4
-)
+status = SharedMemoryConflictBandGuard().check("s1", key="plan", local_version=1, remote_version=4)
 assert status.requires_human_review is True
 print(status.band, status.version_skew)
 ```
