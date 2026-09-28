@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `PlannerGoalDriftGuard` (`src/multi_bot_agentic/planner_goal_drift.py`): Flag planner step goal drift with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph planner goal drift. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_GOAL_DRIFT_GUARD_GUIDE.md`.
 - `ToolResultSchemaHashGate` (`src/multi_bot_agentic/tool_result_schema_hash.py`): Flag tool-result schema hash drift with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph schema drift. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_SCHEMA_HASH_GATE_GUIDE.md`.
 - `ConsensusTimeoutBandGuard` (`src/multi_bot_agentic/consensus_timeout_band.py`): Flag consensus waits vs timeout with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph consensus timeouts. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_TIMEOUT_BAND_GUARD_GUIDE.md`.
 - `ToolResultPiiRedactionGate` (`src/multi_bot_agentic/tool_result_pii_gate.py`): Gate tool-result PII patterns with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool-result PII controls. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_PII_REDACTION_GATE_GUIDE.md`.
