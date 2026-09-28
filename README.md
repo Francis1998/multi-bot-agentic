@@ -30,6 +30,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![PlannerReplanBudgetLimiter](assets/demo/planner-replan-budget-limiter.gif)
 ![SharedMemoryConflictBandGuard](assets/demo/shared-memory-conflict-band-guard.gif)
 ![ToolResultPiiRedactionGate](assets/demo/tool-result-pii-redaction-gate.gif)
+![ToolResultSchemaHashGate](assets/demo/tool-result-schema-hash-gate.gif)
 ![ConsensusTimeoutBandGuard](assets/demo/consensus-timeout-band-guard.gif)
 
 ![CriticVerdictDiversityGate](assets/demo/critic-verdict-diversity-gate.gif)
