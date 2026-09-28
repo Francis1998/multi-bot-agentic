@@ -789,6 +789,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **AgentHandoffDepthLimiter**: Cap chained bot handoff depth with HITL bands — see `docs/guides/AGENT_HANDOFF_DEPTH_LIMITER_GUIDE.md`
 - **ConsensusQuorumFloorGuard**: Require min yes-votes before consensus with HITL bands — see `docs/guides/CONSENSUS_QUORUM_FLOOR_GUARD_GUIDE.md`
 
+- **ToolResultSchemaHashGate**: Flag tool-result schema hash drift with HITL bands — see `docs/guides/TOOL_RESULT_SCHEMA_HASH_GATE_GUIDE.md`
 - **ConsensusTimeoutBandGuard**: Flag consensus waits vs timeout with HITL bands — see `docs/guides/CONSENSUS_TIMEOUT_BAND_GUARD_GUIDE.md`
 - **ToolResultPiiRedactionGate**: Gate tool-result PII with HITL bands — see `docs/guides/TOOL_RESULT_PII_REDACTION_GATE_GUIDE.md`
 - **SharedMemoryConflictBandGuard**: Flag shared-memory version skew with HITL bands — see `docs/guides/SHARED_MEMORY_CONFLICT_BAND_GUARD_GUIDE.md`
