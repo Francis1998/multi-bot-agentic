@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolInvocationDeadlineGuard` (`src/multi_bot_agentic/tool_invocation_deadline.py`): Flag per-tool invocation deadline pressure with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool deadlines. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_INVOCATION_DEADLINE_GUARD_GUIDE.md`.
 - `CriticTimeoutBandGuard` (`src/multi_bot_agentic/critic_timeout_band.py`): Flag critic-pass waits vs timeout with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic timeouts. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_TIMEOUT_BAND_GUARD_GUIDE.md`.
 - `FanInSkewBandGuard` (`src/multi_bot_agentic/fan_in_skew_band.py`): Flag fan-in completion-time skew with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph fan-in skew. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/FAN_IN_SKEW_BAND_GUARD_GUIDE.md`.
 - `PlannerGoalDriftGuard` (`src/multi_bot_agentic/planner_goal_drift.py`): Flag planner step goal drift with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph planner goal drift. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_GOAL_DRIFT_GUARD_GUIDE.md`.
