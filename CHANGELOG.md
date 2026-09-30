@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolSandboxEgressClassGuard` (`src/multi_bot_agentic/tool_sandbox_egress.py`): Classify tool sandbox egress with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph sandbox egress classes. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_EGRESS_CLASS_GUARD_GUIDE.md`.
 - `CriticAgreementEntropyGate` (`src/multi_bot_agentic/critic_agreement_entropy.py`): Gate critic agreement entropy with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic agreement entropy. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_AGREEMENT_ENTROPY_GATE_GUIDE.md`.
 - `BlackboardWriteAmplificationBandGuard` (`src/multi_bot_agentic/blackboard_write_amplification.py`): Flag blackboard write-amplification with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph write amplification. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_WRITE_AMPLIFICATION_BAND_GUARD_GUIDE.md`.
 - `ToolInvocationDeadlineGuard` (`src/multi_bot_agentic/tool_invocation_deadline.py`): Flag per-tool invocation deadline pressure with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool deadlines. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_INVOCATION_DEADLINE_GUARD_GUIDE.md`.
