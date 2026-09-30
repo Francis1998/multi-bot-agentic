@@ -34,6 +34,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![FanInSkewBandGuard](assets/demo/fan-in-skew-band-guard.gif)
 ![ToolInvocationDeadlineGuard](assets/demo/tool-invocation-deadline-guard.gif)
 ![CriticTimeoutBandGuard](assets/demo/critic-timeout-band-guard.gif)
+![BlackboardWriteAmplificationBandGuard](assets/demo/blackboard-write-amplification-band-guard.gif)
 ![PlannerGoalDriftGuard](assets/demo/planner-goal-drift-guard.gif)
 ![ConsensusTimeoutBandGuard](assets/demo/consensus-timeout-band-guard.gif)
 
@@ -796,6 +797,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **ToolResultSchemaHashGate**: Flag tool-result schema hash drift with HITL bands — see `docs/guides/TOOL_RESULT_SCHEMA_HASH_GATE_GUIDE.md`
 - **CriticTimeoutBandGuard**: Flag critic-pass waits vs timeout with HITL bands — see `docs/guides/CRITIC_TIMEOUT_BAND_GUARD_GUIDE.md`
 - **ToolInvocationDeadlineGuard**: Flag per-tool invocation deadline pressure with HITL bands — see `docs/guides/TOOL_INVOCATION_DEADLINE_GUARD_GUIDE.md`
+- **BlackboardWriteAmplificationBandGuard**: Flag blackboard write-amplification (writes/reads) with HITL bands — see `docs/guides/BLACKBOARD_WRITE_AMPLIFICATION_BAND_GUARD_GUIDE.md`
 - **FanInSkewBandGuard**: Flag fan-in completion-time skew with HITL bands — see `docs/guides/FAN_IN_SKEW_BAND_GUARD_GUIDE.md`
 - **PlannerGoalDriftGuard**: Flag planner goal drift with HITL bands — see `docs/guides/PLANNER_GOAL_DRIFT_GUARD_GUIDE.md`
 - **ConsensusTimeoutBandGuard**: Flag consensus waits vs timeout with HITL bands — see `docs/guides/CONSENSUS_TIMEOUT_BAND_GUARD_GUIDE.md`
