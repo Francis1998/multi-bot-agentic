@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `MultiBotLatencyBudgetAllocator` (`src/multi_bot_agentic/multi_bot_latency_budget.py`): Allocate per-bot latency shares vs a session budget with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph multi-bot latency budget allocators. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/MULTI_BOT_LATENCY_BUDGET_ALLOCATOR_GUIDE.md`.
 - `ToolResultCardinalityGate` (`src/multi_bot_agentic/tool_result_cardinality.py`): Gate tool-result cardinality with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool-result cardinality controls. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_CARDINALITY_GATE_GUIDE.md`.
 - `PlannerBeamWidthLimiter` (`src/multi_bot_agentic/planner_beam_width.py`): Cap planner beam width with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph planner beam-width controls. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_BEAM_WIDTH_LIMITER_GUIDE.md`.
 - `ToolSandboxEgressClassGuard` (`src/multi_bot_agentic/tool_sandbox_egress.py`): Classify tool sandbox egress with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph sandbox egress classes. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_EGRESS_CLASS_GUARD_GUIDE.md`.
