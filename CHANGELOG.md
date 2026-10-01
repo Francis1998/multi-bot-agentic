@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolResultCardinalityGate` (`src/multi_bot_agentic/tool_result_cardinality.py`): Gate tool-result cardinality with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool-result cardinality controls. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_CARDINALITY_GATE_GUIDE.md`.
 - `PlannerBeamWidthLimiter` (`src/multi_bot_agentic/planner_beam_width.py`): Cap planner beam width with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph planner beam-width controls. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_BEAM_WIDTH_LIMITER_GUIDE.md`.
 - `ToolSandboxEgressClassGuard` (`src/multi_bot_agentic/tool_sandbox_egress.py`): Classify tool sandbox egress with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph sandbox egress classes. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_EGRESS_CLASS_GUARD_GUIDE.md`.
 - `CriticAgreementEntropyGate` (`src/multi_bot_agentic/critic_agreement_entropy.py`): Gate critic agreement entropy with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic agreement entropy. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_AGREEMENT_ENTROPY_GATE_GUIDE.md`.
