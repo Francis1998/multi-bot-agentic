@@ -36,6 +36,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![CriticTimeoutBandGuard](assets/demo/critic-timeout-band-guard.gif)
 ![BlackboardWriteAmplificationBandGuard](assets/demo/blackboard-write-amplification-band-guard.gif)
 ![CriticAgreementEntropyGate](assets/demo/critic-agreement-entropy-gate.gif)
+![MultiBotLatencyBudgetAllocator](assets/demo/multi-bot-latency-budget-allocator.gif)
 ![ToolResultCardinalityGate](assets/demo/tool-result-cardinality-gate.gif)
 ![PlannerBeamWidthLimiter](assets/demo/planner-beam-width-limiter.gif)
 ![ToolSandboxEgressClassGuard](assets/demo/tool-sandbox-egress-class-guard.gif)
@@ -801,6 +802,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **ToolResultSchemaHashGate**: Flag tool-result schema hash drift with HITL bands — see `docs/guides/TOOL_RESULT_SCHEMA_HASH_GATE_GUIDE.md`
 - **CriticTimeoutBandGuard**: Flag critic-pass waits vs timeout with HITL bands — see `docs/guides/CRITIC_TIMEOUT_BAND_GUARD_GUIDE.md`
 - **ToolInvocationDeadlineGuard**: Flag per-tool invocation deadline pressure with HITL bands — see `docs/guides/TOOL_INVOCATION_DEADLINE_GUARD_GUIDE.md`
+- **MultiBotLatencyBudgetAllocator**: Allocate per-bot latency shares vs a session budget with HITL bands — see `docs/guides/MULTI_BOT_LATENCY_BUDGET_ALLOCATOR_GUIDE.md`
 - **ToolResultCardinalityGate**: Gate tool result row/item counts with HITL bands — see `docs/guides/TOOL_RESULT_CARDINALITY_GATE_GUIDE.md`
 - **PlannerBeamWidthLimiter**: Cap planner beam width with HITL bands (ok/elevated/blocked) — see `docs/guides/PLANNER_BEAM_WIDTH_LIMITER_GUIDE.md`
 - **ToolSandboxEgressClassGuard**: Classify tool sandbox egress risk with HITL bands — see `docs/guides/TOOL_SANDBOX_EGRESS_CLASS_GUARD_GUIDE.md`
