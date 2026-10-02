@@ -39,6 +39,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![MultiBotLatencyBudgetAllocator](assets/demo/multi-bot-latency-budget-allocator.gif)
 ![ToolResultCardinalityGate](assets/demo/tool-result-cardinality-gate.gif)
 ![CriticPairwiseKappaGate](assets/demo/critic-pairwise-kappa-gate.gif)
+![ToolSandboxCpuQuotaGuard](assets/demo/tool-sandbox-cpu-quota-guard.gif)
 ![PlannerBeamWidthLimiter](assets/demo/planner-beam-width-limiter.gif)
 ![ToolSandboxEgressClassGuard](assets/demo/tool-sandbox-egress-class-guard.gif)
 ![PlannerGoalDriftGuard](assets/demo/planner-goal-drift-guard.gif)
@@ -806,6 +807,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **MultiBotLatencyBudgetAllocator**: Allocate per-bot latency shares vs a session budget with HITL bands — see `docs/guides/MULTI_BOT_LATENCY_BUDGET_ALLOCATOR_GUIDE.md`
 - **ToolResultCardinalityGate**: Gate tool result row/item counts with HITL bands — see `docs/guides/TOOL_RESULT_CARDINALITY_GATE_GUIDE.md`
 - **CriticPairwiseKappaGate**: Gate critic pairwise Cohen-kappa with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_PAIRWISE_KAPPA_GATE_GUIDE.md`
+- **ToolSandboxCpuQuotaGuard**: Flag tool-sandbox CPU quota with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_SANDBOX_CPU_QUOTA_GUARD_GUIDE.md`
 - **PlannerBeamWidthLimiter**: Cap planner beam width with HITL bands (ok/elevated/blocked) — see `docs/guides/PLANNER_BEAM_WIDTH_LIMITER_GUIDE.md`
 - **ToolSandboxEgressClassGuard**: Classify tool sandbox egress risk with HITL bands — see `docs/guides/TOOL_SANDBOX_EGRESS_CLASS_GUARD_GUIDE.md`
 - **CriticAgreementEntropyGate**: Gate critic verdict agreement entropy with HITL bands — see `docs/guides/CRITIC_AGREEMENT_ENTROPY_GATE_GUIDE.md`
