@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `PlannerCostCeilingAdvisor` (`src/multi_bot_agentic/planner_cost_ceiling.py`): Advise planner USD cost vs ceiling with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph planner cost ceilings. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_COST_CEILING_ADVISOR_GUIDE.md`.
 - `CriticLatencySloBandGuard` (`src/multi_bot_agentic/critic_latency_slo.py`): Flag critic-pass latency vs SLO with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic latency SLOs. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_LATENCY_SLO_BAND_GUARD_GUIDE.md`.
 - `ToolSandboxMemoryQuotaGuard` (`src/multi_bot_agentic/tool_sandbox_memory_quota.py`): Flag tool-sandbox memory quota pressure with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool-sandbox memory quotas. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_MEMORY_QUOTA_GUARD_GUIDE.md`.
 - `CriticPairwiseKappaGate` (`src/multi_bot_agentic/critic_pairwise_kappa.py`): Gate critic pairwise Cohen-kappa agreement with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic pairwise kappa. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_PAIRWISE_KAPPA_GATE_GUIDE.md`.
