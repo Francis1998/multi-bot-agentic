@@ -41,6 +41,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![CriticPairwiseKappaGate](assets/demo/critic-pairwise-kappa-gate.gif)
 ![ToolSandboxCpuQuotaGuard](assets/demo/tool-sandbox-cpu-quota-guard.gif)
 ![CriticLatencySloBandGuard](assets/demo/critic-latency-slo-band-guard.gif)
+![OrchestratorFairnessAgingAdvisor](assets/demo/orchestrator-fairness-aging-advisor.gif)
 ![PlannerCostCeilingAdvisor](assets/demo/planner-cost-ceiling-advisor.gif)
 ![ToolSandboxMemoryQuotaGuard](assets/demo/tool-sandbox-memory-quota-guard.gif)
 ![SharedMemoryTtlEvictionAdvisor](assets/demo/shared-memory-ttl-eviction-advisor.gif)
@@ -813,6 +814,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **CriticPairwiseKappaGate**: Gate critic pairwise Cohen-kappa with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_PAIRWISE_KAPPA_GATE_GUIDE.md`
 - **ToolSandboxCpuQuotaGuard**: Flag tool-sandbox CPU quota with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_SANDBOX_CPU_QUOTA_GUARD_GUIDE.md`
 - **CriticLatencySloBandGuard**: Flag critic-pass latency vs SLO with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_LATENCY_SLO_BAND_GUARD_GUIDE.md`
+- **OrchestratorFairnessAgingAdvisor**: Advise orchestrator wait-age fairness with HITL bands (ok/elevated/blocked) — see `docs/guides/ORCHESTRATOR_FAIRNESS_AGING_ADVISOR_GUIDE.md`
 - **PlannerCostCeilingAdvisor**: Advise planner USD cost vs ceiling with HITL bands (ok/elevated/blocked) — see `docs/guides/PLANNER_COST_CEILING_ADVISOR_GUIDE.md`
 - **ToolSandboxMemoryQuotaGuard**: Flag tool-sandbox memory quota with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_SANDBOX_MEMORY_QUOTA_GUARD_GUIDE.md`
 - **SharedMemoryTtlEvictionAdvisor**: Advise shared-memory TTL eviction with HITL bands (ok/elevated/blocked) — see `docs/guides/SHARED_MEMORY_TTL_EVICTION_ADVISOR_GUIDE.md`

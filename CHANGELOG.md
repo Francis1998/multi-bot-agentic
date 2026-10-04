@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `OrchestratorFairnessAgingAdvisor` (`src/multi_bot_agentic/orchestrator_fairness_aging.py`): Advise orchestrator fairness aging (wait age) with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph fairness-aging controls. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORCHESTRATOR_FAIRNESS_AGING_ADVISOR_GUIDE.md`.
 - `PlannerCostCeilingAdvisor` (`src/multi_bot_agentic/planner_cost_ceiling.py`): Advise planner USD cost vs ceiling with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph planner cost ceilings. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_COST_CEILING_ADVISOR_GUIDE.md`.
 - `CriticLatencySloBandGuard` (`src/multi_bot_agentic/critic_latency_slo.py`): Flag critic-pass latency vs SLO with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic latency SLOs. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_LATENCY_SLO_BAND_GUARD_GUIDE.md`.
 - `ToolSandboxMemoryQuotaGuard` (`src/multi_bot_agentic/tool_sandbox_memory_quota.py`): Flag tool-sandbox memory quota pressure with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool-sandbox memory quotas. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_MEMORY_QUOTA_GUARD_GUIDE.md`.
