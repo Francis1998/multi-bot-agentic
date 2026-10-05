@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `OrchestratorCascadeFailureAdvisor` (`src/multi_bot_agentic/orchestrator_cascade_failure.py`): Advise orchestrator cascade-failure depth with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph cascade-failure controls. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORCHESTRATOR_CASCADE_FAILURE_ADVISOR_GUIDE.md`.
 - `CriticSelfConsistencyBandGuard` (`src/multi_bot_agentic/critic_self_consistency.py`): Flag critic self-consistency (disagreement rate) with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic self-consistency. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_SELF_CONSISTENCY_BAND_GUARD_GUIDE.md`.
 - `CriticTokenBudgetBandGuard` (`src/multi_bot_agentic/critic_token_budget.py`): Flag critic token-budget pressure with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic token budgets. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_TOKEN_BUDGET_BAND_GUARD_GUIDE.md`.
 - `ToolSandboxDiskQuotaGuard` (`src/multi_bot_agentic/tool_sandbox_disk_quota.py`): Flag tool-sandbox disk quota pressure with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph tool-sandbox disk quotas. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_DISK_QUOTA_GUARD_GUIDE.md`.
