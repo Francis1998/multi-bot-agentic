@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `MessageBusBackpressureAdvisor` (`src/multi_bot_agentic/message_bus_backpressure.py`): Advise message-bus queue-depth backpressure with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph message-bus backpressure. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/MESSAGE_BUS_BACKPRESSURE_ADVISOR_GUIDE.md`.
 - `OrchestratorCascadeFailureAdvisor` (`src/multi_bot_agentic/orchestrator_cascade_failure.py`): Advise orchestrator cascade-failure depth with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph cascade-failure controls. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORCHESTRATOR_CASCADE_FAILURE_ADVISOR_GUIDE.md`.
 - `CriticSelfConsistencyBandGuard` (`src/multi_bot_agentic/critic_self_consistency.py`): Flag critic self-consistency (disagreement rate) with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic self-consistency. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_SELF_CONSISTENCY_BAND_GUARD_GUIDE.md`.
 - `CriticTokenBudgetBandGuard` (`src/multi_bot_agentic/critic_token_budget.py`): Flag critic token-budget pressure with HITL bands (never network I/O). Gap vs AutoGen/CrewAI/LangGraph critic token budgets. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_TOKEN_BUDGET_BAND_GUARD_GUIDE.md`.

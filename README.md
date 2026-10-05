@@ -43,6 +43,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![CriticLatencySloBandGuard](assets/demo/critic-latency-slo-band-guard.gif)
 ![CriticSelfConsistencyBandGuard](assets/demo/critic-self-consistency-band-guard.gif)
 ![OrchestratorCascadeFailureAdvisor](assets/demo/orchestrator-cascade-failure-advisor.gif)
+![MessageBusBackpressureAdvisor](assets/demo/message-bus-backpressure-advisor.gif)
 ![CriticTokenBudgetBandGuard](assets/demo/critic-token-budget-band-guard.gif)
 ![ToolSandboxDiskQuotaGuard](assets/demo/tool-sandbox-disk-quota-guard.gif)
 ![OrchestratorFairnessAgingAdvisor](assets/demo/orchestrator-fairness-aging-advisor.gif)
@@ -820,6 +821,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **CriticLatencySloBandGuard**: Flag critic-pass latency vs SLO with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_LATENCY_SLO_BAND_GUARD_GUIDE.md`
 - **CriticSelfConsistencyBandGuard**: Flag critic disagreement-rate with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_SELF_CONSISTENCY_BAND_GUARD_GUIDE.md`
 - **OrchestratorCascadeFailureAdvisor**: Advise orchestrator cascade-depth with HITL bands (ok/elevated/blocked) — see `docs/guides/ORCHESTRATOR_CASCADE_FAILURE_ADVISOR_GUIDE.md`
+- **MessageBusBackpressureAdvisor**: Advise message-bus queue-depth backpressure with HITL bands (ok/elevated/blocked) — see `docs/guides/MESSAGE_BUS_BACKPRESSURE_ADVISOR_GUIDE.md`
 - **CriticTokenBudgetBandGuard**: Flag critic token budget with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_TOKEN_BUDGET_BAND_GUARD_GUIDE.md`
 - **ToolSandboxDiskQuotaGuard**: Flag tool-sandbox disk quota with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_SANDBOX_DISK_QUOTA_GUARD_GUIDE.md`
 - **OrchestratorFairnessAgingAdvisor**: Advise orchestrator wait-age fairness with HITL bands (ok/elevated/blocked) — see `docs/guides/ORCHESTRATOR_FAIRNESS_AGING_ADVISOR_GUIDE.md`
