@@ -46,6 +46,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![MessageBusBackpressureAdvisor](assets/demo/message-bus-backpressure-advisor.gif)
 ![BlackboardStaleEntryAdvisor](assets/demo/blackboard-stale-entry-advisor.gif)
 ![PlannerDepthCapAdvisor](assets/demo/planner-depth-cap-advisor.gif)
+![BotCapabilityDriftAdvisor](assets/demo/bot-capability-drift.gif)
 ![ToolRetryBudgetBandGuard](assets/demo/tool-retry-budget-band-guard.gif)
 ![CriticTokenBudgetBandGuard](assets/demo/critic-token-budget-band-guard.gif)
 ![ToolSandboxDiskQuotaGuard](assets/demo/tool-sandbox-disk-quota-guard.gif)
@@ -827,6 +828,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **BlackboardStaleEntryAdvisor**: Flag/advise blackboard stale-entry age with HITL bands (ok/elevated/blocked) — see `docs/guides/BLACKBOARD_STALE_ENTRY_ADVISOR_GUIDE.md`
 - **PlannerDepthCapAdvisor**: HITL bands (ok/elevated/blocked) — see `docs/guides/PLANNER_DEPTH_CAP_ADVISOR_GUIDE.md`
 - **MessageBusBackpressureAdvisor**: Advise message-bus queue-depth backpressure with HITL bands (ok/elevated/blocked) — see `docs/guides/MESSAGE_BUS_BACKPRESSURE_ADVISOR_GUIDE.md`
+- **BotCapabilityDriftAdvisor**: Advise bot capability drift_ratio with HITL bands (ok/elevated/blocked) — see `docs/guides/BOT_CAPABILITY_DRIFT_ADVISOR_GUIDE.md`
 - **ToolRetryBudgetBandGuard**: Flag tool retry_count vs soft/hard budgets with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_RETRY_BUDGET_BAND_GUARD_GUIDE.md`
 - **CriticTokenBudgetBandGuard**: Flag critic token budget with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_TOKEN_BUDGET_BAND_GUARD_GUIDE.md`
 - **ToolSandboxDiskQuotaGuard**: Flag tool-sandbox disk quota with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_SANDBOX_DISK_QUOTA_GUARD_GUIDE.md`
