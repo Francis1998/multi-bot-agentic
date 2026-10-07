@@ -48,6 +48,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![PlannerDepthCapAdvisor](assets/demo/planner-depth-cap-advisor.gif)
 ![BotCapabilityDriftAdvisor](assets/demo/bot-capability-drift.gif)
 ![ConsensusQuorumBandGuard](assets/demo/consensus-quorum-band.gif)
+![ToolResultPoisoningGuard](assets/demo/tool-result-poisoning.gif)
 ![ToolRetryBudgetBandGuard](assets/demo/tool-retry-budget-band-guard.gif)
 ![CriticTokenBudgetBandGuard](assets/demo/critic-token-budget-band-guard.gif)
 ![ToolSandboxDiskQuotaGuard](assets/demo/tool-sandbox-disk-quota-guard.gif)
@@ -831,6 +832,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **MessageBusBackpressureAdvisor**: Advise message-bus queue-depth backpressure with HITL bands (ok/elevated/blocked) — see `docs/guides/MESSAGE_BUS_BACKPRESSURE_ADVISOR_GUIDE.md`
 - **BotCapabilityDriftAdvisor**: Advise bot capability drift_ratio with HITL bands (ok/elevated/blocked) — see `docs/guides/BOT_CAPABILITY_DRIFT_ADVISOR_GUIDE.md`
 - **ConsensusQuorumBandGuard**: Flag consensus shortfall_ratio with HITL bands (ok/elevated/blocked) — see `docs/guides/CONSENSUS_QUORUM_BAND_GUARD_GUIDE.md`
+- **ToolResultPoisoningGuard**: Flag tool-result poisoning score with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_RESULT_POISONING_GUARD_GUIDE.md`
 - **ToolRetryBudgetBandGuard**: Flag tool retry_count vs soft/hard budgets with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_RETRY_BUDGET_BAND_GUARD_GUIDE.md`
 - **CriticTokenBudgetBandGuard**: Flag critic token budget with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_TOKEN_BUDGET_BAND_GUARD_GUIDE.md`
 - **ToolSandboxDiskQuotaGuard**: Flag tool-sandbox disk quota with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_SANDBOX_DISK_QUOTA_GUARD_GUIDE.md`
