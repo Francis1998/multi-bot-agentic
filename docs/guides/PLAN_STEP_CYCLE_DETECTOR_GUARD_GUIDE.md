@@ -1,0 +1,23 @@
+# PlanStepCycleDetectorGuard Guide
+
+![PlanStepCycleDetectorGuard HITL flow](../../assets/demo/plan-step-cycle-detector.gif)
+
+Offline HITL guard/advisor. Never network I/O. Gap vs AutoGen/CrewAI/LangGraph plan-step cycle detectors.
+
+Distinct from `PlannerDepthCapAdvisor` / `PlanStepDependencyAdvisor`.
+
+Optional polish via **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2**.
+
+## Usage
+
+```python
+from multi_bot_agentic.plan_step_cycle_detector import PlanStepCycleDetectorGuard
+
+status = PlanStepCycleDetectorGuard().check("s1", cycle_score=0.1)
+assert status.requires_human_review is True
+print(status.band)
+```
+
+## Safety
+
+Always `requires_human_review=True`. Humans decide.
