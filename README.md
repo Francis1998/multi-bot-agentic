@@ -49,6 +49,7 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![BotCapabilityDriftAdvisor](assets/demo/bot-capability-drift.gif)
 ![ConsensusQuorumBandGuard](assets/demo/consensus-quorum-band.gif)
 ![PlanStepCycleDetectorGuard](assets/demo/plan-step-cycle-detector.gif)
+![AgentHandoffLatencyAdvisor](assets/demo/agent-handoff-latency.gif)
 ![ToolResultPoisoningGuard](assets/demo/tool-result-poisoning.gif)
 ![ToolRetryBudgetBandGuard](assets/demo/tool-retry-budget-band-guard.gif)
 ![CriticTokenBudgetBandGuard](assets/demo/critic-token-budget-band-guard.gif)
@@ -834,6 +835,7 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 - **BotCapabilityDriftAdvisor**: Advise bot capability drift_ratio with HITL bands (ok/elevated/blocked) — see `docs/guides/BOT_CAPABILITY_DRIFT_ADVISOR_GUIDE.md`
 - **ConsensusQuorumBandGuard**: Flag consensus shortfall_ratio with HITL bands (ok/elevated/blocked) — see `docs/guides/CONSENSUS_QUORUM_BAND_GUARD_GUIDE.md`
 - **PlanStepCycleDetectorGuard**: Flag plan-step cycle score with HITL bands (ok/elevated/blocked) — see `docs/guides/PLAN_STEP_CYCLE_DETECTOR_GUARD_GUIDE.md`
+- **AgentHandoffLatencyAdvisor**: Advise agent-handoff latency with HITL bands (ok/elevated/blocked) — see `docs/guides/AGENT_HANDOFF_LATENCY_ADVISOR_GUIDE.md`
 - **ToolResultPoisoningGuard**: Flag tool-result poisoning score with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_RESULT_POISONING_GUARD_GUIDE.md`
 - **ToolRetryBudgetBandGuard**: Flag tool retry_count vs soft/hard budgets with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_RETRY_BUDGET_BAND_GUARD_GUIDE.md`
 - **CriticTokenBudgetBandGuard**: Flag critic token budget with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_TOKEN_BUDGET_BAND_GUARD_GUIDE.md`
