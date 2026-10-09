@@ -93,6 +93,12 @@ Offline HITL exfil_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox net
 
 Offline HITL deadlock_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-deadlock detectors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_DEADLOCK_DETECTOR_GUARD_GUIDE.md`.
 
+### PromptLeakBandAdvisor
+
+![PromptLeakBandAdvisor](assets/demo/prompt-leak-band-advisor.gif)
+
+Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PROMPT_LEAK_BAND_ADVISOR_GUIDE.md`.
+
 
 ## Why It Exists
 
