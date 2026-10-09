@@ -82,6 +82,12 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![RunDeadlineWatchdog](assets/demo/run-deadline-watchdog.gif)
 ![ToolCallIdempotencyCache](assets/demo/tool-call-idempotency-cache.gif)
 
+### ToolSandboxNetworkExfilGuard
+
+![ToolSandboxNetworkExfilGuard](assets/demo/tool-sandbox-network-exfil-guard.gif)
+
+Offline HITL exfil_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox network-exfil guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_NETWORK_EXFIL_GUARD_GUIDE.md`.
+
 ## Why It Exists
 
 Most agent demos let the LLM decide everything. This repo takes the production-minded path:
