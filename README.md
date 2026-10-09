@@ -87,6 +87,12 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 ![ToolSandboxNetworkExfilGuard](assets/demo/tool-sandbox-network-exfil-guard.gif)
 
 Offline HITL exfil_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox network-exfil guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_NETWORK_EXFIL_GUARD_GUIDE.md`.
+### AgentDeadlockDetectorGuard
+
+![AgentDeadlockDetectorGuard](assets/demo/agent-deadlock-detector-guard.gif)
+
+Offline HITL deadlock_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-deadlock detectors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_DEADLOCK_DETECTOR_GUARD_GUIDE.md`.
+
 
 ## Why It Exists
 
