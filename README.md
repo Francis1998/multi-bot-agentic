@@ -106,6 +106,12 @@ Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band 
 
 Offline HITL orphan_count bands. Gap vs AutoGen/CrewAI/LangGraph orphan-task sweepers. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORPHAN_TASK_SWEEPER_GUARD_GUIDE.md`.
 
+### ToolSandboxDnsRebindGuard
+
+![ToolSandboxDnsRebindGuard](assets/demo/tool-sandbox-dns-rebind-guard.gif)
+
+Offline HITL rebind_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox DNS-rebinding guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_DNS_REBIND_GUARD_GUIDE.md`.
+
 ## Why It Exists
 
 Most agent demos let the LLM decide everything. This repo takes the production-minded path:
