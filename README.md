@@ -100,6 +100,12 @@ Offline HITL deadlock_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-deadloc
 Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PROMPT_LEAK_BAND_ADVISOR_GUIDE.md`.
 
 
+### OrphanTaskSweeperGuard
+
+![OrphanTaskSweeperGuard](assets/demo/orphan-task-sweeper-guard.gif)
+
+Offline HITL orphan_count bands. Gap vs AutoGen/CrewAI/LangGraph orphan-task sweepers. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORPHAN_TASK_SWEEPER_GUARD_GUIDE.md`.
+
 ## Why It Exists
 
 Most agent demos let the LLM decide everything. This repo takes the production-minded path:
