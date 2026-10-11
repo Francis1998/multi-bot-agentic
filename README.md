@@ -100,6 +100,12 @@ Offline HITL deadlock_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-deadloc
 Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PROMPT_LEAK_BAND_ADVISOR_GUIDE.md`.
 
 
+### PlanGoalContradictionBandAdvisor
+
+![PlanGoalContradictionBandAdvisor](assets/demo/plan-goal-contradiction-band.gif)
+
+Offline HITL contradiction_score bands. Gap vs AutoGen/CrewAI/LangGraph plan-goal contradiction band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLAN_GOAL_CONTRADICTION_BAND_ADVISOR_GUIDE.md`.
+
 ### ToolResultSizeBombGuard
 
 ![ToolResultSizeBombGuard](assets/demo/tool-result-size-bomb.gif)
