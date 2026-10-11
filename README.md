@@ -100,6 +100,12 @@ Offline HITL deadlock_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-deadloc
 Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PROMPT_LEAK_BAND_ADVISOR_GUIDE.md`.
 
 
+### MessageBusPoisonPillGuard
+
+![MessageBusPoisonPillGuard](assets/demo/message-bus-poison-pill.gif)
+
+Offline HITL poison_score bands. Gap vs AutoGen/CrewAI/LangGraph message-bus poison-pill guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/MESSAGE_BUS_POISON_PILL_GUARD_GUIDE.md`.
+
 ### OrphanTaskSweeperGuard
 
 ![OrphanTaskSweeperGuard](assets/demo/orphan-task-sweeper-guard.gif)
