@@ -107,6 +107,13 @@ Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band 
 
 Offline HITL cascade_score bands. Gap vs AutoGen/CrewAI/LangGraph critic-timeout cascade guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_TIMEOUT_CASCADE_GUARD_GUIDE.md`.
 
+
+### ConsensusVoteStuffingBandAdvisor
+
+![ConsensusVoteStuffingBandAdvisor](assets/demo/consensus-vote-stuffing.gif)
+
+Offline HITL stuffing_score bands. Gap vs AutoGen/CrewAI/LangGraph consensus vote-stuffing band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_VOTE_STUFFING_ADVISOR_GUIDE.md`.
+
 ### PlanGoalContradictionBandAdvisor
 
 ![PlanGoalContradictionBandAdvisor](assets/demo/plan-goal-contradiction-band.gif)
