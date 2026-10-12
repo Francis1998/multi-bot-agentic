@@ -114,6 +114,13 @@ Offline HITL cascade_score bands. Gap vs AutoGen/CrewAI/LangGraph critic-timeout
 
 Offline HITL stuffing_score bands. Gap vs AutoGen/CrewAI/LangGraph consensus vote-stuffing band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_VOTE_STUFFING_ADVISOR_GUIDE.md`.
 
+
+### AgentCapabilityRevocationBandAdvisor
+
+![AgentCapabilityRevocationBandAdvisor](assets/demo/agent-capability-revocation.gif)
+
+Offline HITL revocation_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-capability revocation band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_CAPABILITY_REVOCATION_ADVISOR_GUIDE.md`.
+
 ### PlanGoalContradictionBandAdvisor
 
 ![PlanGoalContradictionBandAdvisor](assets/demo/plan-goal-contradiction-band.gif)
