@@ -101,6 +101,12 @@ Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band 
 
 
 
+### PlannerStepBudgetBandAdvisor
+
+![PlannerStepBudgetBandAdvisor](assets/demo/planner-step-budget-band.gif)
+
+Offline HITL steps_used_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner step-budget monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_STEP_BUDGET_BAND_ADVISOR_GUIDE.md`.
+
 ### ToolSandboxSyscallDenylistGuard
 
 ![ToolSandboxSyscallDenylistGuard](assets/demo/tool-sandbox-syscall-denylist.gif)
