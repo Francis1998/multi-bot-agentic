@@ -101,6 +101,12 @@ Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band 
 
 
 
+### ToolSandboxSyscallDenylistGuard
+
+![ToolSandboxSyscallDenylistGuard](assets/demo/tool-sandbox-syscall-denylist.gif)
+
+Offline HITL denied_syscall_rate bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox syscall denylist guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_SYSCALL_DENYLIST_GUARD_GUIDE.md`.
+
 ### CriticTimeoutCascadeGuard
 
 ![CriticTimeoutCascadeGuard](assets/demo/critic-timeout-cascade.gif)
