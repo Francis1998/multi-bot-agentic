@@ -101,6 +101,12 @@ Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band 
 
 
 
+### ToolArgSchemaDriftGuard
+
+![ToolArgSchemaDriftGuard](assets/demo/tool-arg-schema-drift.gif)
+
+Offline HITL schema_drift_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-argument schema-drift guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_ARG_SCHEMA_DRIFT_GUARD_GUIDE.md`.
+
 ### PlannerStepBudgetBandAdvisor
 
 ![PlannerStepBudgetBandAdvisor](assets/demo/planner-step-budget-band.gif)
