@@ -125,6 +125,18 @@ Offline HITL denied_syscall_rate bands. Gap vs AutoGen/CrewAI/LangGraph tool-san
 ![BlackboardCasWriteSkewGuard](assets/demo/blackboard-cas-write-skew.gif)
 
 Offline HITL write_skew_score bands. Gap vs AutoGen/CrewAI/LangGraph shared-blackboard CAS/write-skew guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_CAS_WRITE_SKEW_GUARD_GUIDE.md`.
+### PlannerHorizonBandAdvisor
+
+![PlannerHorizonBandAdvisor](assets/demo/planner-horizon-band.gif)
+
+Offline HITL horizon_steps_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner-horizon monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_HORIZON_BAND_ADVISOR_GUIDE.md`.
+
+### ToolPermissionEscalationBandAdvisor
+
+![ToolPermissionEscalationBandAdvisor](assets/demo/tool-permission-escalation-band.gif)
+
+Offline HITL escalation_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-permission escalation monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_PERMISSION_ESCALATION_BAND_ADVISOR_GUIDE.md`.
+
 ### CriticTimeoutCascadeGuard
 
 ![CriticTimeoutCascadeGuard](assets/demo/critic-timeout-cascade.gif)
