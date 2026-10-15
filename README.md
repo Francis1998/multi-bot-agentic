@@ -131,6 +131,12 @@ Offline HITL write_skew_score bands. Gap vs AutoGen/CrewAI/LangGraph shared-blac
 
 Offline HITL horizon_steps_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner-horizon monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_HORIZON_BAND_ADVISOR_GUIDE.md`.
 
+### CriticQuorumHysteresisAdvisor
+
+![CriticQuorumHysteresisAdvisor](assets/demo/critic-quorum-hysteresis.gif)
+
+Offline HITL advisor for `hysteresis_score` bands. Gap vs AutoGen/CrewAI/LangGraph critic-quorum hysteresis monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+
 ### ToolPermissionEscalationBandAdvisor
 
 ![ToolPermissionEscalationBandAdvisor](assets/demo/tool-permission-escalation-band.gif)
