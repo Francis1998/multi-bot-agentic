@@ -137,6 +137,12 @@ Offline HITL horizon_steps_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner-
 
 Offline HITL advisor for `hysteresis_score` bands. Gap vs AutoGen/CrewAI/LangGraph critic-quorum hysteresis monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
 
+### OrchestratorFanoutBudgetBandAdvisor
+
+![OrchestratorFanoutBudgetBandAdvisor](assets/demo/orchestrator-fanout-budget-band.gif)
+
+Offline HITL advisor for `fanout_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph orchestrator fan-out budget monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+
 ### ToolPermissionEscalationBandAdvisor
 
 ![ToolPermissionEscalationBandAdvisor](assets/demo/tool-permission-escalation-band.gif)
