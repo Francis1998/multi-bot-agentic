@@ -143,6 +143,12 @@ Offline HITL advisor for `hysteresis_score` bands. Gap vs AutoGen/CrewAI/LangGra
 
 Offline HITL advisor for `fanout_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph orchestrator fan-out budget monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
 
+### SubgraphRecursionCapAdvisor
+
+![SubgraphRecursionCapAdvisor](assets/demo/subgraph-recursion-cap.gif)
+
+Offline HITL advisor for `recursion_depth_ratio` bands. Gap vs LangGraph/CrewAI subgraph recursion-cap monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+
 ### ToolResultSchemaLagAdvisor
 
 ![ToolResultSchemaLagAdvisor](assets/demo/tool-result-schema-lag.gif)
