@@ -149,6 +149,12 @@ Offline HITL advisor for `fanout_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph o
 
 Offline HITL advisor for `recursion_depth_ratio` bands. Gap vs LangGraph/CrewAI subgraph recursion-cap monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
 
+### ToolSideEffectLedgerAdvisor
+
+![ToolSideEffectLedgerAdvisor](assets/demo/tool-side-effect-ledger.gif)
+
+Offline HITL `side_effect_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool side-effect ledger monitors. See `docs/guides/TOOL_SIDE_EFFECT_LEDGER_ADVISOR_GUIDE.md`.
+
 ### ToolResultSchemaLagAdvisor
 
 ![ToolResultSchemaLagAdvisor](assets/demo/tool-result-schema-lag.gif)
