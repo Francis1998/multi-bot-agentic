@@ -149,6 +149,12 @@ Offline HITL advisor for `fanout_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph o
 
 Offline HITL advisor for `recursion_depth_ratio` bands. Gap vs LangGraph/CrewAI subgraph recursion-cap monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
 
+### CriticDisagreementSpreadAdvisor
+
+![CriticDisagreementSpreadAdvisor](assets/demo/critic-disagreement-spread.gif)
+
+Offline HITL `disagreement_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph critic disagreement-spread monitors. See `docs/guides/CRITIC_DISAGREEMENT_SPREAD_ADVISOR_GUIDE.md`.
+
 ### ToolSideEffectLedgerAdvisor
 
 ![ToolSideEffectLedgerAdvisor](assets/demo/tool-side-effect-ledger.gif)
