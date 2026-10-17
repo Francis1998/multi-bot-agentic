@@ -149,6 +149,12 @@ Offline HITL advisor for `fanout_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph o
 
 Offline HITL advisor for `recursion_depth_ratio` bands. Gap vs LangGraph/CrewAI subgraph recursion-cap monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
 
+### HandoffTimeoutBandAdvisor
+
+![HandoffTimeoutBandAdvisor](assets/demo/handoff-timeout-band.gif)
+
+Offline HITL `timeout_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff-timeout band monitors. See `docs/guides/HANDOFF_TIMEOUT_BAND_ADVISOR_GUIDE.md`.
+
 ### CriticDisagreementSpreadAdvisor
 
 ![CriticDisagreementSpreadAdvisor](assets/demo/critic-disagreement-spread.gif)
