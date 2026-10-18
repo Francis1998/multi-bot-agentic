@@ -161,6 +161,12 @@ Offline HITL `starvation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker-st
 
 Offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-permission drift monitors. See `docs/guides/TOOL_PERMISSION_DRIFT_ADVISOR_GUIDE.md`.
 
+### BlackboardLeaseThrashAdvisor
+
+![BlackboardLeaseThrashAdvisor](assets/demo/blackboard-lease-thrash.gif)
+
+Offline HITL `thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard lease-thrash monitors. See `docs/guides/BLACKBOARD_LEASE_THRASH_ADVISOR_GUIDE.md`.
+
 ### HandoffTimeoutBandAdvisor
 
 ![HandoffTimeoutBandAdvisor](assets/demo/handoff-timeout-band.gif)

@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `BlackboardLeaseThrashAdvisor` (`blackboard_lease_thrash.py`): offline HITL `thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard lease-thrash monitors. Distinct from `BlackboardWriteLease` / `BlackboardStaleEntryAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_LEASE_THRASH_ADVISOR_GUIDE.md`.
 - `ToolPermissionDriftAdvisor` (`tool_permission_drift.py`): offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-permission drift monitors. Distinct from `ToolPermissionEscalationBandAdvisor` / `BotCapabilityDriftAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_PERMISSION_DRIFT_ADVISOR_GUIDE.md`.
 - `WorkerStarvationBandAdvisor` (`worker_starvation_band.py`): offline HITL `starvation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker-starvation band monitors. Distinct from `OrchestratorFairnessAgingAdvisor` / `HandoffTimeoutBandAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_STARVATION_BAND_ADVISOR_GUIDE.md`.
 - `HandoffTimeoutBandAdvisor` (`handoff_timeout_band.py`): offline HITL `timeout_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff-timeout band monitors. Distinct from `AgentHandoffLatencyTracker` / `CriticTimeoutBandGuard`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HANDOFF_TIMEOUT_BAND_ADVISOR_GUIDE.md`.
