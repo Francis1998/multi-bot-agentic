@@ -155,6 +155,12 @@ Offline HITL advisor for `recursion_depth_ratio` bands. Gap vs LangGraph/CrewAI 
 
 Offline HITL `starvation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker-starvation band monitors. See `docs/guides/WORKER_STARVATION_BAND_ADVISOR_GUIDE.md`.
 
+### ToolPermissionDriftAdvisor
+
+![ToolPermissionDriftAdvisor](assets/demo/tool-permission-drift.gif)
+
+Offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-permission drift monitors. See `docs/guides/TOOL_PERMISSION_DRIFT_ADVISOR_GUIDE.md`.
+
 ### HandoffTimeoutBandAdvisor
 
 ![HandoffTimeoutBandAdvisor](assets/demo/handoff-timeout-band.gif)
