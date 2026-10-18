@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `WorkerStarvationBandAdvisor` (`worker_starvation_band.py`): offline HITL `starvation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker-starvation band monitors. Distinct from `OrchestratorFairnessAgingAdvisor` / `HandoffTimeoutBandAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_STARVATION_BAND_ADVISOR_GUIDE.md`.
 - `HandoffTimeoutBandAdvisor` (`handoff_timeout_band.py`): offline HITL `timeout_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff-timeout band monitors. Distinct from `AgentHandoffLatencyTracker` / `CriticTimeoutBandGuard`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HANDOFF_TIMEOUT_BAND_ADVISOR_GUIDE.md`.
 - `CriticDisagreementSpreadAdvisor` (`critic_disagreement_spread.py`): offline HITL `disagreement_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph critic disagreement-spread monitors. Distinct from `CriticAgreementEntropyGate` / `CriticPairwiseKappaGate`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_DISAGREEMENT_SPREAD_ADVISOR_GUIDE.md`.
 - `ToolSideEffectLedgerAdvisor` (`tool_side_effect_ledger.py`): offline HITL `side_effect_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool side-effect ledger monitors. Distinct from `ToolCallQuotaGuard` / `ToolIdempotencyCache`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SIDE_EFFECT_LEDGER_ADVISOR_GUIDE.md`.
