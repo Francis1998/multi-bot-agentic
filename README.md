@@ -167,6 +167,12 @@ Offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-permissio
 
 Offline HITL `thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard lease-thrash monitors. See `docs/guides/BLACKBOARD_LEASE_THRASH_ADVISOR_GUIDE.md`.
 
+### MemoryNamespaceLeakAdvisor
+
+![MemoryNamespaceLeakAdvisor](assets/demo/memory-namespace-leak.gif)
+
+Offline HITL `leak_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen memory-namespace leak monitors. See `docs/guides/MEMORY_NAMESPACE_LEAK_ADVISOR_GUIDE.md`.
+
 ### HandoffTimeoutBandAdvisor
 
 ![HandoffTimeoutBandAdvisor](assets/demo/handoff-timeout-band.gif)
