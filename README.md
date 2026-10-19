@@ -883,6 +883,12 @@ The repo also keeps `docs/demo.svg` as a static architecture card.
 ![OrchestratorRetryStormBandAdvisor](assets/demo/orchestrator-retry-storm-band.gif)
 
 
+![ConsensusParticipationSkewAdvisor](assets/demo/consensus-participation-skew.gif)
+### ConsensusParticipationSkewAdvisor
+
+![ConsensusParticipationSkewAdvisor](assets/demo/consensus-participation-skew.gif)
+
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
