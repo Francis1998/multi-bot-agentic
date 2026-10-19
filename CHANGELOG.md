@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `OrchestratorRetryStormBandAdvisor` (`orchestrator_retry_storm_band.py`): offline HITL `retry_storm_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen orchestrator retry-storm band monitors. Distinct from `HandoffTimeoutBandAdvisor` / `CriticDisagreementSpreadAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORCHESTRATOR_RETRY_STORM_BAND_ADVISOR_GUIDE.md`.
 - `MemoryNamespaceLeakAdvisor` (`memory_namespace_leak.py`): offline HITL `leak_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen memory-namespace leak monitors. Distinct from `BlackboardLeaseThrashAdvisor` / `WorkerStarvationBandAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/MEMORY_NAMESPACE_LEAK_ADVISOR_GUIDE.md`.
 - `BlackboardLeaseThrashAdvisor` (`blackboard_lease_thrash.py`): offline HITL `thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard lease-thrash monitors. Distinct from `BlackboardWriteLease` / `BlackboardStaleEntryAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_LEASE_THRASH_ADVISOR_GUIDE.md`.
 - `ToolPermissionDriftAdvisor` (`tool_permission_drift.py`): offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-permission drift monitors. Distinct from `ToolPermissionEscalationBandAdvisor` / `BotCapabilityDriftAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_PERMISSION_DRIFT_ADVISOR_GUIDE.md`.
