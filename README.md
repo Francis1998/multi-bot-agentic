@@ -877,6 +877,12 @@ python scripts/render_demo_gif.py
 
 The repo also keeps `docs/demo.svg` as a static architecture card.
 
+![OrchestratorRetryStormBandAdvisor](assets/demo/orchestrator-retry-storm-band.gif)
+### OrchestratorRetryStormBandAdvisor
+
+![OrchestratorRetryStormBandAdvisor](assets/demo/orchestrator-retry-storm-band.gif)
+
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
