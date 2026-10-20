@@ -179,6 +179,12 @@ Offline HITL `oscillation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner-
 ![ToolTimeoutCascadeBandAdvisor](assets/demo/tool-timeout-cascade-band.gif)
 
 Offline HITL `cascade_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-timeout cascade monitors. See `docs/guides/TOOL_TIMEOUT_CASCADE_BAND_ADVISOR_GUIDE.md`.
+![ActorMailboxOverflowAdvisor](assets/demo/actor-mailbox-overflow.gif)
+### ActorMailboxOverflowAdvisor
+
+![ActorMailboxOverflowAdvisor](assets/demo/actor-mailbox-overflow.gif)
+
+Offline HITL `mailbox_depth_ratio` bands. Gap vs Ray/Akka/Orleans actor-mailbox overflow monitors. See `docs/guides/ACTOR_MAILBOX_OVERFLOW_ADVISOR_GUIDE.md`.
 ### MemoryNamespaceLeakAdvisor
 
 ![MemoryNamespaceLeakAdvisor](assets/demo/memory-namespace-leak.gif)
