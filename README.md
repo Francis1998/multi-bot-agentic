@@ -173,6 +173,12 @@ Offline HITL `thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard le
 ![PlannerCriticOscillationBandAdvisor](assets/demo/planner-critic-oscillation-band.gif)
 
 Offline HITL `oscillation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner-critic oscillation monitors. See `docs/guides/PLANNER_CRITIC_OSCILLATION_BAND_ADVISOR_GUIDE.md`.
+![ToolTimeoutCascadeBandAdvisor](assets/demo/tool-timeout-cascade-band.gif)
+### ToolTimeoutCascadeBandAdvisor
+
+![ToolTimeoutCascadeBandAdvisor](assets/demo/tool-timeout-cascade-band.gif)
+
+Offline HITL `cascade_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-timeout cascade monitors. See `docs/guides/TOOL_TIMEOUT_CASCADE_BAND_ADVISOR_GUIDE.md`.
 ### MemoryNamespaceLeakAdvisor
 
 ![MemoryNamespaceLeakAdvisor](assets/demo/memory-namespace-leak.gif)
