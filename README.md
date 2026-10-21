@@ -174,6 +174,12 @@ Offline HITL `thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard le
 
 Offline HITL `write_amp_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-KV write-amplification monitors. See `docs/guides/SHARED_KV_WRITE_AMPLIFICATION_ADVISOR_GUIDE.md`.
 
+### HandoffPayloadBloatAdvisor
+
+![HandoffPayloadBloatAdvisor](assets/demo/handoff-payload-bloat.gif)
+
+Offline HITL `payload_bloat_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff payload-bloat monitors. See `docs/guides/HANDOFF_PAYLOAD_BLOAT_ADVISOR_GUIDE.md`.
+
 ### PlannerCriticOscillationBandAdvisor
 
 ![PlannerCriticOscillationBandAdvisor](assets/demo/planner-critic-oscillation-band.gif)
