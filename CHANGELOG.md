@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `HandoffPayloadBloatAdvisor` (`handoff_payload_bloat.py`): offline HITL `payload_bloat_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff payload-bloat monitors. Distinct from `HandoffTimeoutBandAdvisor` / `ToolTimeoutCascadeBandAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HANDOFF_PAYLOAD_BLOAT_ADVISOR_GUIDE.md`.
 - `SharedKvWriteAmplificationAdvisor` (`shared_kv_write_amplification.py`): offline HITL `write_amp_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-KV write-amplification monitors. Distinct from `BlackboardLeaseThrashAdvisor` / `BlackboardStaleEntryAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_KV_WRITE_AMPLIFICATION_ADVISOR_GUIDE.md`.
 - `ActorMailboxOverflowAdvisor` (`actor_mailbox_overflow.py`): offline HITL `mailbox_depth_ratio` bands. Gap vs Ray/Akka/Orleans actor-mailbox overflow monitors. Distinct from `WorkerStarvationBandAdvisor` / `OrchestratorRetryStormBandAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ACTOR_MAILBOX_OVERFLOW_ADVISOR_GUIDE.md`.
 - `ToolTimeoutCascadeBandAdvisor` (`tool_timeout_cascade_band.py`): offline HITL `cascade_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-timeout cascade monitors. Distinct from `HandoffTimeoutBandAdvisor` / `CriticTimeoutBandAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_TIMEOUT_CASCADE_BAND_ADVISOR_GUIDE.md`.
