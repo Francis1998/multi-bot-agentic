@@ -180,6 +180,12 @@ Offline HITL `write_amp_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-KV 
 
 Offline HITL `payload_bloat_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff payload-bloat monitors. See `docs/guides/HANDOFF_PAYLOAD_BLOAT_ADVISOR_GUIDE.md`.
 
+### AgentLoopTokenBleedAdvisor
+
+![AgentLoopTokenBleedAdvisor](assets/demo/agent-loop-token-bleed.gif)
+
+Offline HITL `token_bleed_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent-loop token-bleed monitors. See `docs/guides/AGENT_LOOP_TOKEN_BLEED_ADVISOR_GUIDE.md`.
+
 ### PlannerCriticOscillationBandAdvisor
 
 ![PlannerCriticOscillationBandAdvisor](assets/demo/planner-critic-oscillation-band.gif)
