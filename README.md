@@ -168,6 +168,12 @@ Offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-permissio
 Offline HITL `thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard lease-thrash monitors. See `docs/guides/BLACKBOARD_LEASE_THRASH_ADVISOR_GUIDE.md`.
 
 
+### SharedKvWriteAmplificationAdvisor
+
+![SharedKvWriteAmplificationAdvisor](assets/demo/shared-kv-write-amplification.gif)
+
+Offline HITL `write_amp_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-KV write-amplification monitors. See `docs/guides/SHARED_KV_WRITE_AMPLIFICATION_ADVISOR_GUIDE.md`.
+
 ### PlannerCriticOscillationBandAdvisor
 
 ![PlannerCriticOscillationBandAdvisor](assets/demo/planner-critic-oscillation-band.gif)
