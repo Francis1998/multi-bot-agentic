@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `BlackboardReadStalenessAdvisor` (`blackboard_read_staleness.py`): offline HITL `staleness_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard read-staleness monitors. Distinct from `BlackboardStaleEntryAdvisor` / `BlackboardLeaseThrashAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_READ_STALENESS_ADVISOR_GUIDE.md`.
 - `SupervisorIdleSkewAdvisor` (`supervisor_idle_skew.py`): offline HITL `idle_skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen supervisor idle-skew monitors. Distinct from `WorkerStarvationBandAdvisor` / `OrchestratorRetryStormBandAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUPERVISOR_IDLE_SKEW_ADVISOR_GUIDE.md`.
 - `AgentLoopTokenBleedAdvisor` (`agent_loop_token_bleed.py`): offline HITL `token_bleed_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent-loop token-bleed monitors. Distinct from `PlannerCriticOscillationBandAdvisor` / `MemoryNamespaceLeakAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_LOOP_TOKEN_BLEED_ADVISOR_GUIDE.md`.
 - `HandoffPayloadBloatAdvisor` (`handoff_payload_bloat.py`): offline HITL `payload_bloat_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff payload-bloat monitors. Distinct from `HandoffTimeoutBandAdvisor` / `ToolTimeoutCascadeBandAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HANDOFF_PAYLOAD_BLOAT_ADVISOR_GUIDE.md`.
