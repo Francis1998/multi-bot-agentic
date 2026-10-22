@@ -180,6 +180,12 @@ Offline HITL `write_amp_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-KV 
 
 Offline HITL `payload_bloat_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff payload-bloat monitors. See `docs/guides/HANDOFF_PAYLOAD_BLOAT_ADVISOR_GUIDE.md`.
 
+### SupervisorIdleSkewAdvisor
+
+![SupervisorIdleSkewAdvisor](assets/demo/supervisor-idle-skew.gif)
+
+Offline HITL `idle_skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen supervisor idle-skew monitors. See `docs/guides/SUPERVISOR_IDLE_SKEW_ADVISOR_GUIDE.md`.
+
 ### AgentLoopTokenBleedAdvisor
 
 ![AgentLoopTokenBleedAdvisor](assets/demo/agent-loop-token-bleed.gif)
