@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `FanInBarrierStallAdvisor` (`fan_in_barrier_stall.py`): offline HITL `stall_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen fan-in barrier stall monitors. Distinct from `SupervisorIdleSkewAdvisor` / `WorkerStarvationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/FAN_IN_BARRIER_STALL_ADVISOR_GUIDE.md`.
 - `ToolSideEffectReplayBandAdvisor` (`tool_side_effect_replay_band.py`): offline HITL `replay_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool side-effect replay monitors. Distinct from `ToolTimeoutCascadeBandAdvisor` / `ActorMailboxOverflowAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SIDE_EFFECT_REPLAY_BAND_ADVISOR_GUIDE.md`.
 - `BlackboardReadStalenessAdvisor` (`blackboard_read_staleness.py`): offline HITL `staleness_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard read-staleness monitors. Distinct from `BlackboardStaleEntryAdvisor` / `BlackboardLeaseThrashAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_READ_STALENESS_ADVISOR_GUIDE.md`.
 - `SupervisorIdleSkewAdvisor` (`supervisor_idle_skew.py`): offline HITL `idle_skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen supervisor idle-skew monitors. Distinct from `WorkerStarvationBandAdvisor` / `OrchestratorRetryStormBandAdvisor`. Optional later polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUPERVISOR_IDLE_SKEW_ADVISOR_GUIDE.md`.
