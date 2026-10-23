@@ -200,6 +200,13 @@ Offline HITL `replay_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool side-eff
 
 
 
+
+### PlannerToolMismatchBandAdvisor
+
+![PlannerToolMismatchBandAdvisor](assets/demo/planner-tool-mismatch-band.gif)
+
+Offline HITL `mismatch_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner-tool mismatch monitors. See `docs/guides/PLANNER_TOOL_MISMATCH_BAND_ADVISOR_GUIDE.md`.
+
 ### OrchestratorHeartbeatGapAdvisor
 
 ![OrchestratorHeartbeatGapAdvisor](assets/demo/orchestrator-heartbeat-gap.gif)
