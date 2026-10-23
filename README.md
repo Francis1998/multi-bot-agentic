@@ -199,6 +199,13 @@ Offline HITL `staleness_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard
 Offline HITL `replay_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool side-effect replay monitors. See `docs/guides/TOOL_SIDE_EFFECT_REPLAY_BAND_ADVISOR_GUIDE.md`.
 
 
+
+### OrchestratorHeartbeatGapAdvisor
+
+![OrchestratorHeartbeatGapAdvisor](assets/demo/orchestrator-heartbeat-gap.gif)
+
+Offline HITL `heartbeat_gap_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen orchestrator heartbeat monitors. See `docs/guides/ORCHESTRATOR_HEARTBEAT_GAP_ADVISOR_GUIDE.md`.
+
 ### FanInBarrierStallAdvisor
 
 ![FanInBarrierStallAdvisor](assets/demo/fan-in-barrier-stall.gif)
