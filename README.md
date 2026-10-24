@@ -201,6 +201,13 @@ Offline HITL `replay_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool side-eff
 
 
 
+
+### CriticFanoutSkewAdvisor
+
+![CriticFanoutSkewAdvisor](assets/demo/critic-fanout-skew.gif)
+
+Offline HITL `skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen critic-fanout skew monitors. See `docs/guides/CRITIC_FANOUT_SKEW_ADVISOR_GUIDE.md`.
+
 ### PlannerToolMismatchBandAdvisor
 
 ![PlannerToolMismatchBandAdvisor](assets/demo/planner-tool-mismatch-band.gif)
