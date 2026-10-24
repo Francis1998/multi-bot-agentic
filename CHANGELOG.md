@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `CriticFanoutSkewAdvisor` (`critic_fanout_skew.py`): offline HITL `skew_ratio` bands (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen critic-fanout skew monitors. Distinct from `PlannerCriticOscillationBandAdvisor` / `PlannerToolMismatchBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_FANOUT_SKEW_ADVISOR_GUIDE.md`.
 - `PlannerToolMismatchBandAdvisor` (`planner_tool_mismatch_band.py`): offline HITL `mismatch_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner-tool mismatch monitors. Distinct from `PlanGoalContradictionBandAdvisor` / `ToolPermissionDriftAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_TOOL_MISMATCH_BAND_ADVISOR_GUIDE.md`.
 - `OrchestratorHeartbeatGapAdvisor` (`orchestrator_heartbeat_gap.py`): offline HITL `heartbeat_gap_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen orchestrator heartbeat monitors. Distinct from `SupervisorIdleSkewAdvisor` / `AgentHandoffLatencyAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORCHESTRATOR_HEARTBEAT_GAP_ADVISOR_GUIDE.md`.
 - `FanInBarrierStallAdvisor` (`fan_in_barrier_stall.py`): offline HITL `stall_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen fan-in barrier stall monitors. Distinct from `SupervisorIdleSkewAdvisor` / `WorkerStarvationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/FAN_IN_BARRIER_STALL_ADVISOR_GUIDE.md`.
