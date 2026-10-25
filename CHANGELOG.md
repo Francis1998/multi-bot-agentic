@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `SupervisorRestartThrashAdvisor` (`supervisor_restart_thrash.py`): offline HITL `restart_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen supervisor restart-thrash monitors. Distinct from `SupervisorIdleSkewAdvisor` / `OrchestratorRetryStormBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUPERVISOR_RESTART_THRASH_ADVISOR_GUIDE.md`.
 - `ConsensusQuorumStallAdvisor` (`consensus_quorum_stall.py`): offline HITL `stall_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen consensus quorum-stall monitors. Distinct from `ConsensusQuorumBandGuard` / `ConsensusTimeoutBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_QUORUM_STALL_ADVISOR_GUIDE.md`.
 - `SubgraphCancelLeakAdvisor` (`subgraph_cancel_leak.py`): offline HITL `leak_ratio` bands (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen subgraph cancel-leak monitors. Distinct from `MemoryNamespaceLeakAdvisor` / `AgentLoopTokenBleedAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUBGRAPH_CANCEL_LEAK_ADVISOR_GUIDE.md`.
 - `SharedLockContentionBandAdvisor` (`shared_lock_contention_band.py`): offline HITL `contention_ratio` bands (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen shared-lock contention monitors. Distinct from `FanInBarrierStallAdvisor` / `SupervisorIdleSkewAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_LOCK_CONTENTION_BAND_ADVISOR_GUIDE.md`.
