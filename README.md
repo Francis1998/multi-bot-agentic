@@ -231,6 +231,13 @@ Offline HITL `stall_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen consensus quor
 
 Offline HITL `capture_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen critic majority-capture monitors. See `docs/guides/CRITIC_MAJORITY_CAPTURE_BAND_ADVISOR_GUIDE.md`.
 
+
+### AgentHandoffLoopBandAdvisor
+
+![AgentHandoffLoopBandAdvisor](assets/demo/agent-handoff-loop.gif)
+
+Offline HITL `loop_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent handoff-loop monitors. See `docs/guides/AGENT_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
+
 ### SupervisorRestartThrashAdvisor
 
 ![SupervisorRestartThrashAdvisor](assets/demo/supervisor-restart-thrash.gif)
