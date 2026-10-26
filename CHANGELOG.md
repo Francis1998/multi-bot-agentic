@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `CriticMajorityCaptureBandAdvisor` (`critic_majority_capture_band.py`): offline HITL `capture_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen critic majority-capture monitors. Distinct from `CriticCollusionBandAdvisor` / `CriticFanoutSkewAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_MAJORITY_CAPTURE_BAND_ADVISOR_GUIDE.md`.
 - `ToolResultSchemaDriftBandAdvisor` (`tool_result_schema_drift_band.py`): offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result schema-drift monitors. Distinct from `ToolArgSchemaDriftGuard` / `ToolResultSchemaLagAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_SCHEMA_DRIFT_BAND_ADVISOR_GUIDE.md`.
 - `SupervisorRestartThrashAdvisor` (`supervisor_restart_thrash.py`): offline HITL `restart_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen supervisor restart-thrash monitors. Distinct from `SupervisorIdleSkewAdvisor` / `OrchestratorRetryStormBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUPERVISOR_RESTART_THRASH_ADVISOR_GUIDE.md`.
 - `ConsensusQuorumStallAdvisor` (`consensus_quorum_stall.py`): offline HITL `stall_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen consensus quorum-stall monitors. Distinct from `ConsensusQuorumBandGuard` / `ConsensusTimeoutBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_QUORUM_STALL_ADVISOR_GUIDE.md`.
