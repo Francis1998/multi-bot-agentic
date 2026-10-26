@@ -238,6 +238,13 @@ Offline HITL `capture_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen critic major
 
 Offline HITL `loop_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent handoff-loop monitors. See `docs/guides/AGENT_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
 
+
+### WorkerHeartbeatMissBandAdvisor
+
+![WorkerHeartbeatMissBandAdvisor](assets/demo/worker-heartbeat-miss.gif)
+
+Offline HITL `miss_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker heartbeat-miss monitors. See `docs/guides/WORKER_HEARTBEAT_MISS_BAND_ADVISOR_GUIDE.md`.
+
 ### SupervisorRestartThrashAdvisor
 
 ![SupervisorRestartThrashAdvisor](assets/demo/supervisor-restart-thrash.gif)
