@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `WorkerHeartbeatMissBandAdvisor` (`worker_heartbeat_miss_band.py`): offline HITL `miss_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker heartbeat-miss monitors. Distinct from `SupervisorRestartThrashAdvisor` / `SupervisorIdleSkewAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_HEARTBEAT_MISS_BAND_ADVISOR_GUIDE.md`.
 - `AgentHandoffLoopBandAdvisor` (`agent_handoff_loop_band.py`): offline HITL `loop_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent handoff-loop monitors. Distinct from `SubgraphCancelLeakAdvisor` / `PlannerGoalDriftGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
 - `CriticMajorityCaptureBandAdvisor` (`critic_majority_capture_band.py`): offline HITL `capture_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen critic majority-capture monitors. Distinct from `CriticCollusionBandAdvisor` / `CriticFanoutSkewAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_MAJORITY_CAPTURE_BAND_ADVISOR_GUIDE.md`.
 - `ToolResultSchemaDriftBandAdvisor` (`tool_result_schema_drift_band.py`): offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result schema-drift monitors. Distinct from `ToolArgSchemaDriftGuard` / `ToolResultSchemaLagAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_SCHEMA_DRIFT_BAND_ADVISOR_GUIDE.md`.
