@@ -1027,6 +1027,13 @@ The repo also keeps `docs/demo.svg` as a static architecture card.
 ![ConsensusParticipationSkewAdvisor](assets/demo/consensus-participation-skew.gif)
 
 
+### ToolSandboxEscapeAttemptBandAdvisor
+
+![ToolSandboxEscapeAttemptBandAdvisor](assets/demo/tool-sandbox-escape.gif)
+
+Offline HITL `attempt_ratio` bands vs LangGraph/CrewAI/AutoGen tool sandbox-escape attempt monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolPermissionEscalationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

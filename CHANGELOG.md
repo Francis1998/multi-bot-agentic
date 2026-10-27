@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolSandboxEscapeAttemptBandAdvisor` (`tool_sandbox_escape_attempt_band.py`): offline HITL `attempt_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool sandbox-escape attempt monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolPermissionEscalationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_ESCAPE_ATTEMPT_BAND_ADVISOR_GUIDE.md`.
 - `WorkerHeartbeatMissBandAdvisor` (`worker_heartbeat_miss_band.py`): offline HITL `miss_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker heartbeat-miss monitors. Distinct from `SupervisorRestartThrashAdvisor` / `SupervisorIdleSkewAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_HEARTBEAT_MISS_BAND_ADVISOR_GUIDE.md`.
 - `AgentHandoffLoopBandAdvisor` (`agent_handoff_loop_band.py`): offline HITL `loop_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent handoff-loop monitors. Distinct from `SubgraphCancelLeakAdvisor` / `PlannerGoalDriftGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
 - `CriticMajorityCaptureBandAdvisor` (`critic_majority_capture_band.py`): offline HITL `capture_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen critic majority-capture monitors. Distinct from `CriticCollusionBandAdvisor` / `CriticFanoutSkewAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_MAJORITY_CAPTURE_BAND_ADVISOR_GUIDE.md`.
