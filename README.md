@@ -1034,6 +1034,13 @@ The repo also keeps `docs/demo.svg` as a static architecture card.
 Offline HITL `attempt_ratio` bands vs LangGraph/CrewAI/AutoGen tool sandbox-escape attempt monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolPermissionEscalationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
 
 
+### ToolBudgetExhaustionBandAdvisor
+
+![ToolBudgetExhaustionBandAdvisor](assets/demo/tool-budget-exhaustion.gif)
+
+Offline HITL `exhaustion_ratio` bands vs LangGraph/CrewAI/AutoGen tool budget-exhaustion monitors. Distinct from `ToolCallQuotaGuard` / `ToolRetryBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

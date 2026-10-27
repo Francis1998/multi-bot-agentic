@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `ToolBudgetExhaustionBandAdvisor` (`tool_budget_exhaustion_band.py`): offline HITL `exhaustion_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool budget-exhaustion monitors. Distinct from `ToolCallQuotaGuard` / `ToolRetryBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_BUDGET_EXHAUSTION_BAND_ADVISOR_GUIDE.md`.
 - `ToolSandboxEscapeAttemptBandAdvisor` (`tool_sandbox_escape_attempt_band.py`): offline HITL `attempt_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool sandbox-escape attempt monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolPermissionEscalationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_ESCAPE_ATTEMPT_BAND_ADVISOR_GUIDE.md`.
 - `WorkerHeartbeatMissBandAdvisor` (`worker_heartbeat_miss_band.py`): offline HITL `miss_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker heartbeat-miss monitors. Distinct from `SupervisorRestartThrashAdvisor` / `SupervisorIdleSkewAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_HEARTBEAT_MISS_BAND_ADVISOR_GUIDE.md`.
 - `AgentHandoffLoopBandAdvisor` (`agent_handoff_loop_band.py`): offline HITL `loop_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent handoff-loop monitors. Distinct from `SubgraphCancelLeakAdvisor` / `PlannerGoalDriftGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
