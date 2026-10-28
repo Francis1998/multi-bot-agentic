@@ -1062,6 +1062,13 @@ Offline HITL `collision_ratio` bands vs LangGraph/CrewAI/AutoGen tool idempotenc
 Offline HITL `partition_ratio` bands vs LangGraph/CrewAI/AutoGen message-bus partition monitors. Distinct from `OrchestratorFanInStallBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
 
 
+### SharedMemoryQuotaThrashBandAdvisor
+
+![SharedMemoryQuotaThrashBandAdvisor](assets/demo/shared-memory-quota-thrash.gif)
+
+Offline HITL `thrash_ratio` bands vs LangGraph/CrewAI/AutoGen shared-memory quota thrash monitors. Distinct from `SharedKvWriteAmplificationAdvisor` / `BlackboardReadStalenessAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
