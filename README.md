@@ -1048,6 +1048,13 @@ Offline HITL `exhaustion_ratio` bands vs LangGraph/CrewAI/AutoGen tool budget-ex
 Offline HITL `stall_ratio` bands vs LangGraph/CrewAI/AutoGen orchestrator fan-in stall monitors. Distinct from `AgentHandoffLoopBandAdvisor` / `ConsensusQuorumStallAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
 
 
+### ToolIdempotencyCollisionBandAdvisor
+
+![ToolIdempotencyCollisionBandAdvisor](assets/demo/tool-idempotency-collision.gif)
+
+Offline HITL `collision_ratio` bands vs LangGraph/CrewAI/AutoGen tool idempotency-collision monitors. Distinct from `ToolSideEffectReplayBandAdvisor` / `ToolResultSchemaDriftBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
