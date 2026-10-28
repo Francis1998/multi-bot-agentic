@@ -1055,6 +1055,13 @@ Offline HITL `stall_ratio` bands vs LangGraph/CrewAI/AutoGen orchestrator fan-in
 Offline HITL `collision_ratio` bands vs LangGraph/CrewAI/AutoGen tool idempotency-collision monitors. Distinct from `ToolSideEffectReplayBandAdvisor` / `ToolResultSchemaDriftBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
 
 
+### MessageBusPartitionBandAdvisor
+
+![MessageBusPartitionBandAdvisor](assets/demo/message-bus-partition.gif)
+
+Offline HITL `partition_ratio` bands vs LangGraph/CrewAI/AutoGen message-bus partition monitors. Distinct from `OrchestratorFanInStallBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
