@@ -1300,6 +1300,12 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 | Gap vs popular stacks for `DeadLetterToolQueue` | Missing local HITL control | `DeadLetterToolQueue` adds offline HITL-safe behavior for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 |
 | Gap filled by `BotHandoffReceiptStore` | Missing structured bot handoff audit | `BotHandoffReceiptStore` — see `docs/guides/BOT_HANDOFF_RECEIPT_GUIDE.md` |
 
+### OrchestratorPriorityInversionBandAdvisor
+
+![OrchestratorPriorityInversionBandAdvisor](assets/demo/orchestrator-priority-inversion.gif)
+
+Offline HITL `inversion_ratio` bands vs LangGraph/CrewAI/AutoGen orchestrator priority-inversion monitors. Distinct from `OrchestratorFanInStallBandAdvisor` / `OrchestratorRetryStormBandAdvisor`.
+
 ### ConsensusVoteLatencySkewBandAdvisor
 
 ![ConsensusVoteLatencySkewBandAdvisor](assets/demo/consensus-vote-latency-skew.gif)
