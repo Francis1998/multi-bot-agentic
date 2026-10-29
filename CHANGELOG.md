@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- `ConsensusVoteLatencySkewBandAdvisor` (`consensus_vote_latency_skew_band.py`): offline HITL `skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen consensus vote latency-skew monitors. Distinct from `ConsensusQuorumStallAdvisor` / `ConsensusConfidenceBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_VOTE_LATENCY_SKEW_BAND_ADVISOR_GUIDE.md`.
 - `PlannerToolMismatchCascadeBandAdvisor` (`planner_tool_mismatch_cascade_band.py`): offline HITL `mismatch_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner-tool mismatch cascade monitors. Distinct from `PlannerToolMismatchBandAdvisor` / `PlanGoalContradictionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_TOOL_MISMATCH_CASCADE_BAND_ADVISOR_GUIDE.md`.
 ### Added
 - `SharedMemoryQuotaThrashBandAdvisor` (`shared_memory_quota_thrash_band.py`): offline HITL `thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-memory quota thrash monitors. Distinct from `SharedKvWriteAmplificationAdvisor` / `BlackboardReadStalenessAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_MEMORY_QUOTA_THRASH_BAND_ADVISOR_GUIDE.md`.
