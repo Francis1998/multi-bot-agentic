@@ -1307,6 +1307,13 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 
 Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_TRUNCATION_BAND_ADVISOR_GUIDE.md`.
 
+
+### SharedStateWriteSkewBandAdvisor
+
+![SharedStateWriteSkewBandAdvisor](assets/demo/shared-state-write-skew.gif)
+
+Gap vs LangGraph/CrewAI/AutoGen shared-state write-skew monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_STATE_WRITE_SKEW_BAND_ADVISOR_GUIDE.md`.
+
 ### OrchestratorPriorityInversionBandAdvisor
 
 ![OrchestratorPriorityInversionBandAdvisor](assets/demo/orchestrator-priority-inversion.gif)
