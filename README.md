@@ -1314,6 +1314,13 @@ Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `
 
 Gap vs LangGraph/CrewAI/AutoGen shared-state write-skew monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_STATE_WRITE_SKEW_BAND_ADVISOR_GUIDE.md`.
 
+
+### AgentMemoryPoisonBandAdvisor
+
+![AgentMemoryPoisonBandAdvisor](assets/demo/agent-memory-poison.gif)
+
+Gap vs LangGraph/CrewAI/AutoGen agent-memory poison monitors. Distinct from `SharedMemoryConflictBandAdvisor` / `PromptLeakBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_MEMORY_POISON_BAND_ADVISOR_GUIDE.md`.
+
 ### OrchestratorPriorityInversionBandAdvisor
 
 ![OrchestratorPriorityInversionBandAdvisor](assets/demo/orchestrator-priority-inversion.gif)
