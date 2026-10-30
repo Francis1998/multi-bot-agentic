@@ -1300,6 +1300,13 @@ Durable checkpoint resume for ODA runs is available via `resume`.
 | Gap vs popular stacks for `DeadLetterToolQueue` | Missing local HITL control | `DeadLetterToolQueue` adds offline HITL-safe behavior for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 |
 | Gap filled by `BotHandoffReceiptStore` | Missing structured bot handoff audit | `BotHandoffReceiptStore` — see `docs/guides/BOT_HANDOFF_RECEIPT_GUIDE.md` |
 
+
+### ToolResultTruncationBandAdvisor
+
+![ToolResultTruncationBandAdvisor](assets/demo/tool-result-truncation.gif)
+
+Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_TRUNCATION_BAND_ADVISOR_GUIDE.md`.
+
 ### OrchestratorPriorityInversionBandAdvisor
 
 ![OrchestratorPriorityInversionBandAdvisor](assets/demo/orchestrator-priority-inversion.gif)

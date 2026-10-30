@@ -1,3 +1,4 @@
+- `ToolResultTruncationBandAdvisor` (`tool_result_truncation_band.py`): HITL `truncation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_TRUNCATION_BAND_ADVISOR_GUIDE.md`.
 # Changelog
 
 ## Unreleased
