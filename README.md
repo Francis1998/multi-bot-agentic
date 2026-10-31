@@ -1081,6 +1081,12 @@ Gap vs LangGraph/CrewAI/AutoGen critic latency-skew monitors. Distinct from `Cri
 
 Gap vs LangGraph/CrewAI/AutoGen subgraph deadlock-residual monitors. Distinct from `SubgraphCancelLeakAdvisor` / `AgentHandoffLoopBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUBGRAPH_DEADLOCK_RESIDUAL_BAND_ADVISOR_GUIDE.md`.
 
+### PlannerContextOverflowBandAdvisor
+
+![PlannerContextOverflowBandAdvisor](assets/demo/planner-context-overflow.gif)
+
+Gap vs LangGraph/CrewAI/AutoGen planner context-overflow monitors. Distinct from `PlannerStepBudgetBandAdvisor` / `PlannerHorizonBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_CONTEXT_OVERFLOW_BAND_ADVISOR_GUIDE.md`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
