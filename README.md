@@ -1093,6 +1093,12 @@ Gap vs LangGraph/CrewAI/AutoGen planner context-overflow monitors. Distinct from
 
 HITL `queue_depth_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen worker-queue depth monitors. Distinct from `WorkerStarvationBandAdvisor` / `WorkerHeartbeatMissBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_QUEUE_DEPTH_BAND_ADVISOR_GUIDE.md`.
 
+### HandoffSchemaDriftBandAdvisor
+
+![HandoffSchemaDriftBandAdvisor](assets/demo/handoff-schema-drift.gif)
+
+HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen handoff-schema drift monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `AgentHandoffLoopBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HANDOFF_SCHEMA_DRIFT_BAND_ADVISOR_GUIDE.md`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
