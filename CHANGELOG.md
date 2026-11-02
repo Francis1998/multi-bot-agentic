@@ -5,6 +5,7 @@
 
 ## Unreleased
 
+- `CriticCalibrationDriftBandAdvisor` (`critic_calibration_drift_band.py`): HITL `drift_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen critic-calibration drift monitors. Distinct from `CriticCollusionBandAdvisor` / `CriticLatencySkewBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_CALIBRATION_DRIFT_BAND_ADVISOR_GUIDE.md`.
 - `AgentAffinitySkewBandAdvisor` (`agent_affinity_skew_band.py`): HITL `skew_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent-affinity skew monitors. Distinct from `FanInSkewBandAdvisor` / `SharedStateWriteSkewBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_AFFINITY_SKEW_BAND_ADVISOR_GUIDE.md`.
 - `HandoffSchemaDriftBandAdvisor` (`handoff_schema_drift_band.py`): HITL `drift_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen handoff-schema drift monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `AgentHandoffLoopBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HANDOFF_SCHEMA_DRIFT_BAND_ADVISOR_GUIDE.md`.
 - `WorkerQueueDepthBandAdvisor` (`worker_queue_depth_band.py`): HITL `queue_depth_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen worker-queue depth monitors. Distinct from `WorkerStarvationBandAdvisor` / `WorkerHeartbeatMissBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_QUEUE_DEPTH_BAND_ADVISOR_GUIDE.md`.

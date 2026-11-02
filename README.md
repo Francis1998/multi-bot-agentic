@@ -1105,6 +1105,12 @@ HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen handoff-schema dr
 
 HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent-affinity skew monitors. Distinct from `FanInSkewBandAdvisor` / `SharedStateWriteSkewBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_AFFINITY_SKEW_BAND_ADVISOR_GUIDE.md`.
 
+### CriticCalibrationDriftBandAdvisor
+
+![CriticCalibrationDriftBandAdvisor](assets/demo/critic-calibration-drift.gif)
+
+HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic-calibration drift monitors. Distinct from `CriticCollusionBandAdvisor` / `CriticLatencySkewBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_CALIBRATION_DRIFT_BAND_ADVISOR_GUIDE.md`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
