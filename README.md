@@ -1117,6 +1117,12 @@ HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic-calibratio
 
 HITL `churn_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen planner goal-churn monitors. Distinct from `PlannerContextOverflowBandAdvisor` / `PlanGoalContradictionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_GOAL_CHURN_BAND_ADVISOR_GUIDE.md`.
 
+### SharedKvLeaseExpiryBandAdvisor
+
+![SharedKvLeaseExpiryBandAdvisor](assets/demo/shared-kv-lease-expiry.gif)
+
+HITL `expiry_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen shared-KV lease-expiry monitors. Distinct from `BlackboardWriteLeaseAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_KV_LEASE_EXPIRY_BAND_ADVISOR_GUIDE.md`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
