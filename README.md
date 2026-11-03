@@ -1137,6 +1137,13 @@ HITL `compat_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool-schema comp
 
 HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent token-budget skew monitors. Distinct from `SessionTokenBudgetLedger` / `CriticTokenBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_TOKEN_BUDGET_SKEW_BAND_ADVISOR_GUIDE.md`.
 
+
+### CriticScoreInflationBandAdvisor
+
+![CriticScoreInflationBandAdvisor](assets/demo/critic-score-inflation.gif)
+
+HITL `inflation_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic score-inflation monitors. Distinct from `CriticCalibrationDriftBandAdvisor` / `CriticCollusionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_SCORE_INFLATION_BAND_ADVISOR_GUIDE.md`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
