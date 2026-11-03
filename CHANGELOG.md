@@ -5,6 +5,8 @@
 
 ## Unreleased
 
+- `AgentTokenBudgetSkewBandAdvisor` (`agent_token_budget_skew_band.py`): HITL `skew_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent token-budget skew monitors. Distinct from `SessionTokenBudgetLedger` / `CriticTokenBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_TOKEN_BUDGET_SKEW_BAND_ADVISOR_GUIDE.md`.
+
 - `ToolSchemaCompatBandAdvisor` (`tool_schema_compat_band.py`): HITL `compat_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen tool-schema compatibility monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SCHEMA_COMPAT_BAND_ADVISOR_GUIDE.md`.
 
 - `SharedKvLeaseExpiryBandAdvisor` (`shared_kv_lease_expiry_band.py`): HITL `expiry_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen shared-KV lease-expiry monitors. Distinct from `BlackboardWriteLeaseAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_KV_LEASE_EXPIRY_BAND_ADVISOR_GUIDE.md`.
