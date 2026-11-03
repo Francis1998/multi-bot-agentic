@@ -1130,6 +1130,13 @@ HITL `expiry_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen shared-KV lease-
 
 HITL `compat_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool-schema compatibility monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SCHEMA_COMPAT_BAND_ADVISOR_GUIDE.md`.
 
+
+### AgentTokenBudgetSkewBandAdvisor
+
+![AgentTokenBudgetSkewBandAdvisor](assets/demo/agent-token-budget-skew.gif)
+
+HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent token-budget skew monitors. Distinct from `SessionTokenBudgetLedger` / `CriticTokenBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_TOKEN_BUDGET_SKEW_BAND_ADVISOR_GUIDE.md`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
