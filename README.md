@@ -1144,6 +1144,13 @@ HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent token-budget
 
 HITL `inflation_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic score-inflation monitors. Distinct from `CriticCalibrationDriftBandAdvisor` / `CriticCollusionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_SCORE_INFLATION_BAND_ADVISOR_GUIDE.md`.
 
+
+### WorkerMailboxOverflowBandAdvisor
+
+![WorkerMailboxOverflowBandAdvisor](assets/demo/worker-mailbox-overflow.gif)
+
+HITL `overflow_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen worker mailbox overflow monitors. Distinct from `WorkerQueueDepthBandAdvisor` / `WorkerStarvationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_MAILBOX_OVERFLOW_BAND_ADVISOR_GUIDE.md`.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

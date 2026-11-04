@@ -5,6 +5,8 @@
 
 ## Unreleased
 
+- `WorkerMailboxOverflowBandAdvisor` (`worker_mailbox_overflow_band.py`): HITL `overflow_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen worker mailbox overflow monitors. Distinct from `WorkerQueueDepthBandAdvisor` / `WorkerStarvationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_MAILBOX_OVERFLOW_BAND_ADVISOR_GUIDE.md`.
+
 - `CriticScoreInflationBandAdvisor` (`critic_score_inflation_band.py`): HITL `inflation_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen critic score-inflation monitors. Distinct from `CriticCalibrationDriftBandAdvisor` / `CriticCollusionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_SCORE_INFLATION_BAND_ADVISOR_GUIDE.md`.
 
 - `AgentTokenBudgetSkewBandAdvisor` (`agent_token_budget_skew_band.py`): HITL `skew_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent token-budget skew monitors. Distinct from `SessionTokenBudgetLedger` / `CriticTokenBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_TOKEN_BUDGET_SKEW_BAND_ADVISOR_GUIDE.md`.
