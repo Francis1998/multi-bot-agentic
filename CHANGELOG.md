@@ -5,6 +5,9 @@
 
 ## Unreleased
 
+- `HitlTimeoutCascadeBandAdvisor` (`hitl_timeout_cascade_band.py`): HITL `cascade_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen HITL timeout-cascade monitors. Distinct from `HandoffTimeoutBandAdvisor` / `ToolTimeoutCascadeBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_TIMEOUT_CASCADE_BAND_ADVISOR_GUIDE.md`.
+
+
 - `SubgraphRetryAmplificationBandAdvisor` (`subgraph_retry_amplification_band.py`): HITL `amplification_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen subgraph retry-amplification monitors. Distinct from `ToolRetryBudgetBandGuard` / `ToolTimeoutCascadeBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUBGRAPH_RETRY_AMPLIFICATION_BAND_ADVISOR_GUIDE.md`.
 
 - `AgentAffinityDecayBandAdvisor` (`agent_affinity_decay_band.py`): HITL `decay_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent affinity-decay monitors. Distinct from `AgentAffinitySkewBandAdvisor` / `StickyBotAffinityStore`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_AFFINITY_DECAY_BAND_ADVISOR_GUIDE.md`.
