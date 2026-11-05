@@ -1166,6 +1166,13 @@ HITL `decay_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent affinity-de
 HITL `cascade_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen HITL timeout-cascade monitors. Distinct from `HandoffTimeoutBandAdvisor` / `ToolTimeoutCascadeBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_TIMEOUT_CASCADE_BAND_ADVISOR_GUIDE.md`.
 
 
+### MemoryCompactionLagBandAdvisor
+
+![MemoryCompactionLagBandAdvisor](assets/demo/memory-compaction-lag.gif)
+
+HITL `lag_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen memory-compaction lag monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedKvLeaseExpiryBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/MEMORY_COMPACTION_LAG_BAND_ADVISOR_GUIDE.md`.
+
+
 ### SubgraphRetryAmplificationBandAdvisor
 
 ![SubgraphRetryAmplificationBandAdvisor](assets/demo/subgraph-retry-amplification.gif)
