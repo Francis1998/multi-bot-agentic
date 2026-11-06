@@ -1180,6 +1180,13 @@ HITL `lag_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen memory-compaction l
 HITL `contention_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen blackboard write-contention monitors. Distinct from `SharedBlackboardWriteLease` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_WRITE_CONTENTION_BAND_ADVISOR_GUIDE.md`.
 
 
+### ToolSideEffectOrphanBandAdvisor
+
+![ToolSideEffectOrphanBandAdvisor](assets/demo/tool-side-effect-orphan.gif)
+
+HITL `orphan_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool side-effect orphan monitors. Distinct from `ToolSideEffectLedgerAdvisor` / `ToolSideEffectReplayBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SIDE_EFFECT_ORPHAN_BAND_ADVISOR_GUIDE.md`.
+
+
 ### SupervisorHandoffLoopBandAdvisor
 
 ![SupervisorHandoffLoopBandAdvisor](assets/demo/supervisor-handoff-loop.gif)
