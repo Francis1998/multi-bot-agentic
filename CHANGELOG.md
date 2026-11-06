@@ -5,6 +5,7 @@
 
 ## Unreleased
 
+- `BlackboardWriteContentionBandAdvisor` (`blackboard_write_contention_band.py`): HITL `contention_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen blackboard write-contention monitors. Distinct from `SharedBlackboardWriteLease` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_WRITE_CONTENTION_BAND_ADVISOR_GUIDE.md`.
 - `SupervisorHandoffLoopBandAdvisor` (`supervisor_handoff_loop_band.py`): HITL `loop_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen supervisor handoff-loop monitors. Distinct from `AgentHandoffLoopBandAdvisor` / `HandoffSchemaDriftBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUPERVISOR_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
 
 
