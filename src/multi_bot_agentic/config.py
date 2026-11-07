@@ -77,7 +77,7 @@ def build_llm_adapter(provider: str) -> LLMAdapter:
         api_key = _required_env("OPENAI_API_KEY")
         return OpenAIAdapter(
             api_key=api_key,
-            model=os.getenv("OPENAI_MODEL", "gpt-5.5"),
+            model=os.getenv("OPENAI_MODEL", "gpt-6.1-sol"),
             base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1/chat/completions"),
         )
     if provider == "claude_code":
@@ -85,12 +85,12 @@ def build_llm_adapter(provider: str) -> LLMAdapter:
     if provider == "gemini":
         return GeminiAdapter(
             api_key=_required_env("GEMINI_API_KEY"),
-            model=os.getenv("GEMINI_MODEL", "gemini-3.5-flash"),
+            model=os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
         )
     if provider == "kimi":
         return KimiAdapter(
             api_key=_required_env("KIMI_API_KEY"),
-            model=os.getenv("KIMI_MODEL", "kimi-k2"),
+            model=os.getenv("KIMI_MODEL", "kimi-k3.1-pro"),
             base_url=os.getenv("KIMI_BASE_URL", "https://api.moonshot.ai/v1/chat/completions"),
         )
     raise ValueError(f"unsupported provider: {provider}")

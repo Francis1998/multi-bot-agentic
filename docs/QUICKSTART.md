@@ -58,4 +58,8 @@ multi-bot-agentic run \
   --max-steps 4
 ```
 
+Current defaults: `gpt-6.1-sol` (OpenAI), `gemini-3.8-flash` (Gemini), and `kimi-k3.1-pro` (Kimi). For Claude Code,
+choose the model with `CLAUDE_CODE_COMMAND="claude --model claude-opus-5-5"` (or `claude-sonnet-5-5`). Override
+any default with `OPENAI_MODEL`, `GEMINI_MODEL`, or `KIMI_MODEL`. See [Configuration](CONFIGURATION.md#current-model-stack).
+
 Live providers are not required for tests or CI.

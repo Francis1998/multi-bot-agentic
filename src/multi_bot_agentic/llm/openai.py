@@ -8,24 +8,36 @@ from multi_bot_agentic.llm.base import render_tool_catalog
 from multi_bot_agentic.llm.http import post_json
 from multi_bot_agentic.models import ModelOutput, ModelRequest
 
+# Reasoning models (GPT-6, Kimi K3) count hidden reasoning tokens against
+# max_completion_tokens; OpenAI recommends reserving at least 25,000 tokens.
+DEFAULT_MAX_COMPLETION_TOKENS = 32_768
+
 
 class OpenAIAdapter:
     """Adapter for OpenAI-compatible GPT chat completions."""
 
     provider_name = "openai"
 
-    def __init__(self, api_key: str, model: str, base_url: str) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        base_url: str,
+        max_completion_tokens: int = DEFAULT_MAX_COMPLETION_TOKENS,
+    ) -> None:
         """Initialize the adapter.
 
         Args:
             api_key: OpenAI API key.
             model: Model name.
             base_url: Chat completions endpoint.
+            max_completion_tokens: Upper bound for reasoning plus visible output tokens.
         """
 
         self.api_key = api_key
         self.model = model
         self.base_url = base_url
+        self.max_completion_tokens = max_completion_tokens
 
     def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
         """Call the provider and normalize text output.
@@ -48,7 +60,9 @@ class OpenAIAdapter:
                 },
                 {"role": "user", "content": _render_prompt(request)},
             ],
-            "max_tokens": max(64, min(request.max_output_chars // 4, 1024)),
+            # max_tokens is deprecated and rejected by reasoning models; sampling knobs such as
+            # temperature are unsupported (GPT-6) or fixed (Kimi K3), so none are sent.
+            "max_completion_tokens": self.max_completion_tokens,
         }
         decoded = post_json(
             self.base_url,

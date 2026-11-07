@@ -5,6 +5,15 @@
 
 ## Unreleased
 
+### Changed
+
+- Refreshed provider defaults to the current model stack (verified 2026-11-06): `OPENAI_MODEL=gpt-6.1-sol`,
+  `GEMINI_MODEL=gemini-3.8-flash`, and `KIMI_MODEL=kimi-k3.1-pro` (Kimi K2 is being retired). Docs name
+  `claude-opus-5-5` and `claude-sonnet-5-5` for the Claude Code CLI. The OpenAI/Kimi adapter now sends
+  `max_completion_tokens` (32768, which covers reasoning plus visible output) instead of the deprecated
+  `max_tokens: 500`. That cap could be spent entirely on reasoning by GPT-6 and Kimi K3. The adapter never
+  sends `temperature`/`top_p`/`n`/penalties, which GPT-6 rejects while reasoning and which K3 fixes.
+
 ### Fixed
 
 - `AgentRunner.resume()` now restores the bot that was active when the checkpoint was written (checkpoints record `active_bot_id`) and executes `HANDOFF:` decisions. Previously a resumed multi-bot run silently reverted to the constructor's bot scope (so a `writer`-scoped run could call planner-only tools) and failed with `unsupported action for _act: handoff`. Resuming a bot-scoped checkpoint on a runner without that bot registered now fails closed with a `ValueError`.
