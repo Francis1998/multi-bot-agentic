@@ -21,3 +21,20 @@ def test_event_log_persists_monotonic_sequences(tmp_path: Path) -> None:
 
     assert [event.seq for event in events] == [1, 2]
     assert events[0].payload == {"goal": "test"}
+
+
+def test_last_event_timestamps_returns_each_runs_latest_event(tmp_path: Path) -> None:
+    """Each run maps to the timestamp of its highest-sequence event."""
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        assert log.last_event_timestamps() == {}
+        log.append("run-a", RunState.CREATED, EventType.RUN_CREATED, {"goal": "a"})
+        log.append("run-b", RunState.CREATED, EventType.RUN_CREATED, {"goal": "b"})
+        last_a = log.append("run-a", RunState.OBSERVING, EventType.OBSERVATION, {"source": "user"})
+        timestamps = log.last_event_timestamps()
+        events_b = log.list_events("run-b")
+    finally:
+        log.close()
+
+    assert timestamps == {"run-a": last_a.timestamp, "run-b": events_b[-1].timestamp}

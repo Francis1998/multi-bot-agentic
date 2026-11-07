@@ -131,6 +131,20 @@ class SQLiteEventLog:
 
         self._connection.close()
 
+    def last_event_timestamps(self) -> dict[str, str]:
+        """Return each run's latest event timestamp (the event with the highest sequence number).
+
+        Returns:
+            Timestamps keyed by run id; empty when the log has no events.
+        """
+
+        cursor = self._connection.execute(
+            "SELECT events.run_id, events.timestamp FROM events "
+            "JOIN (SELECT run_id, MAX(seq) AS seq FROM events GROUP BY run_id) AS latest "
+            "ON events.run_id = latest.run_id AND events.seq = latest.seq"
+        )
+        return {str(row[0]): str(row[1]) for row in cursor.fetchall()}
+
     def _next_sequence(self, run_id: str) -> int:
         """Return the next sequence number for a run.
 
