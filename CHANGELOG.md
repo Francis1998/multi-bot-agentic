@@ -15,6 +15,9 @@
   sends `temperature`/`top_p`/`n`/penalties, which GPT-6 rejects while reasoning and which K3 fixes. Set the
   budget with `OPENAI_MAX_COMPLETION_TOKENS` / `KIMI_MAX_COMPLETION_TOKENS` for model overrides with smaller
   output limits.
+- Documented the provider parameter rules for GPT-6, Claude 5.5, Gemini 3.x, and Kimi K3 in
+  `docs/CONFIGURATION.md#provider-parameter-rules`. Every adapter is now guarded by a test against sending
+  `temperature`/`top_p`/`top_k`/`n`/penalties/logprobs (the Gemini and Claude Code adapters are newly covered).
 
 ### Fixed
 

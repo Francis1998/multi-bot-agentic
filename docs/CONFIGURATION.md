@@ -29,6 +29,18 @@ environment variables below. For prices, see each provider's pricing page.
 If you override `OPENAI_MODEL` with an older model whose output limit is below 32768 tokens, lower
 `OPENAI_MAX_COMPLETION_TOKENS` to match. For example, `gpt-4o` documents a 16384-token output limit.
 
+## Provider Parameter Rules
+
+Current models reject or ignore sampling parameters, so no adapter sends `temperature`, `top_p`, `top_k`, `n`,
+penalties, or logprobs. `tests/test_adapters.py` guards this for every provider.
+
+| Provider | Rule (official docs, checked 2026-11-07) | What the adapter does |
+| --- | --- | --- |
+| OpenAI GPT-6 | When reasoning effort is not `none`, remove `temperature`, `top_p`, and `top_logprobs` (and `logprobs` on Chat Completions). `gpt-6.1-sol` and `gpt-6-astra` support only `low`..`max`. `gpt-6.1-terra` and `gpt-6-luna` accept `temperature` only with `reasoning_effort: none` ([GPT-6 guide](https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md)) | Sends only `model`, `messages`, and `max_completion_tokens` |
+| Anthropic Claude 5.5 | A non-default `temperature`, `top_p`, or `top_k` returns 400. Since API version 2026-10-21, any of them returns 400 on every model. Use `output_config.effort` instead ([thinking](https://platform.claude.com/docs/en/build-with-claude/thinking.md), [effort](https://platform.claude.com/docs/en/build-with-claude/effort.md)) | The Claude Code CLI adapter runs only the configured command (for example `claude --model claude-opus-5-5`) and adds no flags |
+| Google Gemini 3.x | Remove `temperature`, `top_p`, and `top_k`; if provided, they are ignored ([Gemini 3 guide](https://aistudio.google.com/docs/gemini-3.md)) | Sends only `contents`, with no `generationConfig` |
+| Kimi K3 | `temperature` is fixed at 1.0 (any other value errors), as are `top_p`, `n`, and penalties. Use top-level `reasoning_effort` (`low`/`high`/`max`) ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | Sends only `model`, `messages`, and `max_completion_tokens` |
+
 ## Provider Commands
 
 Fake:

@@ -602,6 +602,8 @@ multi-bot-agentic report --event-log data/runs.sqlite
 | Kimi K3 / Moonshot | `KimiAdapter` | `kimi-k3.1-pro` (`KIMI_MODEL`; also `kimi-k3.1-pro-highspeed`, `kimi-k3`) | `KIMI_API_KEY` |
 
 Model IDs were verified against provider docs on 2026-11-06 ([details](docs/CONFIGURATION.md#current-model-stack)).
+No adapter sends `temperature`/`top_p`/`top_k`. Current GPT-6, Claude 5.5, Gemini 3.x, and Kimi K3 models
+reject, fix, or ignore them ([provider parameter rules](docs/CONFIGURATION.md#provider-parameter-rules)).
 
 All adapters normalize output into `ModelOutput`. The runner consumes that output as an observation before the decision engine selects the next action.
 
