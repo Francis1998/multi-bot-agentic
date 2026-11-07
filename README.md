@@ -20,8 +20,9 @@ a portfolio-quality recreation of the `multi-bot` product idea, built without pr
   actions it rejected.
 - **Every run is auditable.** Lifecycle transitions, observations, decisions, and tool and MCP calls are
   persisted per run. `replay` and `report` never call a provider, so postmortems are safe and deterministic.
-- **Tools are explicit and bounded.** Built-in and MCP tools pass the same allowlist, per-bot scopes,
-  timeouts, and result caps. A model can only request a tool; the engine decides whether it runs.
+- **Tools are explicit and bounded.** Built-in and MCP tools pass the same allowlist and per-bot scopes. MCP
+  calls also get per-call timeouts and result byte caps. Built-in tools run offline and in-process with
+  size-limited inputs. A model can only request a tool; the engine decides whether it runs.
 - **Provider-neutral.** One adapter interface covers GPT-6, the Claude Code CLI, Gemini, and Kimi K3, and every
   adapter sends parameters that current reasoning models accept.
 - **CI-friendly.** The fake provider exercises the real runtime, so lint, types, tests, a smoke run, and
@@ -86,7 +87,7 @@ To use a real model, export its key and pick the provider, for example
 | Parallel fan-out | Capped, order-preserving task batches | `fanout.py` | [Fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md) |
 | Tool-call hygiene | Rate limits, PII redaction, result truncation, per-bot permissions | `tool_runner.py`, `observation_redactor.py`, `tool_result_truncator.py`, `tool_permission.py` | [Rate limiter](docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md) |
 | Offline evaluation | Golden-path fixtures scored on tool sequence and answer | `eval/` | [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md) |
-| 122 built-in tools | Deterministic, offline tools for text, JSON, CSV, HTML, MIME, and encodings | `tools/` | [Tools catalog](docs/TOOLS.md) |
+| 122 built-in tools | Offline, in-process tools for text, JSON, CSV, HTML, MIME, and encodings | `tools/` | [Tools catalog](docs/TOOLS.md) |
 | Advisors & guards | 150+ offline HITL guards for multi-bot failure modes | `*_band.py` and friends | [Advisor catalog](docs/ADVISOR_CATALOG.md) |
 
 ## Current Model Stack

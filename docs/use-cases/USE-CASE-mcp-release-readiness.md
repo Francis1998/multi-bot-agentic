@@ -133,10 +133,14 @@ as the answer. A real model would pick an allowed tool or answer directly.
 ## 5. Gate releases on an offline evaluation
 
 The golden-path evaluation replays scripted scenarios through the real runtime and scores tool sequences and
-answers. It needs no network or API keys, so it can block a release in CI:
+answers. It needs no network or API keys, so it can block a release in CI. `eval` exits with `2` when any
+scenario fails, so gate on the command's own exit status. Don't pipe it straight into `head`, because a plain
+pipeline reports `head`'s status instead:
 
 ```text
-$ multi-bot-agentic eval --event-log-dir demo-output/eval-logs | head -5
+$ multi-bot-agentic eval --event-log-dir demo-output/eval-logs > demo-output/eval.json; echo "exit=$?"
+exit=0
+$ head -5 demo-output/eval.json
 {
   "pass_rate": 1.0,
   "mean_tool_sequence_score": 1.0,

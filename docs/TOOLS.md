@@ -1,9 +1,9 @@
 # Built-In Tools
 
 Every built-in tool implements `ToolAdapter`, is registered in `build_default_tools()`, and is allowlisted
-by `SafetyPolicy`. A model requests one with `TOOL:<name>:<payload>`. Tools are deterministic, offline, and
-bounded: they never run code or make network requests. For tools from external servers, see the
-[MCP Tool Bridge Guide](guides/MCP_TOOLS_GUIDE.md).
+by `SafetyPolicy`. A model requests one with `TOOL:<name>:<payload>`. Tools run offline and in-process, reject
+oversized input, and never make network requests. Most are deterministic; generators such as `uuid4` and `ulid`
+are not. For tools from external servers, see the [MCP Tool Bridge Guide](guides/MCP_TOOLS_GUIDE.md).
 
 > Entries below were moved **verbatim** from the former README. Model names in them (GPT-5.5, Claude
 > Sonnet 4.6, Gemini 3.x, Kimi K2) are historical. See
