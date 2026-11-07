@@ -33,6 +33,7 @@
 
 ### Added
 
+- `ToolPermissionBounceBandAdvisor` (`tool_permission_bounce_band.py`): HITL tool permission bounce_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen tool-permission bounce monitors. Distinct from `ToolPermissionEscalationBandAdvisor` / `ToolSandboxEscapeAttemptBandAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. See `docs/guides/TOOL_PERMISSION_BOUNCE_BAND_ADVISOR_GUIDE.md`.
 - `AgentCapabilityDriftBandAdvisor` (`agent_capability_drift_band.py`): HITL agent capability drift_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent capability-drift monitors. Distinct from `BotCapabilityDriftAdvisor` / `ToolSchemaCompatBandAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. See `docs/guides/AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md`.
 - `SupervisorFanoutSkewBandAdvisor` (`supervisor_fanout_skew_band.py`): HITL supervisor fanout skew_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen supervisor fanout-skew monitors. Distinct from `OrchestratorFanoutBudgetBandAdvisor` / `CriticFanoutSkewAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. See `docs/guides/SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md`.
 - **MCP tool bridge** (`multi_bot_agentic.mcp`): dependency-free stdio MCP client that is dual-era. A
