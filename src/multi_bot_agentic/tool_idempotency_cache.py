@@ -4,7 +4,7 @@ Caches tool results by a stable hash of ``tool_name`` plus canonical args so
 retries can replay without re-executing. Distinct from
 ``DeadLetterToolQueue`` (post-exhaustion HITL) and ``ToolResultTruncator``
 (payload size capping) — this is a thin, stdlib-only idempotency cache for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 tool loops. Fills a gap
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro tool loops. Fills a gap
 vs AutoGen/CrewAI/LangGraph, which often re-run identical tool calls on
 retry.
 """

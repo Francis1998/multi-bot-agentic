@@ -3,8 +3,8 @@
 Agents often need consecutive row windows from a table without asking a model
 to copy headers or slice rows by hand. This tool validates a CSV document,
 preserves the header once per window, and emits sliding windows over data rows.
-It never executes code or makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+It never executes code or makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Arguments: ``text`` (CSV), ``window_size``, optional ``step`` (default 1),
 ``start_row`` (0-based data-row offset, default 0), and optional ``index`` to

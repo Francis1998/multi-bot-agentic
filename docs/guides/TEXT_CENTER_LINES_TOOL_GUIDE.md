@@ -7,8 +7,8 @@
 Agents sometimes need each non-empty line centered to a fixed column width
 before aligning headings, code blocks, or quoted observations.
 **multi-bot-agentic** includes `text_center_lines` as a deterministic,
-allowlisted helper that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+allowlisted helper that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 
 This differs from `text_wrap`, which reflows long lines, and from
 `text_pad_lines`, which exposes left/right/both placement. `text_center_lines`

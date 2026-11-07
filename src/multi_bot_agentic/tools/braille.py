@@ -3,7 +3,7 @@
 Agents need a deterministic ASCII↔Braille codec for accessibility demos and
 puzzle pipelines. Models invent arbitrary mappings. This tool maps ASCII bytes
 onto the Unicode Braille Patterns block (U+2800+) and back, with no network.
-Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

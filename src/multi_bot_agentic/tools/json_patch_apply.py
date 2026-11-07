@@ -4,8 +4,8 @@ Agents often need to apply structured updates without asking a model to
 reconstruct an entire JSON document. This tool implements RFC 6902
 ``add``, ``remove``, ``replace``, ``move``, ``copy``, and ``test`` operations
 with stdlib :mod:`json` only. It bounds both inputs, operation count, and output,
-and never executes code or makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+and never executes code or makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Inputs may be supplied as separate ``text`` / ``patch`` arguments or as one
 ``text`` value split on ``<<<JSON_PATCH>>>``.

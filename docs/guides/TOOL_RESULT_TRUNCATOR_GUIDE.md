@@ -4,7 +4,7 @@
 
 Bound oversized tool result strings before they inflate the LLM context.
 
-Works with **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2** agent loops.
+Works with **GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro** agent loops.
 
 Distinct from the user-facing `truncate` tool (`tools/text_truncate.py`) — this
 is an orchestration-layer guard, not a bot-callable text tool.

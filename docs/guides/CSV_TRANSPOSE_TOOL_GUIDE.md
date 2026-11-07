@@ -2,7 +2,7 @@
 
 ![csv_transpose demo](../../assets/demo/csv-transpose.gif)
 
-Transpose CSV tables before GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+Transpose CSV tables before GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 turns. Inspired by spreadsheet transpose helpers in popular agent toolkits.
 
 ## Usage

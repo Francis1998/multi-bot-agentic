@@ -5,8 +5,8 @@ snippets or model handoff payloads). This tool parses TOML text with
 ``tomllib`` (Python 3.11+) or ``tomli`` when available, then re-serializes a
 deterministic subset of values (tables, arrays, strings, ints, floats, bools)
 without executing code. Dates/times and other non-scalar types are refused so
-output stays portable across GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+output stays portable across GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

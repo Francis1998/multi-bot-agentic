@@ -3,8 +3,8 @@
 Caps how many times each tool may be invoked per ``session_id`` with
 advisory or hard deny after N calls. Distinct from ``ToolPermissionAllowlist``
 (ACL allow/deny by bot) and ``ToolCallLatencyTracker`` (latency samples) —
-this is a thin, stdlib-only per-session per-tool call counter for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 multi-bot crews. Fills a gap vs
+this is a thin, stdlib-only per-session per-tool call counter for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro multi-bot crews. Fills a gap vs
 AutoGen/CrewAI/LangGraph/Semantic Kernel, which often rate-limit by wall
 clock or share one global tool budget without an explicit per-session
 per-tool quota with advisory vs hard modes. Never performs network I/O.

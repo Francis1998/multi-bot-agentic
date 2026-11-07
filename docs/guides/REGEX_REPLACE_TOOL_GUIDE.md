@@ -7,8 +7,8 @@
 Agents routinely need a deterministic find/replace before the next LLM turn.
 Inventing replacements in-model drifts across turns and corrupts surrounding
 text. **multi-bot-agentic** includes `regex_replace` as a bounded, allowlisted
-substitution via stdlib `re` that is safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+substitution via stdlib `re` that is safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 
@@ -52,5 +52,5 @@ A model requests it with `TOOL:regex_replace:<text>` plus `pattern` / `repl`
 ## Suggested repo metadata
 
 - **Description:** Multi-bot agentic runtime with allowlisted tools, safety
-  policy, and GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+  policy, and GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 - **Topics:** `agentic-ai`, `multi-agent`, `llm-tools`, `python`, `safety`

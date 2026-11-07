@@ -6,8 +6,8 @@ JSON Pointer dialect (``/foo/0/bar``) rather than the project's simpler
 library and evaluates RFC 6901 pointers, including the empty pointer for the
 whole document and ``~0``/``~1`` escapes. It never executes code, never
 evaluates scripts/filters, and never makes a network request — matching the
-``json_path``, ``json_format``, and ``json_query`` contracts for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+``json_path``, ``json_format``, and ``json_query`` contracts for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Because the decision engine only forwards a single ``text`` payload from
 ``TOOL:json_pointer:<payload>``, the JSON document and pointer may be supplied

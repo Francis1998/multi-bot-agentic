@@ -3,7 +3,7 @@
 ![uuid_nil demo](../../assets/demo/uuid-nil.gif)
 
 Return the RFC 4122 nil UUID (or max UUID) as a stable placeholder id before
-the next GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 turn.
+the next GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro turn.
 
 ## Why
 

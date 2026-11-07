@@ -3,7 +3,7 @@
 Flags Shannon entropy of critic verdict label distributions with HITL bands.
 Distinct from ``CriticVerdictDiversityGate`` (verdict diversity) and
 ``CriticTimeoutBandGuard`` (timeout). Fills a gap vs AutoGen / CrewAI / LangGraph critic agreement-entropy gates.
-Works with GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Works with GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 Never performs network I/O.
 """
 

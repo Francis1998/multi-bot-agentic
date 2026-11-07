@@ -5,8 +5,8 @@ Asking a language model to invent replacements drifts across turns and can
 corrupt surrounding text. This tool compiles a Python regular expression and
 applies a bounded substitution via stdlib :mod:`re`. Patterns are length-capped
 and match counts are limited to reduce catastrophic backtracking risk. It never
-executes code and never makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+executes code and never makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 """
 
 from __future__ import annotations

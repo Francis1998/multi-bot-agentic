@@ -4,7 +4,7 @@ Agents often need to move opaque payloads through human-typed channels that
 forbid ambiguous lookalikes (0/O/I/l). Asking a model to Base58-encode bytes is
 unreliable. This tool encodes or decodes UTF-8 text with the Bitcoin Base58
 alphabet. It never executes code and never makes network requests. Safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

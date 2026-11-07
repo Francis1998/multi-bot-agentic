@@ -7,8 +7,8 @@
 Agents sometimes need to route or validate MIME attachments by transfer
 encoding without exposing message bodies or attachment bytes.
 **multi-bot-agentic** includes `mime_attachment_encoding` as a deterministic,
-allowlisted stdlib `email` parser that is safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+allowlisted stdlib `email` parser that is safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 It complements `mime_attachment_names`, `mime_attachment_ctypes`,
 `mime_attachment_sizes`, and `mime_attachment_disposition` with

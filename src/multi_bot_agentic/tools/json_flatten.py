@@ -5,7 +5,7 @@ the next model turn. Asking a model to flatten structures is brittle (invented
 keys, dropped array indexes, inconsistent separators). This tool parses JSON
 with the standard library and emits dotted/bracket keys such as ``a.b[0].c`` with
 a configurable separator for object nesting. It never executes code or makes
-network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 workers.
 """
 

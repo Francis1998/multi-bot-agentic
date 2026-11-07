@@ -4,7 +4,7 @@ Agent runs often ingest legacy ``.ini`` / ``.cfg`` snippets from ops repos.
 Asking a model to reconstruct section/key structure is brittle. This tool
 parses INI text via stdlib ``configparser.ConfigParser`` and returns a pretty
 JSON object of sections→keys. It never executes code and never makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

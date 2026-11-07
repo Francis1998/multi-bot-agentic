@@ -4,8 +4,8 @@ Tracks a run deadline and reports remaining/expired status via ``check``.
 Never kills or terminates processes itself — callers decide how to stop.
 Distinct from ``ToolCircuitBreaker`` (per-tool failure isolation) and
 ``AdaptiveConcurrencyLimiter`` (in-flight caps) — this is a thin,
-stdlib-only wall-clock signal for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 agent loops. Fills a gap vs AutoGen/CrewAI/LangGraph, which often
+stdlib-only wall-clock signal for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro agent loops. Fills a gap vs AutoGen/CrewAI/LangGraph, which often
 rely on step counts without an explicit wall-clock advisory.
 """
 

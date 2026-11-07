@@ -5,7 +5,7 @@
 Bounded compaction for long multi-bot event streams: keep head + tail, drop
 the middle, insert an `event_log.compacted` marker.
 
-Works with **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2** ODA runs.
+Works with **GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro** ODA runs.
 
 ## Gap vs LangSmith / Langfuse
 

@@ -1,8 +1,8 @@
 """Deterministic nested MIME multipart flatten tool.
 
 Email and ticket agents often receive nested multipart messages and need a
-compact inventory of leaf parts before GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 reasoning. This tool recursively walks multipart MIME and
+compact inventory of leaf parts before GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro reasoning. This tool recursively walks multipart MIME and
 returns JSON metadata for each leaf part without payloads. Inspired by mail
 pipelines in popular agent frameworks. It never executes code or makes network
 requests.

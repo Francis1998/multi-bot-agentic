@@ -6,8 +6,8 @@
 
 Agents often need a stable hexadecimal representation of a UTF-8 payload before
 hashing, embedding, or comparing opaque blobs. **multi-bot-agentic** includes
-`hex_encode` as a deterministic, allowlisted transform that is safe for GPT-5.5
-/ Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+`hex_encode` as a deterministic, allowlisted transform that is safe for GPT-6 Astra
+/ Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

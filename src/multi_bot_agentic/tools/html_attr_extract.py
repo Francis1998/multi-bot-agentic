@@ -5,8 +5,8 @@ from an HTML snippet before the next LLM turn. Asking a language model to
 invent attribute values drifts across turns and hallucinates URLs. This tool
 walks markup with stdlib :class:`html.parser.HTMLParser` and returns matching
 attribute values as newline-separated text. It never executes code and never
-makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2.
+makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro.
 """
 
 from __future__ import annotations

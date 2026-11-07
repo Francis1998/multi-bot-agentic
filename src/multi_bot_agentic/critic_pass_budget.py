@@ -3,7 +3,7 @@
 Caps critic re-pass / revise loops and emits HITL exhaust bands. Distinct from
 ``CriticBotVerdictGate`` (accept/revise/reject) and ``DebateRoundLimiter``
 (debate rounds). Fills a gap vs AutoGen / CrewAI / LangGraph unbounded critic
-revision loops. Works with GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+revision loops. Works with GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 Never performs network I/O.
 """
 

@@ -8,7 +8,7 @@ Agents routinely need to present small tabular outputs in issue comments, run
 summaries, and final answers. Letting a model hand-format markdown can produce
 shifted columns or unescaped pipes. **multi-bot-agentic** includes
 `markdown_table` as a deterministic, allowlisted renderer that is safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 2.5 / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

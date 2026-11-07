@@ -1,8 +1,8 @@
 """Deterministic CSV transpose tool.
 
 Agents routinely need to flip spreadsheet-shaped CSV so columns become rows
-(or vice versa) before the next model turn. Asking GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 to transpose tables is error-prone for wide inputs. This
+(or vice versa) before the next model turn. Asking GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro to transpose tables is error-prone for wide inputs. This
 tool validates a bounded CSV document and emits its transpose. It never
 executes code or makes network requests.
 """

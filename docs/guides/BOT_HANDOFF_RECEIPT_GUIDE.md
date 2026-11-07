@@ -6,7 +6,7 @@ Structured bot-to-bot handoff receipts for audit trails — `from_bot`, `to_bot`
 `summary`, `artifacts`, and `timestamp_iso` — with an in-memory store and no
 network I/O.
 
-Works with **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2** multi-bot loops.
+Works with **GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro** multi-bot loops.
 
 Distinct from the runner `HANDOFF:bot_id:summary` directive (`BOT_HANDOFF_GUIDE.md`)
 — this module records receipts for post-hoc audit, it does not swap the active bot.

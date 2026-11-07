@@ -6,7 +6,7 @@ Track cumulative prompt + completion tokens per `session_id` with **soft** and
 **hard** thresholds. Status is `ok` / `soft` / `hard` — the ledger never kills
 processes or performs network I/O.
 
-Works with **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2** multi-bot chats.
+Works with **GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro** multi-bot chats.
 
 Distinct from:
 

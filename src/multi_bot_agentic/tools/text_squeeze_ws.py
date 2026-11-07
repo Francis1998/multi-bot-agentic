@@ -5,7 +5,7 @@ newlines that waste context and break exact string matches. Asking a model to
 normalize whitespace can drop meaningful blank lines or invent spacing. This
 tool collapses whitespace runs to a single space, optionally preserving
 newlines, with a hard input cap. It never executes code or makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 The document and ``preserve_newlines`` flag may be supplied as separate
 arguments or as a single ``text`` value split on ``<<<TEXT_SQUEEZE>>>``.

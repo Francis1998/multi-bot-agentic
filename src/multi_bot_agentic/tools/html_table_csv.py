@@ -7,7 +7,7 @@ table or every ``<table>`` in a bounded HTML fragment to CSV text via the
 standard-library :class:`html.parser.HTMLParser`, reusing the extraction
 patterns from ``html_table``. It rejects documents containing ``script`` or
 ``style``, never executes code, and never makes a network request — safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

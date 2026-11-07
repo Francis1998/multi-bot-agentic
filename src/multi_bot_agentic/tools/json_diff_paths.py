@@ -4,7 +4,7 @@ Agents sometimes need to identify where two JSON observations differ without
 copying both documents into the next model turn. This tool parses two bounded
 documents with the standard library and returns sorted dotted/bracket paths such
 as ``models[0].name``. It never executes code or makes network requests. Safe
-for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Documents may be supplied as separate ``text`` / ``other`` arguments or as one
 ``text`` value split on ``<<<JSON_DIFF_PATHS>>>``.

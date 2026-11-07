@@ -4,7 +4,7 @@ Web-research agents (Browser-use / Scrapy-style pipelines) often need href +
 anchor text without fetching pages. This tool parses HTML via stdlib
 ``html.parser``, returns canonical JSON of ``href``/``text`` pairs, rejects
 ``script``/``style`` documents, and never executes code or makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Arguments: ``html`` (or ``text``) plus optional ``max_links`` (default 100,
 range 1..500).

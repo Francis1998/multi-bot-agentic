@@ -5,7 +5,7 @@
 Scrub emails, phones, SSN-like values, and `sk-` / `Bearer` tokens from
 observation text before it hits the durable event log.
 
-Works with **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2** agent loops.
+Works with **GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro** agent loops.
 
 ## Gap vs AutoGen / CrewAI
 

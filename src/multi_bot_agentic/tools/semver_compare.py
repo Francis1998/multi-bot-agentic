@@ -5,8 +5,8 @@ newer than another before the next LLM turn. Asking a model to compare
 ``1.0.0-alpha`` vs ``1.0.0`` is error-prone. This tool implements SemVer 2.0.0
 precedence for ``major.minor.patch`` with optional pre-release identifiers
 (build metadata is ignored for comparison). It never executes code and never
-makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 
 Versions may be supplied as separate ``version_a`` / ``version_b`` arguments
 or as one ``text`` value split on ``<<<SEMVER_COMPARE>>>``.

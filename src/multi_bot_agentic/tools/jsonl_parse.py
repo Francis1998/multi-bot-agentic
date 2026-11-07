@@ -4,8 +4,8 @@ HuggingFace-datasets-style agents often receive JSONL blobs and need a
 deterministic JSON array before the next model turn. Asking an LLM to parse
 JSONL is fragile on large multi-line payloads. This tool validates JSON Lines
 text with the stdlib ``json`` module and returns a pretty-printed JSON array.
-It never executes code and never makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+It never executes code and never makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

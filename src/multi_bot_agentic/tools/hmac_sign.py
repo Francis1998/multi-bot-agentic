@@ -5,7 +5,7 @@ to sign outbound webhook payloads before the next LLM turn. Asking a model to
 compute HMAC is unreliable. This tool signs UTF-8 text with a secret key using
 an allowlisted hash algorithm and returns hex or Base64. It never logs the
 secret, never executes code, and never makes network requests. Safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

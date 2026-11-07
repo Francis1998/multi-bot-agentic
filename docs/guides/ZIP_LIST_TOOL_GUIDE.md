@@ -8,7 +8,7 @@ Agents sometimes receive small ZIP payloads as base64 blobs — export bundles,
 attachment previews, or relayed tool output — and need member metadata before
 choosing a parser. Extracting or executing archive contents is unsafe.
 **multi-bot-agentic** includes `zip_list` as a deterministic, allowlisted
-lister that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+lister that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 workers.
 
 ## Usage

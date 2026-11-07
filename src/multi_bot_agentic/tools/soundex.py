@@ -4,7 +4,7 @@ CrewAI / LangChain-style agent toolkits often need a deterministic phonetic
 fingerprint when reconciling person names or vendor labels. Asking a model to
 compute Soundex is unreliable. This tool returns the classic 4-character
 American Soundex code for a string. It never executes code and never makes
-network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 workers.
 """
 

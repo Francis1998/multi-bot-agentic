@@ -1,12 +1,11 @@
-- `AgentMemoryPoisonBandAdvisor` (`agent_memory_poison_band.py`): HITL `poison_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent-memory poison monitors. Distinct from `SharedMemoryConflictBandAdvisor` / `PromptLeakBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_MEMORY_POISON_BAND_ADVISOR_GUIDE.md`.
-- `SharedStateWriteSkewBandAdvisor` (`shared_state_write_skew_band.py`): HITL `write_skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-state write-skew monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_STATE_WRITE_SKEW_BAND_ADVISOR_GUIDE.md`.
-- `ToolResultTruncationBandAdvisor` (`tool_result_truncation_band.py`): HITL `truncation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_TRUNCATION_BAND_ADVISOR_GUIDE.md`.
 # Changelog
 
 ## Unreleased
 
 ### Changed
 
+- Guides, `docs/ADVISOR_CATALOG.md` `Stack:` lines, `docs/TOOLS.md`, and module docstrings no longer list the retired "GPT-5.5 (or 5.4) / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2" stack (about 780 changed lines across 464 files). They now name the provider flagships verified on 2026-11-07: GPT-6 Astra, Claude Opus 5.5, Gemini 4 Argon, and Kimi K3.1 Pro. The catalog's "model names are historical" note now says what changed. Old names used as tool sample data (CSV rows, YAML lists, sorted lines, base-N inputs) are unchanged, so documented outputs stay exact. `tests/test_docs_model_stack_current.py` fails if a retired name reappears inside a model list.
+- `docs/TOOLS.md`: the `uuid4` and `yaml_to_json` entries had been spliced together by a bad rebase (2026-08-08), which left the `yaml_to_json` description truncated mid-sentence. Both entries are restored, and the `yaml_to_json` entry is checked against the tool (sorted keys, 2-space indent, anchors/aliases/tags/constructors and non-finite numbers rejected). Three advisor entries that sat above the `# Changelog` title moved under Unreleased → Added.
 - README restructured into a short showcase: pitch with badges, hero GIF, why, an ODA mermaid diagram,
   60-second quickstart (including MCP tools), feature map, current model stack, documentation map, condensed
   use cases, and a contributing note. Templated advisor/guard sections moved verbatim to
@@ -33,6 +32,9 @@
 
 ### Added
 
+- `AgentMemoryPoisonBandAdvisor` (`agent_memory_poison_band.py`): HITL `poison_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent-memory poison monitors. Distinct from `SharedMemoryConflictBandAdvisor` / `PromptLeakBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_MEMORY_POISON_BAND_ADVISOR_GUIDE.md`.
+- `SharedStateWriteSkewBandAdvisor` (`shared_state_write_skew_band.py`): HITL `write_skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-state write-skew monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_STATE_WRITE_SKEW_BAND_ADVISOR_GUIDE.md`.
+- `ToolResultTruncationBandAdvisor` (`tool_result_truncation_band.py`): HITL `truncation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_TRUNCATION_BAND_ADVISOR_GUIDE.md`.
 - `ToolPermissionBounceBandAdvisor` (`tool_permission_bounce_band.py`): HITL tool permission bounce_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen tool-permission bounce monitors. Distinct from `ToolPermissionEscalationBandAdvisor` / `ToolSandboxEscapeAttemptBandAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. See `docs/guides/TOOL_PERMISSION_BOUNCE_BAND_ADVISOR_GUIDE.md`.
 - `AgentCapabilityDriftBandAdvisor` (`agent_capability_drift_band.py`): HITL agent capability drift_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent capability-drift monitors. Distinct from `BotCapabilityDriftAdvisor` / `ToolSchemaCompatBandAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. See `docs/guides/AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md`.
 - `SupervisorFanoutSkewBandAdvisor` (`supervisor_fanout_skew_band.py`): HITL supervisor fanout skew_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen supervisor fanout-skew monitors. Distinct from `OrchestratorFanoutBudgetBandAdvisor` / `CriticFanoutSkewAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. See `docs/guides/SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md`.

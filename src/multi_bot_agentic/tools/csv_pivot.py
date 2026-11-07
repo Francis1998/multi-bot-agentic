@@ -5,7 +5,7 @@ moving observations between tools and prompts. Asking a language model to pivot
 tables invents columns and drops rows. This tool uses stdlib :mod:`csv` to
 pivot long-form rows into wide columns by an index key and value column, or
 unpivot wide columns back to long form. It never executes code and never makes
-network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 """
 
 from __future__ import annotations

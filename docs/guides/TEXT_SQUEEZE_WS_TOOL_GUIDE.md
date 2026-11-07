@@ -7,7 +7,7 @@
 Agents often receive messy pasted observations with runs of spaces, tabs, or
 newlines that waste context and break exact matches. **multi-bot-agentic**
 includes `text_squeeze_ws` as a deterministic, allowlisted whitespace normalizer
-that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

@@ -3,8 +3,8 @@
 Caps chained bot-to-bot handoff depth per session and emits HITL bands.
 Distinct from ``BotHandoffReceiptStore`` (receipt audit) and
 ``BotSpawnBudgetLimiter`` (spawn caps). Fills a gap vs AutoGen /
-CrewAI / LangGraph unbounded nested handoffs. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+CrewAI / LangGraph unbounded nested handoffs. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

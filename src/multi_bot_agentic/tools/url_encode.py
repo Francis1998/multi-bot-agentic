@@ -6,7 +6,7 @@ model to apply RFC 3986 encoding can drop characters or invent escapes. This
 tool wraps stdlib :func:`urllib.parse.quote` (or :func:`urllib.parse.quote_plus`
 when spaces should become ``+``) with an optional ``safe`` character set and a
 hard input cap. It never executes code or makes network requests. Safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 The document and options may be supplied as separate ``text`` / ``safe`` /
 ``plus`` arguments or as a single ``text`` value split on ``<<<URL_ENCODE>>>``.

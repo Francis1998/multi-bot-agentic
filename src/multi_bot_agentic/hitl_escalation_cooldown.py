@@ -4,8 +4,8 @@ Tracks wall-clock cooldown after a human denies or rejects an escalation so
 bots cannot immediately re-prompt the same HITL surface. Distinct from
 ``HitlApprovalGate`` (approve/deny decision) and ``CriticBotVerdictGate``
 (critic accept/revise/reject). Fills a gap vs AutoGen / CrewAI / LangGraph
-HITL nodes that often allow immediate re-escalation. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+HITL nodes that often allow immediate re-escalation. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

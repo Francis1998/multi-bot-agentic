@@ -4,8 +4,8 @@ Agent runs often need to inspect claims inside a JWT relayed by an upstream
 step — issuer, subject, expiry — without treating the token as authenticated.
 This tool base64url-decodes the header and payload segments only and returns
 canonical JSON. It never verifies signatures, never trusts claims, never
-executes code, and never makes a network request. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need opaque claim
+executes code, and never makes a network request. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers that need opaque claim
 inspection before the next turn.
 """
 

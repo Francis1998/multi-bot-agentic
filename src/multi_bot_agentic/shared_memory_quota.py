@@ -3,8 +3,8 @@
 Caps per-bot writes to shared blackboard memory and emits HITL bands.
 Distinct from ``SharedBlackboardWriteLease`` (exclusive lease) and
 ``BlackboardEntryTtlEvictor`` (TTL eviction). Fills a gap vs AutoGen /
-CrewAI / LangGraph unbounded shared-state growth. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+CrewAI / LangGraph unbounded shared-state growth. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

@@ -6,8 +6,8 @@ parses a bounded raw MIME message with the stdlib :mod:`email` package and
 returns only filename/size metadata from Content-Disposition ``filename`` or
 Content-Type ``name`` parameters. Sizes use ``Content-Length`` when present,
 otherwise decoded payload byte length. It never returns payloads, writes
-attachments, executes code, or makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+attachments, executes code, or makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

@@ -2,8 +2,8 @@
 
 ![text_collapse_blank demo](../../assets/demo/text-collapse-blank.gif)
 
-Collapse consecutive blank or whitespace-only lines before the next GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 turn.
+Collapse consecutive blank or whitespace-only lines before the next GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro turn.
 
 ## Why
 

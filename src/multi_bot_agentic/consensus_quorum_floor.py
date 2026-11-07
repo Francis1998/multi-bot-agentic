@@ -3,8 +3,8 @@
 Requires a minimum yes-vote count before consensus and emits HITL bands.
 Distinct from ``VoteTieBreakPolicy`` (tie breaks) and
 ``ConsensusConfidenceBandAdvisor`` (winning-share bands). Fills a gap vs
-AutoGen / CrewAI / LangGraph thin-quorum consensus. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+AutoGen / CrewAI / LangGraph thin-quorum consensus. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

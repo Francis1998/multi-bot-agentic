@@ -6,7 +6,7 @@ them next. Asking a language model to guess the format is unreliable. This tool
 sniffs likely content types (``json``, ``xml``, ``html``, ``csv``, ``tsv``,
 ``markdown``, ``plain``) from a bounded text or bytes prefix without network
 access. It never executes code and returns a detected type plus a confidence
-score. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+score. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

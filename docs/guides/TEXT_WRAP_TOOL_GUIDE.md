@@ -7,7 +7,7 @@
 Agents routinely need to reflow long lines for logs, rationales, or bounded
 previews before the next LLM turn. Wrapping in-model is unreliable. **multi-bot-agentic**
 includes `text_wrap` as a deterministic, allowlisted wrapper via stdlib
-`textwrap` that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+`textwrap` that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 workers.
 
 ## Usage

@@ -5,7 +5,7 @@
 Register bots with skill tags, then **route** a task string to the best
 `bot_id` by tag overlap. Returns ranked matches and a winner (or none).
 
-Works with **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2** multi-bot chats.
+Works with **GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro** multi-bot chats.
 
 Distinct from:
 

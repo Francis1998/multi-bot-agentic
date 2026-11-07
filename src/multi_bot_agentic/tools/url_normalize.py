@@ -5,8 +5,8 @@ slashes, or fragment noise. Asking a model to canonicalize those forms is
 unreliable. This tool normalizes a URL via stdlib ``urllib.parse``: lowercases
 the scheme/host, drops default ``:80``/``:443`` ports, strips fragments, and
 optionally collapses a trailing slash on the path. It never executes code and
-never makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+never makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

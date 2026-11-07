@@ -8,8 +8,8 @@ Agents sometimes receive raw email or HTTP multipart bodies — pasted webhook
 payloads, relayed MIME messages, or attachment previews — and need a structured
 summary of each part before choosing a parser. Guessing boundaries in-model is
 unreliable. **multi-bot-agentic** includes `mime_multipart` as a deterministic,
-allowlisted parser via stdlib `email` that is safe for GPT-5.5 / Claude Sonnet
-4.6 / Gemini 3.x / Kimi K2 workers.
+allowlisted parser via stdlib `email` that is safe for GPT-6 Astra / Claude
+Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

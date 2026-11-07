@@ -7,7 +7,7 @@
 Agents sometimes need each non-empty line padded to a fixed column width before
 aligning code blocks, tables, or quoted observations. **multi-bot-agentic**
 includes `text_pad_lines` as a deterministic, allowlisted helper that is safe
-for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 This differs from `text_wrap`, which reflows long lines, and from `text_indent`,
 which prepends a fixed prefix. `text_pad_lines` expands shorter non-empty lines

@@ -6,7 +6,7 @@ inventing element trees. This tool parses XML with the stdlib
 ``xml.etree.ElementTree`` module, rejects DOCTYPE/ENTITY declarations before
 parse (XXE hardening), and returns a compact indented text summary (tag names,
 ``@attr=value`` pairs, and text nodes) with depth and element caps. Output stays
-portable across GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+portable across GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

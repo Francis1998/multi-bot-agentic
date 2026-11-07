@@ -5,8 +5,8 @@ fill (pandas-style ``fillna``) before the next LLM turn. Asking a model to
 rewrite pasted tables can drop quoted cells or shift columns. This tool uses
 stdlib :mod:`csv` only, preserves the header, fills empty cells with a constant
 value (default ``""``), and optionally limits the fill to named columns. It
-never executes code and never makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+never executes code and never makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Because the decision engine only forwards a single ``text`` payload from
 ``TOOL:csv_fillna:<payload>``, the CSV document and fill settings may be

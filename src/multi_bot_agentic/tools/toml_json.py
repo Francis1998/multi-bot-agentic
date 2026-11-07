@@ -5,7 +5,7 @@ Agents often need to convert configuration between TOML (common in
 parses one format and emits the other using the same portable value subset as
 ``toml_format`` and ``json_format``: dict/list/str/int/float/bool only. Dates,
 nulls, and non-finite numbers are refused so output stays portable across
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

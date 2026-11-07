@@ -3,7 +3,7 @@
 ![cron_next demo](../../assets/demo/cron-next.gif)
 
 Preview the next UTC fire times for a classic 5-field cron expression before
-the next GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 turn.
+the next GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro turn.
 
 ## Why
 

@@ -6,7 +6,7 @@ Operators (or an external UI) resolve requests by rewriting the same files.
 This is intentionally thinner than LangGraph interrupt/resume or CrewAI/AutoGen
 human-input loops: no runner rewiring is required for v1. Callers check
 ``requires_approval``, create a request, poll until resolved, then continue.
-Compatible with GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 tool flows.
+Compatible with GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro tool flows.
 """
 
 from __future__ import annotations

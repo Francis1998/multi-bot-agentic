@@ -4,7 +4,7 @@ Collects answers from multiple bots and returns a consensus winner for
 HITL-style multi-bot agreement. Distinct from ``CriticBotVerdictGate``
 (accept/revise/reject on one producer output) and ``ParallelFanOut``
 (order-preserving task execution) — this is a thin, stdlib-only vote
-tally for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 multi-bot
+tally for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro multi-bot
 crews. Fills a gap vs AutoGen/CrewAI/LangGraph, which often lack a
 first-class majority/plurality consensus aggregator separate from the
 critic or fan-out runtime.

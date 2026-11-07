@@ -6,8 +6,8 @@ structured summary of each part before choosing a parser. Guessing boundaries
 in-model is unreliable. This tool parses multipart messages via stdlib
 :mod:`email` and returns a JSON summary of each part (content-type, charset,
 size, payload preview). It never executes code, never extracts attachments to
-disk, and never makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+disk, and never makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

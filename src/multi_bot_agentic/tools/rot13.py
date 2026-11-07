@@ -2,8 +2,8 @@
 
 Agents often need a deterministic Caesar-13 transform for puzzles and
 reversible obfuscation demos. Models invent rotations. This tool applies
-stdlib ``str.translate`` ROT13 with no network access. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+stdlib ``str.translate`` ROT13 with no network access. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

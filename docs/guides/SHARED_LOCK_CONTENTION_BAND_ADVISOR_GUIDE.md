@@ -5,7 +5,7 @@
 Offline HITL `contention_ratio` bands.
 Gap vs LangGraph/CrewAI/AutoGen shared-lock contention monitors. Distinct from `FanInBarrierStallAdvisor` / `SupervisorIdleSkewAdvisor`.
 
-Stack: **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2**.
+Stack: **GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro**.
 
 ## Usage
 

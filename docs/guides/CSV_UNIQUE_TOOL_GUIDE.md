@@ -7,7 +7,7 @@
 Agents often need CSV rows unique on one or more named columns before the next
 turn without asking a model to drop the wrong duplicate. **multi-bot-agentic**
 includes `csv_unique` as a deterministic, allowlisted stdlib `csv` deduper that
-is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

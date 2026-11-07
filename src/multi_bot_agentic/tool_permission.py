@@ -3,8 +3,8 @@
 Gates tool calls by ``bot_id`` so each bot only invokes tools it was
 explicitly granted. Distinct from the global ``SafetyPolicy`` tool allowlist
 (run-wide) and from ``HitlApprovalGate`` (human review) — this is a thin,
-stdlib-only per-bot ACL for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 multi-bot crews. Fills a gap vs AutoGen/CrewAI/LangGraph, which
+stdlib-only per-bot ACL for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro multi-bot crews. Fills a gap vs AutoGen/CrewAI/LangGraph, which
 often share one tool set across agents without per-bot allow/deny checks.
 """
 

@@ -4,8 +4,8 @@ Agents often need to identify which records changed between two small CSV
 exports without asking a model to compare every cell. This tool parses both
 documents with stdlib :mod:`csv`, indexes rows by one or more primary-key
 columns, and emits only added, removed, and changed key maps. It never executes
-code or makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini
-3.x / Kimi K2 workers.
+code or makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini
+4 Argon / Kimi K3.1 Pro workers.
 
 Programmatic callers pass ``left``, ``right``, and ``key``. A single decision
 payload may instead use ``<<<CSV_DIFF>>>`` between documents and

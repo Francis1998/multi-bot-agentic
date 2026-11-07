@@ -3,8 +3,8 @@
 Records from_bot / to_bot / summary / artifacts / timestamp without network I/O.
 Distinct from the typed ``HANDOFF:bot_id:summary`` decision directive in the
 runner — this is a durable receipt store for post-hoc audit. Fills a
-CrewAI/AutoGen handoff-audit gap and suits GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 multi-bot loops.
+CrewAI/AutoGen handoff-audit gap and suits GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro multi-bot loops.
 """
 
 from __future__ import annotations

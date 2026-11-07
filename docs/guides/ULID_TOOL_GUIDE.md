@@ -2,7 +2,7 @@
 
 ![ULID demo](../../assets/demo/ulid.gif)
 
-Deterministic Crockford-Base32 ULID generate/validate for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+Deterministic Crockford-Base32 ULID generate/validate for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Why
 

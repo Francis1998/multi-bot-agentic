@@ -4,7 +4,7 @@ Hashes canonical tool results per ``session_id`` so identical payloads are
 not re-injected into LLM context. Distinct from ``ToolCallIdempotencyCache``
 (caches by tool+args before execute) and ``ToolResultTruncator`` (size trim).
 Fills a gap vs AutoGen / CrewAI / LangGraph, which often re-emit duplicate
-observations. Works with GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+observations. Works with GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 Never performs network I/O.
 """
 

@@ -2,8 +2,8 @@
 
 Caps tool observation text before it is fed back into the LLM context.
 Distinct from the user-facing ``truncate`` tool in ``tools/text_truncate.py`` —
-this is a thin, stdlib-only guard for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 agent loops. Fills a gap vs AutoGen/CrewAI/LangGraph, which often
+this is a thin, stdlib-only guard for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro agent loops. Fills a gap vs AutoGen/CrewAI/LangGraph, which often
 leave raw tool payloads unbounded.
 """
 

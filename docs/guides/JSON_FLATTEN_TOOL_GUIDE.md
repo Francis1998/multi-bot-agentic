@@ -6,8 +6,8 @@
 
 Agents often need nested JSON observations reduced to a flat key/value map before
 the next model turn. **multi-bot-agentic** includes `json_flatten` as a
-deterministic, allowlisted stdlib `json` helper that is safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+deterministic, allowlisted stdlib `json` helper that is safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Unlike `json_path`, which extracts one value, `json_flatten` emits the whole
 flattened map with dotted/bracket keys such as `a.b[0].c`.

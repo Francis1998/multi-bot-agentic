@@ -7,8 +7,8 @@
 Agents sometimes need to distinguish attachment and inline MIME parts without
 copying message bodies or attachment bytes into another model turn.
 **multi-bot-agentic** includes `mime_attachment_disposition` as a deterministic,
-allowlisted stdlib `email` parser that is safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+allowlisted stdlib `email` parser that is safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Unlike `mime_attachment_names`, this tool emits only values declared by
 Content-Disposition and retains disposition records that have no filename.

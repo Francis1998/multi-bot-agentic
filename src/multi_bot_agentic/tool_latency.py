@@ -4,8 +4,8 @@ Records latency samples per tool name and reports percentile stats.
 Never kills, cancels, or blocks tools — callers decide how to react.
 Distinct from ``RunDeadlineWatchdog`` (wall-clock run deadline) and
 ``AdaptiveConcurrencyLimiter`` (in-flight caps) — this is a thin,
-stdlib-only per-tool latency advisory for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 agent loops. Fills a gap vs AutoGen/CrewAI/LangGraph,
+stdlib-only per-tool latency advisory for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro agent loops. Fills a gap vs AutoGen/CrewAI/LangGraph,
 which often lack a first-class local p50/p95 tool-latency store separate
 from tracing backends.
 """

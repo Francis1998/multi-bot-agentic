@@ -5,7 +5,7 @@ when fuzzy-matching labels, ticket ids, or user typos. Asking a model to
 compute edit distance is unreliable. This tool returns the classic
 Levenshtein distance (insert/delete/substitute cost 1) between two strings
 via a bounded DP table. It never executes code and never makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

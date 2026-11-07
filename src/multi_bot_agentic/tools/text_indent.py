@@ -5,7 +5,7 @@ it in a code fence, YAML list, or quoted reply. Asking a model to add spaces can
 drop blank lines or invent uneven widths. This tool prepends a fixed number of
 spaces to each non-empty line (default 2, max 32), optionally skipping the first
 line, with a hard input cap. It never executes code or makes network requests.
-Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 The document and options may be supplied as separate ``text`` / ``spaces`` /
 ``skip_first`` arguments or as a single ``text`` value split on

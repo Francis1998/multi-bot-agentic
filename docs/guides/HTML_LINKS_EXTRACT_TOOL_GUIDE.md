@@ -2,8 +2,8 @@
 
 ![html_links_extract demo](../../assets/demo/html-links-extract.gif)
 
-Extract anchor `href` + text pairs as JSON before the next GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 research turn.
+Extract anchor `href` + text pairs as JSON before the next GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro research turn.
 
 ## Why
 

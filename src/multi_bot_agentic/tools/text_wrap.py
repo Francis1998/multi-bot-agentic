@@ -5,7 +5,7 @@ bounded previews before the next LLM turn. Asking a language model to wrap text
 is unreliable (ragged widths, dropped newlines, inconsistent indentation). This
 tool wraps or fills lines via stdlib :mod:`textwrap` with a configurable width
 and ``wrap`` or ``fill`` mode. It never executes code and never makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

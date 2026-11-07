@@ -4,7 +4,7 @@ Waits until N distinct bot results arrive for a barrier id before releasing.
 Distinct from ``BotVoteConsensusAggregator`` (vote tally) and
 ``PlanStepDependencyResolver`` (DAG ordering). Fills a gap vs AutoGen /
 CrewAI / LangGraph fan-in barriers that are often implicit. Works with
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

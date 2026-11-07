@@ -4,7 +4,7 @@ Agents often need CSV rows unique on one or more named columns before the next
 LLM turn. Asking a model to drop duplicates can remove the wrong row or scramble
 quoted cells. This tool uses stdlib :mod:`csv` only, keeps the header, and
 retains the first occurrence of each key. It never executes code and never makes
-network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 workers.
 
 Because the decision engine only forwards a single ``text`` payload from

@@ -3,8 +3,8 @@
 Compresses observation/message lists into a bounded rolling summary so long
 runs stay within prompt budgets. Thinner than LangChain ConversationSummaryMemory
 or CrewAI memory backends: no embeddings, no LLM call required for v1 — extractive
-head/tail + keyword bullets suitable for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 agent loops.
+head/tail + keyword bullets suitable for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro agent loops.
 """
 
 from __future__ import annotations

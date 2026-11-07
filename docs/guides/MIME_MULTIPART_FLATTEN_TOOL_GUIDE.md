@@ -2,8 +2,8 @@
 
 ![mime_multipart_flatten demo](../../assets/demo/mime-multipart-flatten.gif)
 
-Recursively flatten nested multipart MIME into leaf metadata for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers. Inspired by email agent
+Recursively flatten nested multipart MIME into leaf metadata for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers. Inspired by email agent
 pipelines in popular frameworks.
 
 ## Usage

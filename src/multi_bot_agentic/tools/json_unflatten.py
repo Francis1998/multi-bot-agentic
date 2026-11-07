@@ -5,8 +5,8 @@ model turn. Asking a model to reconstruct dotted and bracketed paths is brittle:
 paths can conflict, array indexes can be dropped, and separators can be applied
 inconsistently. This tool parses JSON with the standard library and rebuilds
 paths such as ``a.b[0].c`` with a configurable object separator. It never
-executes code or makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+executes code or makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

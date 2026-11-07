@@ -4,7 +4,7 @@ Agent pipelines often need a deterministic CRC32 fingerprint when comparing
 handoff blobs or cache keys. Asking a model to compute CRC32 is unreliable.
 This tool returns the unsigned hexadecimal CRC32 digest of UTF-8 text via
 stdlib ``zlib``. It never executes code and never makes network requests.
-Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

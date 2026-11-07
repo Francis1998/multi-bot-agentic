@@ -3,8 +3,8 @@
 Tracks soft/hard cumulative token budgets per ``session_id`` with status
 ``ok`` / ``soft`` / ``hard``. Distinct from ``ConversationTurnBudgetGuard``
 (turn counts) and ``RunDeadlineWatchdog`` (wall-clock) — this is a thin,
-stdlib-only cumulative token ledger for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 multi-bot chats. Fills a gap vs AutoGen/CrewAI/LangGraph/
+stdlib-only cumulative token ledger for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro multi-bot chats. Fills a gap vs AutoGen/CrewAI/LangGraph/
 Semantic Kernel, which often bound graph steps or single-call tokens without
 an explicit per-session soft/hard cumulative token ledger that never kills
 processes.

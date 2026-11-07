@@ -7,7 +7,7 @@
 Agents often need wide CSV observations converted to long form without losing
 identifier columns or mismatching column names and values. **multi-bot-agentic**
 includes `csv_melt` as a deterministic, allowlisted stdlib `csv` reshape that
-is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Unlike the multi-mode `csv_pivot` tool, `csv_melt` has one focused operation
 and always produces columns named `variable` and `value`.

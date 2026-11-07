@@ -9,7 +9,7 @@ for the next API or tool step. Full YAML includes anchors, tags, and
 constructors that are unsafe for model handoffs. **multi-bot-agentic** includes
 `yaml_to_json` as a deterministic, allowlisted converter that reuses the same
 stdlib-only safe YAML subset as `yaml_format` — no PyYAML dependency — and is
-safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

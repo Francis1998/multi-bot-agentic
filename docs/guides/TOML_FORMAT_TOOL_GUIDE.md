@@ -8,7 +8,7 @@ Agents often exchange configuration snippets as TOML (`pyproject.toml` fragments
 runtime flags, or structured handoffs). Full TOML includes dates, times, and
 parser-specific edge cases that are easy to mishandle across providers.
 **multi-bot-agentic** includes `toml_format` as a deterministic, allowlisted
-formatter that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+formatter that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 workers.
 
 ## Usage
