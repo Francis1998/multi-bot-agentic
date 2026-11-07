@@ -14,6 +14,21 @@ cp .env.example .env
 - `gemini`: calls the Gemini `generateContent` API using `GEMINI_API_KEY`.
 - `kimi`: calls the Moonshot/Kimi chat completions API using `KIMI_API_KEY`.
 
+## Current Model Stack
+
+Defaults were verified against the providers' documentation on 2026-11-06. Override any of them with the
+environment variables below. For prices, see each provider's pricing page.
+
+| Provider | Default here | Other current models | Notes |
+| --- | --- | --- | --- |
+| OpenAI ([models](https://developers.openai.com/api/docs/guides/latest-model)) | `gpt-6.1-sol` | `gpt-6-astra` (highest intelligence), `gpt-6.1-terra` (fast), `gpt-6-luna` (fastest, lowest cost) | Reasoning models: the adapter sends `max_completion_tokens` (default 32768, which covers reasoning and visible output; set it with `OPENAI_MAX_COMPLETION_TOKENS`) and no `temperature`/`top_p` |
+| Anthropic via Claude Code CLI ([models](https://platform.claude.com/docs/en/models/overview)) | the CLI's own setting | `claude-opus-5-5` (recommended default), `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-1` | Choose one with `CLAUDE_CODE_COMMAND="claude --model claude-opus-5-5"` |
+| Google Gemini ([models](https://aistudio.google.com/docs/models)) | `gemini-3.8-flash` | `gemini-4-argon` (flagship reasoning), `gemini-3.6-flash`, `gemini-3.5-flash-lite` | `generateContent` API |
+| Kimi / Moonshot ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed`, `kimi-k3` | K3 fixes `temperature`/`top_p`/`n`/penalties and always reasons, so none of those are sent. `KIMI_MAX_COMPLETION_TOKENS` sets the budget (default 32768). K2 is being retired |
+
+If you override `OPENAI_MODEL` with an older model whose output limit is below 32768 tokens, lower
+`OPENAI_MAX_COMPLETION_TOKENS` to match. For example, `gpt-4o` documents a 16384-token output limit.
+
 ## Provider Commands
 
 Fake:
@@ -26,14 +41,14 @@ OpenAI GPT:
 
 ```bash
 export OPENAI_API_KEY=...
-export OPENAI_MODEL=gpt-5.5
+export OPENAI_MODEL=gpt-6.1-sol
 multi-bot-agentic run --goal "Draft a launch checklist" --provider openai
 ```
 
 Claude Code CLI:
 
 ```bash
-export CLAUDE_CODE_COMMAND="claude"
+export CLAUDE_CODE_COMMAND="claude --model claude-opus-5-5"
 multi-bot-agentic run --goal "Draft a launch checklist" --provider claude_code
 ```
 
@@ -41,7 +56,7 @@ Gemini:
 
 ```bash
 export GEMINI_API_KEY=...
-export GEMINI_MODEL=gemini-3.5-flash
+export GEMINI_MODEL=gemini-3.8-flash
 multi-bot-agentic run --goal "Draft a launch checklist" --provider gemini
 ```
 
@@ -49,6 +64,7 @@ Kimi / Moonshot:
 
 ```bash
 export KIMI_API_KEY=...
+export KIMI_MODEL=kimi-k3.1-pro
 multi-bot-agentic run --goal "Draft a launch checklist" --provider kimi
 ```
 

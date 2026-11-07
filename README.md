@@ -2,7 +2,7 @@
 
 `multi-bot-agentic` is a standalone AI-agent engineering showcase: a deterministic agent coordinator with explicit **Observe -> Decide -> Act** loops, durable event logs, rationale traces, provider adapters, and bounded safety controls.
 
-It is built as a portfolio-quality recreation of the `multi-bot` product idea without depending on private infrastructure. The default path runs fully offline with a deterministic fake provider. Real adapters are included for GPT-5.5/OpenAI-compatible models, Claude Sonnet 4.6 via Claude Code CLI, Gemini 3.x, and Kimi K2/Moonshot.
+It is built as a portfolio-quality recreation of the `multi-bot` product idea without depending on private infrastructure. The default path runs fully offline with a deterministic fake provider. Real adapters are included for OpenAI GPT-6 (default `gpt-6.1-sol`), Claude Opus/Sonnet 5.5 via the Claude Code CLI, Gemini (default `gemini-3.8-flash`), and Kimi K3 (default `kimi-k3.1-pro`).
 
 ![multi-bot-agentic animated demo](docs/demo.gif)
 
@@ -456,16 +456,16 @@ Many agent frameworks let the model choose and invoke tools directly. That is co
 
 This repo treats model output as an observation. The deterministic decision engine interprets constrained text like `TOOL:checklist:<payload>`, checks the safety policy, and only then executes an allowlisted tool adapter.
 
-### 3. "I need the same agent flow to work with GPT-5.5, Claude Sonnet 4.6, Gemini 3.x, and Kimi K2."
+### 3. "I need the same agent flow to work with GPT-6, Claude 5.5, Gemini, and Kimi K3."
 
 Provider-specific SDKs and response shapes make agent code hard to port. A prototype built around one model often leaks provider details into the orchestration layer.
 
 `multi-bot-agentic` normalizes providers behind one adapter interface:
 
-- `OpenAIAdapter` for GPT-5.5/OpenAI-compatible chat completions.
-- `ClaudeCodeCLIAdapter` for local Claude Code CLI workflows with Claude Sonnet 4.6.
-- `GeminiAdapter` for Gemini 3.x `generateContent`.
-- `KimiAdapter` for Moonshot/Kimi K2 chat completions.
+- `OpenAIAdapter` for GPT-6 (`gpt-6.1-sol` by default) and OpenAI-compatible chat completions.
+- `ClaudeCodeCLIAdapter` for local Claude Code CLI workflows with `claude-opus-5-5` or `claude-sonnet-5-5`.
+- `GeminiAdapter` for Gemini `generateContent` (`gemini-3.8-flash` by default, `gemini-4-argon` for flagship reasoning).
+- `KimiAdapter` for Moonshot/Kimi K3 chat completions (`kimi-k3.1-pro` by default).
 - `FakeLLMAdapter` for deterministic CI and demos.
 
 The runner consumes all provider responses as `ModelOutput`, so orchestration logic stays provider-neutral.
@@ -498,7 +498,7 @@ Unbounded agent loops are a common failure mode. They waste time, cost money, an
 
 ### 7. "I need to compare AI provider behavior without rewriting my orchestration."
 
-Teams often want to test GPT-5.5 vs Gemini 3.x vs Kimi K2 vs Claude Sonnet 4.6, but provider-specific code makes comparisons noisy.
+Teams often want to compare GPT-6.1 Sol, Gemini 3.8 Flash, Kimi K3.1 Pro, and Claude Opus 5.5, but provider-specific code makes comparisons noisy.
 
 With provider adapters, you can keep the same runner, same decision engine, same event log, and same replay/report UX while swapping the provider:
 
@@ -585,7 +585,7 @@ multi-bot-agentic report --event-log data/runs.sqlite
 - Typed multi-bot handoffs with per-bot tool allowlists.
 - HITL approval gate for sensitive tools via durable JSON request files.
 - Parallel fan-out helpers for capped, order-preserving multi-bot task batches.
-- LLM adapters for GPT-5.5/OpenAI-compatible models, Claude Sonnet 4.6 via Claude Code CLI, Gemini 3.x, and Kimi K2/Moonshot.
+- LLM adapters for OpenAI GPT-6, Claude 5.5 via the Claude Code CLI, Gemini 3.8 Flash and 4 Argon, and Kimi K3. They send reasoning-model-safe parameters (`max_completion_tokens`, no fixed sampling knobs).
 - Tool adapters with allowlisted execution, including deterministic checklist generation.
 - Safety controls for max steps, prompt bounds, cancellation, and timeouts.
 - Human-readable replay and run reports for inspecting durable rationale traces.
@@ -593,13 +593,15 @@ multi-bot-agentic report --event-log data/runs.sqlite
 
 ## Providers
 
-| Provider | Adapter | Live credential |
-| --- | --- | --- |
-| Fake | deterministic local provider | none |
-| GPT-5.5 / OpenAI-compatible | `OpenAIAdapter` | `OPENAI_API_KEY` |
-| Claude Sonnet 4.6 / Claude Code | `ClaudeCodeCLIAdapter` | local `claude` command |
-| Gemini 3.x | `GeminiAdapter` | `GEMINI_API_KEY` |
-| Kimi K2 / Moonshot | `KimiAdapter` | `KIMI_API_KEY` |
+| Provider | Adapter | Default model (override) | Live credential |
+| --- | --- | --- | --- |
+| Fake | deterministic local provider | n/a | none |
+| OpenAI GPT-6 / OpenAI-compatible | `OpenAIAdapter` | `gpt-6.1-sol` (`OPENAI_MODEL`; also `gpt-6-astra`, `gpt-6.1-terra`, `gpt-6-luna`) | `OPENAI_API_KEY` |
+| Anthropic Claude via Claude Code | `ClaudeCodeCLIAdapter` | CLI setting (`claude --model claude-opus-5-5` or `claude-sonnet-5-5`) | local `claude` command |
+| Google Gemini | `GeminiAdapter` | `gemini-3.8-flash` (`GEMINI_MODEL`; `gemini-4-argon` for flagship reasoning) | `GEMINI_API_KEY` |
+| Kimi K3 / Moonshot | `KimiAdapter` | `kimi-k3.1-pro` (`KIMI_MODEL`; also `kimi-k3.1-pro-highspeed`, `kimi-k3`) | `KIMI_API_KEY` |
+
+Model IDs were verified against provider docs on 2026-11-06 ([details](docs/CONFIGURATION.md#current-model-stack)).
 
 All adapters normalize output into `ModelOutput`. The runner consumes that output as an observation before the decision engine selects the next action.
 

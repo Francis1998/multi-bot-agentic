@@ -96,7 +96,7 @@ def test_openai_adapter_default_uses_latest_gpt_stack(monkeypatch: MonkeyPatch) 
     adapter = build_llm_adapter("openai")
 
     assert isinstance(adapter, OpenAIAdapter)
-    assert adapter.model == "gpt-5.5"
+    assert adapter.model == "gpt-6.1-sol"
 
 
 def test_required_provider_secret_rejects_blank_value(monkeypatch: MonkeyPatch) -> None:
@@ -117,7 +117,7 @@ def test_gemini_adapter_default_uses_latest_flash_stack(monkeypatch: MonkeyPatch
     adapter = build_llm_adapter("gemini")
 
     assert isinstance(adapter, GeminiAdapter)
-    assert adapter.model == "gemini-3.5-flash"
+    assert adapter.model == "gemini-3.8-flash"
 
 
 def test_claude_code_adapter_maps_timeout_to_runtime_error(monkeypatch: MonkeyPatch) -> None:
@@ -145,8 +145,8 @@ def test_claude_code_adapter_maps_timeout_to_runtime_error(monkeypatch: MonkeyPa
         adapter.complete(request, timeout_seconds=1.0)
 
 
-def test_kimi_adapter_default_uses_latest_k2_stack(monkeypatch: MonkeyPatch) -> None:
-    """Kimi adapter defaults should stay aligned with the current K2 stack."""
+def test_kimi_adapter_default_uses_latest_k3_stack(monkeypatch: MonkeyPatch) -> None:
+    """Kimi adapter defaults should stay aligned with the current K3 stack (K2 is being retired)."""
 
     monkeypatch.setenv("KIMI_API_KEY", "dummy-key")
     monkeypatch.delenv("KIMI_MODEL", raising=False)
@@ -154,4 +154,80 @@ def test_kimi_adapter_default_uses_latest_k2_stack(monkeypatch: MonkeyPatch) -> 
     adapter = build_llm_adapter("kimi")
 
     assert isinstance(adapter, KimiAdapter)
-    assert adapter.model == "kimi-k2"
+    assert adapter.model == "kimi-k3.1-pro"
+
+
+# Sampling parameters that reasoning models reject: GPT-6 (reasoning effort above "none") does not accept
+# temperature/top_p/logprobs, and Kimi K3 fixes temperature/top_p/n/penalties ("omit them from requests").
+_FIXED_OR_UNSUPPORTED = {"temperature", "top_p", "n", "presence_penalty", "frequency_penalty", "logprobs"}
+
+
+def _captured_payload(monkeypatch: MonkeyPatch, adapter: OpenAIAdapter) -> dict[str, object]:
+    captured: dict[str, object] = {}
+
+    def fake_post_json(
+        url: str, payload: dict[str, object], headers: dict[str, str], timeout_seconds: float
+    ) -> dict[str, object]:
+        del url, headers, timeout_seconds
+        captured.update(payload)
+        return {"choices": [{"message": {"content": "DONE: ok"}, "finish_reason": "stop"}]}
+
+    monkeypatch.setattr("multi_bot_agentic.llm.openai.post_json", fake_post_json)
+    request = ModelRequest(goal="demo", observations=(Observation(source="user", content="demo"),))
+    assert adapter.complete(request, timeout_seconds=1.0).text == "DONE: ok"
+    return captured
+
+
+@pytest.mark.parametrize(
+    ("adapter_cls", "model"),
+    [(OpenAIAdapter, "gpt-6.1-sol"), (KimiAdapter, "kimi-k3.1-pro")],
+)
+def test_reasoning_model_payload_uses_max_completion_tokens(
+    monkeypatch: MonkeyPatch, adapter_cls: type[OpenAIAdapter], model: str
+) -> None:
+    """Current GPT-6 and Kimi K3 models are reasoning models with fixed or unsupported sampling knobs.
+
+    ``max_tokens`` is deprecated in favor of ``max_completion_tokens`` (which counts reasoning
+    tokens), so a 500-token ``max_tokens`` cap could be spent entirely on reasoning before any
+    visible answer. The payload must use a reasoning-sized ``max_completion_tokens`` and never
+    send temperature-style sampling parameters.
+    """
+
+    payload = _captured_payload(monkeypatch, adapter_cls(api_key="k", model=model, base_url="https://example.test"))
+
+    assert payload["model"] == model
+    assert "max_tokens" not in payload
+    max_completion_tokens = payload["max_completion_tokens"]
+    assert isinstance(max_completion_tokens, int)
+    assert max_completion_tokens >= 25_000
+    assert _FIXED_OR_UNSUPPORTED.isdisjoint(payload)
+
+
+@pytest.mark.parametrize(
+    ("provider", "prefix", "model"),
+    [("openai", "OPENAI", "gpt-4o"), ("kimi", "KIMI", "kimi-k3.1-pro-highspeed")],
+)
+def test_completion_budget_is_configurable_per_provider(
+    monkeypatch: MonkeyPatch, provider: str, prefix: str, model: str
+) -> None:
+    """``*_MAX_COMPLETION_TOKENS`` lowers the budget for overrides with smaller output limits."""
+
+    monkeypatch.setenv(f"{prefix}_API_KEY", "dummy-key")
+    monkeypatch.setenv(f"{prefix}_MODEL", model)
+    monkeypatch.setenv(f"{prefix}_MAX_COMPLETION_TOKENS", "16384")
+
+    adapter = build_llm_adapter(provider)
+
+    assert isinstance(adapter, OpenAIAdapter)
+    assert _captured_payload(monkeypatch, adapter)["max_completion_tokens"] == 16384
+
+
+@pytest.mark.parametrize("value", ["0", "-5", "lots", "1.5"])
+def test_completion_budget_rejects_invalid_values(monkeypatch: MonkeyPatch, value: str) -> None:
+    """Invalid budgets fail fast with the variable name instead of reaching the provider."""
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy-key")
+    monkeypatch.setenv("OPENAI_MAX_COMPLETION_TOKENS", value)
+
+    with pytest.raises(ValueError, match="OPENAI_MAX_COMPLETION_TOKENS must be a positive integer"):
+        build_llm_adapter("openai")
