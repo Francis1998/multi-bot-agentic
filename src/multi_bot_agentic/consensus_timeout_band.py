@@ -3,8 +3,8 @@
 Flags consensus waits that approach or exceed a timeout budget with HITL
 bands. Distinct from ``ConsensusQuorumFloorGuard`` (vote floor) and
 ``OrchestratorStallWatchdog`` (orchestrator progress). Fills a gap vs
-AutoGen / CrewAI / LangGraph consensus wait timeouts. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+AutoGen / CrewAI / LangGraph consensus wait timeouts. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

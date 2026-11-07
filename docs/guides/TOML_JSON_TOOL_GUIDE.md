@@ -7,8 +7,8 @@
 Agents often need to move configuration between TOML (`pyproject.toml` fragments,
 runtime flags) and JSON (API payloads, prior tool output). Converting by hand is
 error-prone across providers. **multi-bot-agentic** includes `toml_json` as a
-deterministic, allowlisted bridge that is safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+deterministic, allowlisted bridge that is safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

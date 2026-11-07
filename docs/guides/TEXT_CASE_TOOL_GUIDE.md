@@ -7,8 +7,8 @@
 Agents routinely need a stable case transform — lower, upper, title, snake,
 kebab, or camel — before using free-form text as a key or label. Rewriting
 case in-model is unreliable. **multi-bot-agentic** includes `text_case` as a
-deterministic, allowlisted converter that is safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+deterministic, allowlisted converter that is safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

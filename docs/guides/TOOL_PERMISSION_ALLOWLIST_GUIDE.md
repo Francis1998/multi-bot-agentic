@@ -5,7 +5,7 @@
 Per-bot tool ACL gate: grant/revoke tools by `bot_id`, then `check` before
 execute. Default-deny so bots only call what they were explicitly allowed.
 
-Works with **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2** multi-bot crews.
+Works with **GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro** multi-bot crews.
 
 Distinct from:
 

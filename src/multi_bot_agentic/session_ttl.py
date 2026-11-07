@@ -3,8 +3,8 @@
 Tracks idle timeout per ``session_id``; activity via ``touch`` resets the
 deadline. Distinct from ``ConversationTurnBudgetGuard`` (turn counts) and
 ``RunDeadlineWatchdog`` (single wall-clock run deadline) — this is a thin,
-stdlib-only per-session idle TTL for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 multi-bot chats. Fills a gap vs AutoGen/CrewAI/LangGraph,
+stdlib-only per-session idle TTL for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro multi-bot chats. Fills a gap vs AutoGen/CrewAI/LangGraph,
 which often bound graph steps or tokens without an explicit per-session idle
 TTL with advisory vs hard modes.
 """

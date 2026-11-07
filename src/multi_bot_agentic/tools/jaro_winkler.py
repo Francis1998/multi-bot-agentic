@@ -3,8 +3,8 @@
 CrewAI / LangGraph-style agents often need a fuzzy similarity signal when
 matching labels or typos. Levenshtein gives edit distance; this companion
 returns the classic Jaro-Winkler similarity in ``[0, 1]``. It never executes
-code and never makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+code and never makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

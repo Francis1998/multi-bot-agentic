@@ -6,8 +6,8 @@
 
 Agents often need flat JSON observations rebuilt into nested objects and arrays
 before the next model turn. **multi-bot-agentic** includes `json_unflatten` as a
-deterministic, allowlisted stdlib `json` helper that is safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+deterministic, allowlisted stdlib `json` helper that is safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 It is the inverse of `json_flatten` for its dotted object paths and bracketed
 array indexes, such as `items[0].name`.

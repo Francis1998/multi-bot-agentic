@@ -3,7 +3,7 @@
 ![base58 demo](../../assets/demo/base58.gif)
 
 Encode or decode UTF-8 text with Bitcoin-alphabet Base58 before the next
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 turn.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro turn.
 
 ## Why
 

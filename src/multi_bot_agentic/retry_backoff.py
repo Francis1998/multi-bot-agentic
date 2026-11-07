@@ -2,8 +2,8 @@
 
 Distinct from :class:`~multi_bot_agentic.circuit_breaker.ToolCircuitBreaker`
 (which opens after consecutive failures) — this policy computes sleep delays
-for transient retries with optional full-jitter. Suitable for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 tool loops without framework lock-in.
+for transient retries with optional full-jitter. Suitable for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro tool loops without framework lock-in.
 """
 
 from __future__ import annotations

@@ -7,7 +7,7 @@
 Agents sometimes need stable fixed-width lines without relying on a model to
 count columns or distribute whitespace. **multi-bot-agentic** includes
 `text_justify_lines` as a deterministic, allowlisted formatter that is safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 It combines left, right, and center alignment with full justification, while
 `text_center_lines` and `text_pad_lines` cover narrower padding-only workflows.

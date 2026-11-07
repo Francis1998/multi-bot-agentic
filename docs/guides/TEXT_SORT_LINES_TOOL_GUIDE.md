@@ -8,7 +8,7 @@ Popular agent frameworks (LangGraph toolkits, OpenAI Agents SDK examples, Claude
 tool-use demos) ship helpers that **normalize multi-line text** so the model does
 not invent ordering or drop duplicates inconsistently. **multi-bot-agentic** now
 includes the same capability as a deterministic, allowlisted tool — safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

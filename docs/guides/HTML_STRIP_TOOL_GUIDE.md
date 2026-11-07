@@ -8,7 +8,7 @@ Popular agent frameworks (LangChain text utilities, CrewAI helpers, OpenAI
 Agents SDK examples) ship a dedicated **HTML → plain text** helper so the model
 does not invent stripped output or leak `<script>` bodies. **multi-bot-agentic**
 now includes the same capability as a deterministic, allowlisted tool — safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 2.5 / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

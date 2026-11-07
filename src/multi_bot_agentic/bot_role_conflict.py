@@ -4,8 +4,8 @@ Detects when two or more bots claim the same exclusive role tag within a
 session (e.g. two ``critic`` bots). Distinct from ``BotSkillTagRouter``
 (skill overlap ranking) and ``BotTurnFairnessScheduler`` (turn counts).
 Fills a gap vs AutoGen / CrewAI / LangGraph, which often allow silent
-role collisions. Works with GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2. Never performs network I/O.
+role collisions. Works with GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

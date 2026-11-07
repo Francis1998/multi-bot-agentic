@@ -5,7 +5,7 @@ filenames without reading or writing payloads. This tool parses a bounded raw
 message, groups decoded original filenames, and assigns collision-free names by
 adding ``-2``, ``-3``, and so on before the final extension. It never returns
 payloads, writes files, executes code, or makes network requests. Safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

@@ -3,7 +3,7 @@
 Pins a ``session_id`` to a ``bot_id`` so subsequent turns stay on the same
 bot without re-routing. Distinct from ``BotHandoffReceiptStore`` (audit
 receipts for handoffs) — this is a thin, stdlib-only affinity map for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 multi-bot loops. Fills a
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro multi-bot loops. Fills a
 gap vs AutoGen/CrewAI/LangGraph, which often reselect agents each turn
 without sticky session pins.
 """

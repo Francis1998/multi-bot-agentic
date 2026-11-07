@@ -8,8 +8,8 @@ Agents often need a fresh opaque identifier for a correlation id, temporary
 handle, or client-side token. Deterministic ``uuid5`` is the right choice when
 the same inputs must always yield the same id. When uniqueness without
 reproducibility is enough, **multi-bot-agentic** includes ``uuid4`` as an
-allowlisted generator that is safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+allowlisted generator that is safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

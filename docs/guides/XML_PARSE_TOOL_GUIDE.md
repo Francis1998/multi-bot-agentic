@@ -9,7 +9,7 @@ often ship XML helpers so models can exchange structured snippets without
 inventing element trees. Pasting raw XML into prompts is error-prone (lost
 attributes, flattened nesting, unsafe declarations). **multi-bot-agentic**
 includes `xml_parse` as a deterministic, allowlisted parser that is safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

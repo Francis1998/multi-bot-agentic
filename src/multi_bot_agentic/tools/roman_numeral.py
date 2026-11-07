@@ -2,8 +2,8 @@
 
 Agents converting integers to Roman numerals (or back) need a deterministic
 codec. Models invent subtractive pairs. This tool encodes 1..3999 and
-decodes standard Roman strings with no network access. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+decodes standard Roman strings with no network access. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

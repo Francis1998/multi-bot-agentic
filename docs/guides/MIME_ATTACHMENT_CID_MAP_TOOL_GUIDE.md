@@ -7,8 +7,8 @@
 Agents sometimes need to resolve `cid:` references in multipart messages to
 attachment filenames and content types without copying payloads into the next
 turn. **multi-bot-agentic** includes `mime_attachment_cid_map` as a
-deterministic, allowlisted stdlib `email` parser that is safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+deterministic, allowlisted stdlib `email` parser that is safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Unlike `mime_attachment_names`, `mime_attachment_ctypes`, and related tools,
 this map is keyed by Content-ID rather than filename order.

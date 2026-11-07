@@ -7,7 +7,7 @@
 Agents often need to identify record-level changes between two CSV exports
 without copying whole changed rows into the next turn. **multi-bot-agentic**
 includes `csv_diff` as a deterministic, allowlisted stdlib `csv` comparator
-that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

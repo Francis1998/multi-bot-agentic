@@ -4,8 +4,8 @@ Agents often need CSV rows ordered by a named column before the next LLM turn.
 Asking a model to sort pasted tables can drop quoted cells or scramble headers.
 This tool uses stdlib :mod:`csv` only, keeps the header row, and sorts data
 rows by a required column with optional descending and numeric modes. It never
-executes code and never makes network requests. Safe for GPT-5.5 / Claude
-Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+executes code and never makes network requests. Safe for GPT-6 Astra / Claude
+Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Because the decision engine only forwards a single ``text`` payload from
 ``TOOL:csv_sort:<payload>``, the CSV document and column may be supplied either

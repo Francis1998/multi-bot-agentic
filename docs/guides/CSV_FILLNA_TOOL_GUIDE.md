@@ -5,7 +5,7 @@
 ## Why
 
 Sparse CSV handoffs often need a constant fill (pandas-style `fillna`) before
-the next GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 turn. Asking a
+the next GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro turn. Asking a
 model to rewrite blank cells can scramble quoted fields. **multi-bot-agentic**
 includes `csv_fillna` as a deterministic, allowlisted stdlib `csv` filler.
 

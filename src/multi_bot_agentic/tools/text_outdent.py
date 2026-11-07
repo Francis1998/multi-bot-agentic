@@ -5,7 +5,7 @@ code, templates, or quoted observations. Common-prefix dedenting is different:
 it can remove less than requested when indentation varies. This tool removes up
 to N leading ASCII spaces from each non-empty line (default 2, max 32), never
 removes tabs, and preserves blank lines. It never executes code or makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 The document and options may be supplied as separate ``text`` / ``spaces`` /
 ``skip_first`` arguments or as a single ``text`` value split on

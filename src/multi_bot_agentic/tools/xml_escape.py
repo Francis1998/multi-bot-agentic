@@ -4,8 +4,8 @@ Agents often need to escape ``&``, ``<``, and ``>`` before embedding text in
 XML handoff snippets, or unescape entities after scraping. Asking a language
 model to escape XML is unreliable (missed ampersands, double-escaping). This
 tool uses stdlib :func:`xml.sax.saxutils.escape` / :func:`xml.sax.saxutils.unescape`.
-It never executes code and never makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+It never executes code and never makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

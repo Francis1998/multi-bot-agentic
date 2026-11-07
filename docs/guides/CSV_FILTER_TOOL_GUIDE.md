@@ -8,7 +8,7 @@ Agents routinely need to keep only the CSV rows that match a named-column
 predicate before the next LLM turn. Filtering in-model can drop quoted cells,
 shift columns, or invent rows. **multi-bot-agentic** includes `csv_filter` as a
 deterministic, allowlisted equals/contains filter via stdlib `csv` that is safe
-for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

@@ -5,8 +5,8 @@ the least-served eligible bot so one agent does not monopolize the loop.
 Distinct from ``BotSkillTagRouter`` (skill-tag overlap routing) and
 ``StickyBotAffinityStore`` (session→bot pin). Fills a gap vs AutoGen / CrewAI /
 LangGraph / Semantic Kernel, which often lack an explicit per-session turn
-fairness scheduler with advisory vs hard modes. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 multi-bot crews. Never network I/O.
+fairness scheduler with advisory vs hard modes. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro multi-bot crews. Never network I/O.
 """
 
 from __future__ import annotations

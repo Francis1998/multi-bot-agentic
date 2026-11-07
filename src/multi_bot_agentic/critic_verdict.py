@@ -3,8 +3,8 @@
 Implements a thin critic pattern: a producer bot submits output, a critic
 returns ``accept``, ``revise``, or ``reject`` with optional critique text.
 Distinct from ``HitlApprovalGate`` (human file-backed tool approvals) —
-this is an in-memory critic verdict store for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 multi-bot crews. Fills a gap vs AutoGen/CrewAI/LangGraph,
+this is an in-memory critic verdict store for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro multi-bot crews. Fills a gap vs AutoGen/CrewAI/LangGraph,
 which often lack a first-class accept/revise/reject gate separate from the
 producer agent loop.
 """

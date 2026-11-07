@@ -4,7 +4,7 @@ Agents often need to concatenate tabular observations from several workers
 without asking a model to copy headers or align rows. This tool validates that
 all CSV documents share the same header, emits the header once, and appends data
 rows in document order. It never executes code or makes network requests. Safe
-for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Documents may be supplied as a ``csvs`` list or in one ``text`` value separated
 by ``<<<CSV_STACK>>>``.

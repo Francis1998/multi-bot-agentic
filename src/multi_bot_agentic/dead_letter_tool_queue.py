@@ -4,7 +4,7 @@ Captures exhausted tool failures after retries/circuit breakers give up so an
 operator can inspect and acknowledge them. Distinct from
 ``ToolRetryBackoffPolicy`` (transient retries) and ``ToolCircuitBreaker``
 (fail-fast open circuits) — this is a post-exhaustion HITL queue for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 tool loops. Fills a gap
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro tool loops. Fills a gap
 vs AutoGen/CrewAI/LangGraph, which often drop failed tool payloads after
 retry exhaustion.
 """

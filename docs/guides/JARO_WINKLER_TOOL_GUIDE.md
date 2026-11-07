@@ -2,7 +2,7 @@
 
 ![Jaro-Winkler demo](../../assets/demo/jaro-winkler.gif)
 
-Deterministic Jaro-Winkler string similarity for GPT-5.4 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+Deterministic Jaro-Winkler string similarity for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Why
 

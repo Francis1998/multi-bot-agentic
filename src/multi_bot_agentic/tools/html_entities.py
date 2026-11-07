@@ -5,7 +5,7 @@ or comparing scraped text. Asking a language model to encode entities is
 unreliable (missed ampersands, double-escaping, invented named entities). This
 tool uses stdlib :mod:`html` for deterministic encode (``html.escape``) and
 decode (``html.unescape``). It never executes code and never makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

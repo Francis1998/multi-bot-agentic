@@ -4,7 +4,7 @@ Agents sometimes need fixed left and right margins around line-oriented
 observations before the next model turn. This tool adds ASCII spaces to each
 non-empty line, optionally skipping the first line, while preserving line
 endings and enforcing hard input/output caps. It never executes code or makes
-network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 workers.
 
 The document and options may be supplied as separate arguments or as one

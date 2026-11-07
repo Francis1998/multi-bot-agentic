@@ -7,7 +7,7 @@
 Agents sometimes need consistent left and right margins around line-oriented
 observations before formatting a handoff. **multi-bot-agentic** includes
 `text_margin_lines` as a deterministic, allowlisted helper that is safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Unlike `text_center_lines` or width-based padding, this tool adds exact,
 independent margins without measuring or reflowing line content.

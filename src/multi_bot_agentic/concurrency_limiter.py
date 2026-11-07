@@ -4,8 +4,8 @@ Caps concurrent tool executions process-wide and optionally shrinks the
 effective limit when releases report failures, recovering on successes.
 Distinct from ``RateLimitedToolRunner`` (per-tool sliding time window) and
 ``ParallelFanOut`` (batch ``max_workers``) — this is a thin, stdlib-only
-in-flight guard suitable for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 loops. Fills a gap vs AutoGen unbounded tool fanout.
+in-flight guard suitable for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro loops. Fills a gap vs AutoGen unbounded tool fanout.
 """
 
 from __future__ import annotations

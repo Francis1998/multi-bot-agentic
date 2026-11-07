@@ -2,8 +2,8 @@
 
 Keeps head + tail events and drops the middle when logs exceed a max size.
 Distinct from LangSmith / Langfuse retention policies — this is a thin,
-stdlib-only offline compactor suitable for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 ODA event streams.
+stdlib-only offline compactor suitable for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro ODA event streams.
 """
 
 from __future__ import annotations

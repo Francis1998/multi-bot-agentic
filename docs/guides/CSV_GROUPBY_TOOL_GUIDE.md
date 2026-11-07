@@ -7,8 +7,8 @@
 Agents routinely need to aggregate CSV snippets (sum/count/min/max/mean) by a
 key column before the next LLM turn. Aggregating in-model invents totals and
 drops groups. **multi-bot-agentic** includes `csv_groupby` as a deterministic,
-allowlisted aggregation via stdlib `csv` that is safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+allowlisted aggregation via stdlib `csv` that is safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 
@@ -50,5 +50,5 @@ arguments.
 ## Suggested repo metadata
 
 - **Description:** Multi-bot agentic runtime with allowlisted tools, safety
-  policy, and GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+  policy, and GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 - **Topics:** `agentic-ai`, `multi-agent`, `llm-tools`, `python`, `safety`

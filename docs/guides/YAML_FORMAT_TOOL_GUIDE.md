@@ -8,7 +8,7 @@ Agents often exchange configuration, checklist state, or structured notes as
 YAML. Full YAML includes anchors, tags, merge keys, and other features that are
 unnecessary for model handoffs and easy to interpret inconsistently.
 **multi-bot-agentic** includes `yaml_format` as a deterministic, allowlisted
-formatter that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+formatter that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 workers.
 
 ## Usage

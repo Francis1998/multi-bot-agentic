@@ -6,7 +6,7 @@ display label. Asking a language model to rewrite case is unreliable
 (inconsistent word boundaries, dropped accents, invented separators). This
 tool converts text via stdlib helpers with fixed case modes and a hard size
 cap. It never executes code and never makes network requests. Safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Because the decision engine only forwards a single ``text`` payload from
 ``TOOL:text_case:<payload>``, the document and case mode may be supplied

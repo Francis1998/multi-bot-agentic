@@ -2,8 +2,8 @@
 
 Agents validating book identifiers need a deterministic ISBN-13 (EAN-13)
 mod-10 check. Models invent weighting rules. This tool validates or
-appends a check digit with no network access. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+appends a check digit with no network access. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

@@ -2,7 +2,7 @@
 
 ![Parallel fan-out demo](../../assets/demo/parallel-fanout.gif)
 
-Capped thread-pool fan-out for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 multi-bot batches.
+Capped thread-pool fan-out for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro multi-bot batches.
 
 ## Why
 

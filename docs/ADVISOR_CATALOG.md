@@ -4,9 +4,10 @@ Offline, HITL-safe advisors, guards, and limiters for multi-bot runs. They were 
 from the former README so the README can stay a short showcase. Each entry links to its guide in
 [`docs/guides/`](guides/) and its demo GIF in [`assets/demo/`](../assets/demo/).
 
-> **Model names in these entries are historical.** Entries such as `Stack: GPT-5.5 / Claude Sonnet 4.6 /
-> Gemini 3.x / Kimi K2` name the models that were current when each entry was written. The verified
-> current stack is in [Configuration › Current Model Stack](CONFIGURATION.md#current-model-stack).
+> **Model names.** Every `Stack:` line was refreshed on 2026-11-07 to the provider flagships verified that day
+> (GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro), and `tests/test_docs_model_stack_current.py`
+> keeps retired names out of model lists. Older demo GIFs may still show the model names that were current when
+> they were rendered. The configured defaults are in [Configuration › Current Model Stack](CONFIGURATION.md#current-model-stack).
 
 **Adding an entry:** add new advisor, guard, or limiter entries **here, not in the README**. Use a
 `### ClassName` heading, a demo GIF, a one-paragraph summary, and a link to the guide.
@@ -95,65 +96,65 @@ from the former README so the README can stay a short showcase. Each entry links
 
 ![ToolSandboxNetworkExfilGuard](../assets/demo/tool-sandbox-network-exfil-guard.gif)
 
-Offline HITL exfil_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox network-exfil guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_NETWORK_EXFIL_GUARD_GUIDE.md`.
+Offline HITL exfil_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox network-exfil guards. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/TOOL_SANDBOX_NETWORK_EXFIL_GUARD_GUIDE.md`.
 ### AgentDeadlockDetectorGuard
 
 ![AgentDeadlockDetectorGuard](../assets/demo/agent-deadlock-detector-guard.gif)
 
-Offline HITL deadlock_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-deadlock detectors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_DEADLOCK_DETECTOR_GUARD_GUIDE.md`.
+Offline HITL deadlock_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-deadlock detectors. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/AGENT_DEADLOCK_DETECTOR_GUARD_GUIDE.md`.
 
 ### PromptLeakBandAdvisor
 
 ![PromptLeakBandAdvisor](../assets/demo/prompt-leak-band-advisor.gif)
 
-Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PROMPT_LEAK_BAND_ADVISOR_GUIDE.md`.
+Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band advisors. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/PROMPT_LEAK_BAND_ADVISOR_GUIDE.md`.
 
 ### ToolArgSchemaDriftGuard
 
 ![ToolArgSchemaDriftGuard](../assets/demo/tool-arg-schema-drift.gif)
 
-Offline HITL schema_drift_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-argument schema-drift guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_ARG_SCHEMA_DRIFT_GUARD_GUIDE.md`.
+Offline HITL schema_drift_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-argument schema-drift guards. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/TOOL_ARG_SCHEMA_DRIFT_GUARD_GUIDE.md`.
 
 ### PlannerStepBudgetBandAdvisor
 
 ![PlannerStepBudgetBandAdvisor](../assets/demo/planner-step-budget-band.gif)
 
-Offline HITL steps_used_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner step-budget monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_STEP_BUDGET_BAND_ADVISOR_GUIDE.md`.
+Offline HITL steps_used_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner step-budget monitors. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/PLANNER_STEP_BUDGET_BAND_ADVISOR_GUIDE.md`.
 
 ### ToolSandboxSyscallDenylistGuard
 
 ![ToolSandboxSyscallDenylistGuard](../assets/demo/tool-sandbox-syscall-denylist.gif)
 
-Offline HITL denied_syscall_rate bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox syscall denylist guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_SYSCALL_DENYLIST_GUARD_GUIDE.md`.
+Offline HITL denied_syscall_rate bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox syscall denylist guards. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/TOOL_SANDBOX_SYSCALL_DENYLIST_GUARD_GUIDE.md`.
 
 ### BlackboardCasWriteSkewGuard
 
 ![BlackboardCasWriteSkewGuard](../assets/demo/blackboard-cas-write-skew.gif)
 
-Offline HITL write_skew_score bands. Gap vs AutoGen/CrewAI/LangGraph shared-blackboard CAS/write-skew guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_CAS_WRITE_SKEW_GUARD_GUIDE.md`.
+Offline HITL write_skew_score bands. Gap vs AutoGen/CrewAI/LangGraph shared-blackboard CAS/write-skew guards. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/BLACKBOARD_CAS_WRITE_SKEW_GUARD_GUIDE.md`.
 ### PlannerHorizonBandAdvisor
 
 ![PlannerHorizonBandAdvisor](../assets/demo/planner-horizon-band.gif)
 
-Offline HITL horizon_steps_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner-horizon monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_HORIZON_BAND_ADVISOR_GUIDE.md`.
+Offline HITL horizon_steps_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner-horizon monitors. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/PLANNER_HORIZON_BAND_ADVISOR_GUIDE.md`.
 
 ### CriticQuorumHysteresisAdvisor
 
 ![CriticQuorumHysteresisAdvisor](../assets/demo/critic-quorum-hysteresis.gif)
 
-Offline HITL advisor for `hysteresis_score` bands. Gap vs AutoGen/CrewAI/LangGraph critic-quorum hysteresis monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL advisor for `hysteresis_score` bands. Gap vs AutoGen/CrewAI/LangGraph critic-quorum hysteresis monitors. Optional polish via GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### OrchestratorFanoutBudgetBandAdvisor
 
 ![OrchestratorFanoutBudgetBandAdvisor](../assets/demo/orchestrator-fanout-budget-band.gif)
 
-Offline HITL advisor for `fanout_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph orchestrator fan-out budget monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL advisor for `fanout_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph orchestrator fan-out budget monitors. Optional polish via GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### SubgraphRecursionCapAdvisor
 
 ![SubgraphRecursionCapAdvisor](../assets/demo/subgraph-recursion-cap.gif)
 
-Offline HITL advisor for `recursion_depth_ratio` bands. Gap vs LangGraph/CrewAI subgraph recursion-cap monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL advisor for `recursion_depth_ratio` bands. Gap vs LangGraph/CrewAI subgraph recursion-cap monitors. Optional polish via GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### WorkerStarvationBandAdvisor
 
@@ -326,79 +327,79 @@ Offline HITL `side_effect_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool sid
 
 ![ToolResultSchemaLagAdvisor](../assets/demo/tool-result-schema-lag.gif)
 
-Offline HITL advisor for `lag_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result schema lag monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL advisor for `lag_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result schema lag monitors. Optional polish via GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### ParallelToolCollisionAdvisor
 
 ![ParallelToolCollisionAdvisor](../assets/demo/parallel-tool-collision.gif)
 
-Offline HITL advisor for `collision_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph parallel tool-collision monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL advisor for `collision_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph parallel tool-collision monitors. Optional polish via GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### PlannerReplanThrashAdvisor
 
 ![PlannerReplanThrashAdvisor](../assets/demo/planner-replan-thrash.gif)
 
-Offline HITL advisor for `replan_thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner replan-thrash monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL advisor for `replan_thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner replan-thrash monitors. Optional polish via GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### ToolPermissionEscalationBandAdvisor
 
 ![ToolPermissionEscalationBandAdvisor](../assets/demo/tool-permission-escalation-band.gif)
 
-Offline HITL escalation_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-permission escalation monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_PERMISSION_ESCALATION_BAND_ADVISOR_GUIDE.md`.
+Offline HITL escalation_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-permission escalation monitors. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/TOOL_PERMISSION_ESCALATION_BAND_ADVISOR_GUIDE.md`.
 
 ### CriticTimeoutCascadeGuard
 
 ![CriticTimeoutCascadeGuard](../assets/demo/critic-timeout-cascade.gif)
 
-Offline HITL cascade_score bands. Gap vs AutoGen/CrewAI/LangGraph critic-timeout cascade guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_TIMEOUT_CASCADE_GUARD_GUIDE.md`.
+Offline HITL cascade_score bands. Gap vs AutoGen/CrewAI/LangGraph critic-timeout cascade guards. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/CRITIC_TIMEOUT_CASCADE_GUARD_GUIDE.md`.
 
 ### ConsensusVoteStuffingBandAdvisor
 
 ![ConsensusVoteStuffingBandAdvisor](../assets/demo/consensus-vote-stuffing.gif)
 
-Offline HITL stuffing_score bands. Gap vs AutoGen/CrewAI/LangGraph consensus vote-stuffing band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_VOTE_STUFFING_ADVISOR_GUIDE.md`.
+Offline HITL stuffing_score bands. Gap vs AutoGen/CrewAI/LangGraph consensus vote-stuffing band advisors. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/CONSENSUS_VOTE_STUFFING_ADVISOR_GUIDE.md`.
 
 ### AgentCapabilityRevocationBandAdvisor
 
 ![AgentCapabilityRevocationBandAdvisor](../assets/demo/agent-capability-revocation.gif)
 
-Offline HITL revocation_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-capability revocation band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_CAPABILITY_REVOCATION_ADVISOR_GUIDE.md`.
+Offline HITL revocation_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-capability revocation band advisors. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/AGENT_CAPABILITY_REVOCATION_ADVISOR_GUIDE.md`.
 
 ### PlanGoalContradictionBandAdvisor
 
 ![PlanGoalContradictionBandAdvisor](../assets/demo/plan-goal-contradiction-band.gif)
 
-Offline HITL contradiction_score bands. Gap vs AutoGen/CrewAI/LangGraph plan-goal contradiction band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLAN_GOAL_CONTRADICTION_BAND_ADVISOR_GUIDE.md`.
+Offline HITL contradiction_score bands. Gap vs AutoGen/CrewAI/LangGraph plan-goal contradiction band advisors. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/PLAN_GOAL_CONTRADICTION_BAND_ADVISOR_GUIDE.md`.
 
 ### ToolResultSizeBombGuard
 
 ![ToolResultSizeBombGuard](../assets/demo/tool-result-size-bomb.gif)
 
-Offline HITL result_bytes bands. Gap vs AutoGen/CrewAI/LangGraph tool-result size-bomb guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_SIZE_BOMB_GUARD_GUIDE.md`.
+Offline HITL result_bytes bands. Gap vs AutoGen/CrewAI/LangGraph tool-result size-bomb guards. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/TOOL_RESULT_SIZE_BOMB_GUARD_GUIDE.md`.
 
 ### MessageBusPoisonPillGuard
 
 ![MessageBusPoisonPillGuard](../assets/demo/message-bus-poison-pill.gif)
 
-Offline HITL poison_score bands. Gap vs AutoGen/CrewAI/LangGraph message-bus poison-pill guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/MESSAGE_BUS_POISON_PILL_GUARD_GUIDE.md`.
+Offline HITL poison_score bands. Gap vs AutoGen/CrewAI/LangGraph message-bus poison-pill guards. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/MESSAGE_BUS_POISON_PILL_GUARD_GUIDE.md`.
 
 ### OrphanTaskSweeperGuard
 
 ![OrphanTaskSweeperGuard](../assets/demo/orphan-task-sweeper-guard.gif)
 
-Offline HITL orphan_count bands. Gap vs AutoGen/CrewAI/LangGraph orphan-task sweepers. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORPHAN_TASK_SWEEPER_GUARD_GUIDE.md`.
+Offline HITL orphan_count bands. Gap vs AutoGen/CrewAI/LangGraph orphan-task sweepers. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/ORPHAN_TASK_SWEEPER_GUARD_GUIDE.md`.
 
 ### ToolSandboxDnsRebindGuard
 
 ![ToolSandboxDnsRebindGuard](../assets/demo/tool-sandbox-dns-rebind-guard.gif)
 
-Offline HITL rebind_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox DNS-rebinding guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_DNS_REBIND_GUARD_GUIDE.md`.
+Offline HITL rebind_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox DNS-rebinding guards. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/TOOL_SANDBOX_DNS_REBIND_GUARD_GUIDE.md`.
 
 ### CriticCollusionBandAdvisor
 
 ![CriticCollusionBandAdvisor](../assets/demo/critic-collusion-band-advisor.gif)
 
-Offline HITL collusion_score bands. Gap vs AutoGen/CrewAI/LangGraph critic-collusion band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_COLLUSION_BAND_ADVISOR_GUIDE.md`.
+Offline HITL collusion_score bands. Gap vs AutoGen/CrewAI/LangGraph critic-collusion band advisors. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/CRITIC_COLLUSION_BAND_ADVISOR_GUIDE.md`.
 
 ![OrchestratorRetryStormBandAdvisor](../assets/demo/orchestrator-retry-storm-band.gif)
 ### OrchestratorRetryStormBandAdvisor
@@ -414,202 +415,202 @@ Offline HITL collusion_score bands. Gap vs AutoGen/CrewAI/LangGraph critic-collu
 
 ![ToolSandboxEscapeAttemptBandAdvisor](../assets/demo/tool-sandbox-escape.gif)
 
-Offline HITL `attempt_ratio` bands vs LangGraph/CrewAI/AutoGen tool sandbox-escape attempt monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolPermissionEscalationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL `attempt_ratio` bands vs LangGraph/CrewAI/AutoGen tool sandbox-escape attempt monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolPermissionEscalationBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### ToolBudgetExhaustionBandAdvisor
 
 ![ToolBudgetExhaustionBandAdvisor](../assets/demo/tool-budget-exhaustion.gif)
 
-Offline HITL `exhaustion_ratio` bands vs LangGraph/CrewAI/AutoGen tool budget-exhaustion monitors. Distinct from `ToolCallQuotaGuard` / `ToolRetryBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL `exhaustion_ratio` bands vs LangGraph/CrewAI/AutoGen tool budget-exhaustion monitors. Distinct from `ToolCallQuotaGuard` / `ToolRetryBudgetBandGuard`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### OrchestratorFanInStallBandAdvisor
 
 ![OrchestratorFanInStallBandAdvisor](../assets/demo/orchestrator-fan-in-stall.gif)
 
-Offline HITL `stall_ratio` bands vs LangGraph/CrewAI/AutoGen orchestrator fan-in stall monitors. Distinct from `AgentHandoffLoopBandAdvisor` / `ConsensusQuorumStallAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL `stall_ratio` bands vs LangGraph/CrewAI/AutoGen orchestrator fan-in stall monitors. Distinct from `AgentHandoffLoopBandAdvisor` / `ConsensusQuorumStallAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### ToolIdempotencyCollisionBandAdvisor
 
 ![ToolIdempotencyCollisionBandAdvisor](../assets/demo/tool-idempotency-collision.gif)
 
-Offline HITL `collision_ratio` bands vs LangGraph/CrewAI/AutoGen tool idempotency-collision monitors. Distinct from `ToolSideEffectReplayBandAdvisor` / `ToolResultSchemaDriftBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL `collision_ratio` bands vs LangGraph/CrewAI/AutoGen tool idempotency-collision monitors. Distinct from `ToolSideEffectReplayBandAdvisor` / `ToolResultSchemaDriftBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### MessageBusPartitionBandAdvisor
 
 ![MessageBusPartitionBandAdvisor](../assets/demo/message-bus-partition.gif)
 
-Offline HITL `partition_ratio` bands vs LangGraph/CrewAI/AutoGen message-bus partition monitors. Distinct from `OrchestratorFanInStallBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL `partition_ratio` bands vs LangGraph/CrewAI/AutoGen message-bus partition monitors. Distinct from `OrchestratorFanInStallBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### SharedMemoryQuotaThrashBandAdvisor
 
 ![SharedMemoryQuotaThrashBandAdvisor](../assets/demo/shared-memory-quota-thrash.gif)
 
-Offline HITL `thrash_ratio` bands vs LangGraph/CrewAI/AutoGen shared-memory quota thrash monitors. Distinct from `SharedKvWriteAmplificationAdvisor` / `BlackboardReadStalenessAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+Offline HITL `thrash_ratio` bands vs LangGraph/CrewAI/AutoGen shared-memory quota thrash monitors. Distinct from `SharedKvWriteAmplificationAdvisor` / `BlackboardReadStalenessAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 
 ### CriticLatencySkewBandAdvisor
 
 ![CriticLatencySkewBandAdvisor](../assets/demo/critic-latency-skew.gif)
 
-Gap vs LangGraph/CrewAI/AutoGen critic latency-skew monitors. Distinct from `CriticLatencySloBandGuard` / `CriticTimeoutBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_LATENCY_SKEW_BAND_ADVISOR_GUIDE.md`.
+Gap vs LangGraph/CrewAI/AutoGen critic latency-skew monitors. Distinct from `CriticLatencySloBandGuard` / `CriticTimeoutBandGuard`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/CRITIC_LATENCY_SKEW_BAND_ADVISOR_GUIDE.md`.
 
 ### SubgraphDeadlockResidualBandAdvisor
 
 ![SubgraphDeadlockResidualBandAdvisor](../assets/demo/subgraph-deadlock-residual.gif)
 
-Gap vs LangGraph/CrewAI/AutoGen subgraph deadlock-residual monitors. Distinct from `SubgraphCancelLeakAdvisor` / `AgentHandoffLoopBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUBGRAPH_DEADLOCK_RESIDUAL_BAND_ADVISOR_GUIDE.md`.
+Gap vs LangGraph/CrewAI/AutoGen subgraph deadlock-residual monitors. Distinct from `SubgraphCancelLeakAdvisor` / `AgentHandoffLoopBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/SUBGRAPH_DEADLOCK_RESIDUAL_BAND_ADVISOR_GUIDE.md`.
 
 ### PlannerContextOverflowBandAdvisor
 
 ![PlannerContextOverflowBandAdvisor](../assets/demo/planner-context-overflow.gif)
 
-Gap vs LangGraph/CrewAI/AutoGen planner context-overflow monitors. Distinct from `PlannerStepBudgetBandAdvisor` / `PlannerHorizonBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_CONTEXT_OVERFLOW_BAND_ADVISOR_GUIDE.md`.
+Gap vs LangGraph/CrewAI/AutoGen planner context-overflow monitors. Distinct from `PlannerStepBudgetBandAdvisor` / `PlannerHorizonBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/PLANNER_CONTEXT_OVERFLOW_BAND_ADVISOR_GUIDE.md`.
 
 ### WorkerQueueDepthBandAdvisor
 
 ![WorkerQueueDepthBandAdvisor](../assets/demo/worker-queue-depth.gif)
 
-HITL `queue_depth_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen worker-queue depth monitors. Distinct from `WorkerStarvationBandAdvisor` / `WorkerHeartbeatMissBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_QUEUE_DEPTH_BAND_ADVISOR_GUIDE.md`.
+HITL `queue_depth_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen worker-queue depth monitors. Distinct from `WorkerStarvationBandAdvisor` / `WorkerHeartbeatMissBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/WORKER_QUEUE_DEPTH_BAND_ADVISOR_GUIDE.md`.
 
 ### HandoffSchemaDriftBandAdvisor
 
 ![HandoffSchemaDriftBandAdvisor](../assets/demo/handoff-schema-drift.gif)
 
-HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen handoff-schema drift monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `AgentHandoffLoopBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HANDOFF_SCHEMA_DRIFT_BAND_ADVISOR_GUIDE.md`.
+HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen handoff-schema drift monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `AgentHandoffLoopBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/HANDOFF_SCHEMA_DRIFT_BAND_ADVISOR_GUIDE.md`.
 
 ### AgentAffinitySkewBandAdvisor
 
 ![AgentAffinitySkewBandAdvisor](../assets/demo/agent-affinity-skew.gif)
 
-HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent-affinity skew monitors. Distinct from `FanInSkewBandAdvisor` / `SharedStateWriteSkewBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_AFFINITY_SKEW_BAND_ADVISOR_GUIDE.md`.
+HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent-affinity skew monitors. Distinct from `FanInSkewBandAdvisor` / `SharedStateWriteSkewBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/AGENT_AFFINITY_SKEW_BAND_ADVISOR_GUIDE.md`.
 
 ### CriticCalibrationDriftBandAdvisor
 
 ![CriticCalibrationDriftBandAdvisor](../assets/demo/critic-calibration-drift.gif)
 
-HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic-calibration drift monitors. Distinct from `CriticCollusionBandAdvisor` / `CriticLatencySkewBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_CALIBRATION_DRIFT_BAND_ADVISOR_GUIDE.md`.
+HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic-calibration drift monitors. Distinct from `CriticCollusionBandAdvisor` / `CriticLatencySkewBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/CRITIC_CALIBRATION_DRIFT_BAND_ADVISOR_GUIDE.md`.
 
 ### PlannerGoalChurnBandAdvisor
 
 ![PlannerGoalChurnBandAdvisor](../assets/demo/planner-goal-churn.gif)
 
-HITL `churn_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen planner goal-churn monitors. Distinct from `PlannerContextOverflowBandAdvisor` / `PlanGoalContradictionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_GOAL_CHURN_BAND_ADVISOR_GUIDE.md`.
+HITL `churn_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen planner goal-churn monitors. Distinct from `PlannerContextOverflowBandAdvisor` / `PlanGoalContradictionBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/PLANNER_GOAL_CHURN_BAND_ADVISOR_GUIDE.md`.
 
 ### SharedKvLeaseExpiryBandAdvisor
 
 ![SharedKvLeaseExpiryBandAdvisor](../assets/demo/shared-kv-lease-expiry.gif)
 
-HITL `expiry_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen shared-KV lease-expiry monitors. Distinct from `BlackboardWriteLeaseAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_KV_LEASE_EXPIRY_BAND_ADVISOR_GUIDE.md`.
+HITL `expiry_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen shared-KV lease-expiry monitors. Distinct from `BlackboardWriteLeaseAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/SHARED_KV_LEASE_EXPIRY_BAND_ADVISOR_GUIDE.md`.
 
 ### ToolSchemaCompatBandAdvisor
 
 ![ToolSchemaCompatBandAdvisor](../assets/demo/tool-schema-compat.gif)
 
-HITL `compat_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool-schema compatibility monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SCHEMA_COMPAT_BAND_ADVISOR_GUIDE.md`.
+HITL `compat_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool-schema compatibility monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/TOOL_SCHEMA_COMPAT_BAND_ADVISOR_GUIDE.md`.
 
 ### AgentTokenBudgetSkewBandAdvisor
 
 ![AgentTokenBudgetSkewBandAdvisor](../assets/demo/agent-token-budget-skew.gif)
 
-HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent token-budget skew monitors. Distinct from `SessionTokenBudgetLedger` / `CriticTokenBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_TOKEN_BUDGET_SKEW_BAND_ADVISOR_GUIDE.md`.
+HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent token-budget skew monitors. Distinct from `SessionTokenBudgetLedger` / `CriticTokenBudgetBandGuard`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/AGENT_TOKEN_BUDGET_SKEW_BAND_ADVISOR_GUIDE.md`.
 
 ### CriticScoreInflationBandAdvisor
 
 ![CriticScoreInflationBandAdvisor](../assets/demo/critic-score-inflation.gif)
 
-HITL `inflation_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic score-inflation monitors. Distinct from `CriticCalibrationDriftBandAdvisor` / `CriticCollusionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_SCORE_INFLATION_BAND_ADVISOR_GUIDE.md`.
+HITL `inflation_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic score-inflation monitors. Distinct from `CriticCalibrationDriftBandAdvisor` / `CriticCollusionBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/CRITIC_SCORE_INFLATION_BAND_ADVISOR_GUIDE.md`.
 
 ### WorkerMailboxOverflowBandAdvisor
 
 ![WorkerMailboxOverflowBandAdvisor](../assets/demo/worker-mailbox-overflow.gif)
 
-HITL `overflow_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen worker mailbox overflow monitors. Distinct from `WorkerQueueDepthBandAdvisor` / `WorkerStarvationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_MAILBOX_OVERFLOW_BAND_ADVISOR_GUIDE.md`.
+HITL `overflow_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen worker mailbox overflow monitors. Distinct from `WorkerQueueDepthBandAdvisor` / `WorkerStarvationBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/WORKER_MAILBOX_OVERFLOW_BAND_ADVISOR_GUIDE.md`.
 
 ### AgentAffinityDecayBandAdvisor
 
 ![AgentAffinityDecayBandAdvisor](../assets/demo/agent-affinity-decay.gif)
 
-HITL `decay_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent affinity-decay monitors. Distinct from `AgentAffinitySkewBandAdvisor` / `StickyBotAffinityStore`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_AFFINITY_DECAY_BAND_ADVISOR_GUIDE.md`.
+HITL `decay_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent affinity-decay monitors. Distinct from `AgentAffinitySkewBandAdvisor` / `StickyBotAffinityStore`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/AGENT_AFFINITY_DECAY_BAND_ADVISOR_GUIDE.md`.
 
 ### HitlTimeoutCascadeBandAdvisor
 
 ![HitlTimeoutCascadeBandAdvisor](../assets/demo/hitl-timeout-cascade.gif)
 
-HITL `cascade_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen HITL timeout-cascade monitors. Distinct from `HandoffTimeoutBandAdvisor` / `ToolTimeoutCascadeBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_TIMEOUT_CASCADE_BAND_ADVISOR_GUIDE.md`.
+HITL `cascade_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen HITL timeout-cascade monitors. Distinct from `HandoffTimeoutBandAdvisor` / `ToolTimeoutCascadeBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/HITL_TIMEOUT_CASCADE_BAND_ADVISOR_GUIDE.md`.
 
 ### MemoryCompactionLagBandAdvisor
 
 ![MemoryCompactionLagBandAdvisor](../assets/demo/memory-compaction-lag.gif)
 
-HITL `lag_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen memory-compaction lag monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedKvLeaseExpiryBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/MEMORY_COMPACTION_LAG_BAND_ADVISOR_GUIDE.md`.
+HITL `lag_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen memory-compaction lag monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedKvLeaseExpiryBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/MEMORY_COMPACTION_LAG_BAND_ADVISOR_GUIDE.md`.
 
 ### BlackboardWriteContentionBandAdvisor
 
 ![BlackboardWriteContentionBandAdvisor](../assets/demo/blackboard-write-contention.gif)
 
-HITL `contention_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen blackboard write-contention monitors. Distinct from `SharedBlackboardWriteLease` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_WRITE_CONTENTION_BAND_ADVISOR_GUIDE.md`.
+HITL `contention_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen blackboard write-contention monitors. Distinct from `SharedBlackboardWriteLease` / `SharedLockContentionBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/BLACKBOARD_WRITE_CONTENTION_BAND_ADVISOR_GUIDE.md`.
 
 ### ToolSideEffectOrphanBandAdvisor
 
 ![ToolSideEffectOrphanBandAdvisor](../assets/demo/tool-side-effect-orphan.gif)
 
-HITL `orphan_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool side-effect orphan monitors. Distinct from `ToolSideEffectLedgerAdvisor` / `ToolSideEffectReplayBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SIDE_EFFECT_ORPHAN_BAND_ADVISOR_GUIDE.md`.
+HITL `orphan_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool side-effect orphan monitors. Distinct from `ToolSideEffectLedgerAdvisor` / `ToolSideEffectReplayBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/TOOL_SIDE_EFFECT_ORPHAN_BAND_ADVISOR_GUIDE.md`.
 
 
 ### SupervisorFanoutSkewBandAdvisor
 
 ![SupervisorFanoutSkewBandAdvisor](../assets/demo/supervisor-fanout-skew.gif)
 
-HITL supervisor fanout skew_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen supervisor fanout-skew monitors. Distinct from `OrchestratorFanoutBudgetBandAdvisor` / `CriticFanoutSkewAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. Guide: [`SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md`](guides/SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md).
+HITL supervisor fanout skew_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen supervisor fanout-skew monitors. Distinct from `OrchestratorFanoutBudgetBandAdvisor` / `CriticFanoutSkewAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Guide: [`SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md`](guides/SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md).
 
 
 ### AgentCapabilityDriftBandAdvisor
 
 ![AgentCapabilityDriftBandAdvisor](../assets/demo/agent-capability-drift.gif)
 
-HITL agent capability drift_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent capability-drift monitors. Distinct from `BotCapabilityDriftAdvisor` / `ToolSchemaCompatBandAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. Guide: [`AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md`](guides/AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md).
+HITL agent capability drift_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent capability-drift monitors. Distinct from `BotCapabilityDriftAdvisor` / `ToolSchemaCompatBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Guide: [`AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md`](guides/AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md).
 
 
 ### ToolPermissionBounceBandAdvisor
 
 ![ToolPermissionBounceBandAdvisor](../assets/demo/tool-permission-bounce.gif)
 
-HITL tool permission bounce_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen tool-permission bounce monitors. Distinct from `ToolPermissionEscalationBandAdvisor` / `ToolSandboxEscapeAttemptBandAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. Guide: [`TOOL_PERMISSION_BOUNCE_BAND_ADVISOR_GUIDE.md`](guides/TOOL_PERMISSION_BOUNCE_BAND_ADVISOR_GUIDE.md).
+HITL tool permission bounce_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen tool-permission bounce monitors. Distinct from `ToolPermissionEscalationBandAdvisor` / `ToolSandboxEscapeAttemptBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Guide: [`TOOL_PERMISSION_BOUNCE_BAND_ADVISOR_GUIDE.md`](guides/TOOL_PERMISSION_BOUNCE_BAND_ADVISOR_GUIDE.md).
 
 ### HitlApprovalStarvationBandAdvisor
 
 ![HitlApprovalStarvationBandAdvisor](../assets/demo/hitl-approval-starvation.gif)
 
-HITL `starvation_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen HITL approval-starvation monitors. Distinct from `HitlTimeoutCascadeBandAdvisor` / `HitlApprovalGate`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_APPROVAL_STARVATION_BAND_ADVISOR_GUIDE.md`.
+HITL `starvation_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen HITL approval-starvation monitors. Distinct from `HitlTimeoutCascadeBandAdvisor` / `HitlApprovalGate`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/HITL_APPROVAL_STARVATION_BAND_ADVISOR_GUIDE.md`.
 
 ### SupervisorHandoffLoopBandAdvisor
 
 ![SupervisorHandoffLoopBandAdvisor](../assets/demo/supervisor-handoff-loop.gif)
 
-HITL `loop_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen supervisor handoff-loop monitors. Distinct from `AgentHandoffLoopBandAdvisor` / `HandoffSchemaDriftBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUPERVISOR_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
+HITL `loop_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen supervisor handoff-loop monitors. Distinct from `AgentHandoffLoopBandAdvisor` / `HandoffSchemaDriftBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/SUPERVISOR_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
 
 ### SubgraphRetryAmplificationBandAdvisor
 
 ![SubgraphRetryAmplificationBandAdvisor](../assets/demo/subgraph-retry-amplification.gif)
 
-HITL `amplification_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen subgraph retry-amplification monitors. Distinct from `ToolRetryBudgetBandGuard` / `ToolTimeoutCascadeBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUBGRAPH_RETRY_AMPLIFICATION_BAND_ADVISOR_GUIDE.md`.
+HITL `amplification_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen subgraph retry-amplification monitors. Distinct from `ToolRetryBudgetBandGuard` / `ToolTimeoutCascadeBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/SUBGRAPH_RETRY_AMPLIFICATION_BAND_ADVISOR_GUIDE.md`.
 
 ### ToolResultTruncationBandAdvisor
 
 ![ToolResultTruncationBandAdvisor](../assets/demo/tool-result-truncation.gif)
 
-Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_TRUNCATION_BAND_ADVISOR_GUIDE.md`.
+Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/TOOL_RESULT_TRUNCATION_BAND_ADVISOR_GUIDE.md`.
 
 ### SharedStateWriteSkewBandAdvisor
 
 ![SharedStateWriteSkewBandAdvisor](../assets/demo/shared-state-write-skew.gif)
 
-Gap vs LangGraph/CrewAI/AutoGen shared-state write-skew monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_STATE_WRITE_SKEW_BAND_ADVISOR_GUIDE.md`.
+Gap vs LangGraph/CrewAI/AutoGen shared-state write-skew monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/SHARED_STATE_WRITE_SKEW_BAND_ADVISOR_GUIDE.md`.
 
 ### AgentMemoryPoisonBandAdvisor
 
 ![AgentMemoryPoisonBandAdvisor](../assets/demo/agent-memory-poison.gif)
 
-Gap vs LangGraph/CrewAI/AutoGen agent-memory poison monitors. Distinct from `SharedMemoryConflictBandAdvisor` / `PromptLeakBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_MEMORY_POISON_BAND_ADVISOR_GUIDE.md`.
+Gap vs LangGraph/CrewAI/AutoGen agent-memory poison monitors. Distinct from `SharedMemoryConflictBandAdvisor` / `PromptLeakBandAdvisor`. Stack: GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. See `docs/guides/AGENT_MEMORY_POISON_BAND_ADVISOR_GUIDE.md`.
 
 ### OrchestratorPriorityInversionBandAdvisor
 
@@ -740,5 +741,5 @@ Offline HITL `mismatch_ratio` bands vs LangGraph/CrewAI/AutoGen planner-tool mis
 | Gap filled by `StickyBotAffinityStore` | Missing sticky session→bot pin | `StickyBotAffinityStore` — see `docs/guides/STICKY_BOT_AFFINITY_GUIDE.md` |
 | Gap filled by `RunDeadlineWatchdog` | Missing wall-clock advisory deadline | `RunDeadlineWatchdog` — see `docs/guides/RUN_DEADLINE_WATCHDOG_GUIDE.md` |
 | Gap filled by `ToolCallIdempotencyCache` | Missing local tool idempotency | `ToolCallIdempotencyCache` — see `docs/guides/TOOL_CALL_IDEMPOTENCY_CACHE_GUIDE.md` |
-| Gap vs popular stacks for `DeadLetterToolQueue` | Missing local HITL control | `DeadLetterToolQueue` adds offline HITL-safe behavior for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 |
+| Gap vs popular stacks for `DeadLetterToolQueue` | Missing local HITL control | `DeadLetterToolQueue` adds offline HITL-safe behavior for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro |
 | Gap filled by `BotHandoffReceiptStore` | Missing structured bot handoff audit | `BotHandoffReceiptStore` — see `docs/guides/BOT_HANDOFF_RECEIPT_GUIDE.md` |

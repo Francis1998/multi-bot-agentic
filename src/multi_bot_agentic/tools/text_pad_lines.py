@@ -5,8 +5,8 @@ aligning code blocks, tables, or quoted observations. Asking a model to pad line
 can drop blank lines or mis-count widths. This tool pads each non-empty line to a
 target width with leading and/or trailing ASCII spaces (default width 80, side
 right), optionally skipping the first line, with a hard input cap. It never
-executes code or makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+executes code or makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 The document and options may be supplied as separate ``text`` / ``width`` /
 ``side`` / ``skip_first`` arguments or as a single ``text`` value split on

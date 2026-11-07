@@ -3,8 +3,8 @@
 Scrubs secrets from tool **args dicts** before execute. Distinct from
 ``ObservationRedactor`` (observation/log text) and ``RedactionTool`` (callable
 PII tool). Fills a gap vs AutoGen/CrewAI, which often pass raw tool args
-verbatim — this is a thin, stdlib-only guard suitable for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 loops.
+verbatim — this is a thin, stdlib-only guard suitable for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro loops.
 """
 
 from __future__ import annotations

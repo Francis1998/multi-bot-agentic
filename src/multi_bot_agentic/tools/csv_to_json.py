@@ -5,8 +5,8 @@ tool or model turn. Asking a language model to invent object keys from a header
 row is unreliable (shifted columns, dropped quotes). This tool parses CSV text
 via the stdlib ``csv`` module into a JSON array of objects keyed by the header
 row, with bounded document size and hard caps on row and column counts. It
-never executes code and never makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+never executes code and never makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

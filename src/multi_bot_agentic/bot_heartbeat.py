@@ -4,7 +4,7 @@ Tracks last-heartbeat timestamps per bot and reports stale/alive status.
 Distinct from ``SessionTtlExpirer`` (session idle TTL) and
 ``RunDeadlineWatchdog`` (wall-clock run deadline). Fills a gap vs AutoGen /
 CrewAI / LangGraph runtimes that often lack explicit per-bot heartbeat
-liveness. Works with GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+liveness. Works with GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 Never performs network I/O.
 """
 

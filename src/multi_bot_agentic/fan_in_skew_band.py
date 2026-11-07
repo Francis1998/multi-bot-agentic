@@ -3,8 +3,8 @@
 Measures completion-time skew across fan-in branches and emits HITL bands.
 Distinct from ``FanInBarrierGate`` (barrier join) and
 ``ToolCallWaveScheduler`` (wave scheduling). Fills a gap vs AutoGen /
-CrewAI / LangGraph fan-in latency skew. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+CrewAI / LangGraph fan-in latency skew. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

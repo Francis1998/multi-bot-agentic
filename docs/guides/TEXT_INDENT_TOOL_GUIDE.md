@@ -7,7 +7,7 @@
 Agents often need every non-empty line of a pasted block indented before nesting
 it in a code fence, YAML list, or quoted reply. **multi-bot-agentic** includes
 `text_indent` as a deterministic, allowlisted indent helper that is safe for
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

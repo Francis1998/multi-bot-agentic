@@ -5,8 +5,8 @@ often need the next UTC fire times for a classic minute/hour/dom/month/dow
 expression before the next LLM turn. Asking a model to expand cron fields is
 error-prone. This tool evaluates a small deterministic subset of 5-field cron
 using only the Python stdlib (no ``croniter``). It never executes code and
-never makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+never makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

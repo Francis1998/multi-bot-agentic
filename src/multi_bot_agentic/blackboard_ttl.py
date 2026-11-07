@@ -4,8 +4,8 @@ Tracks per-key write timestamps and reports expired keys for eviction.
 Distinct from ``SessionTtlExpirer`` (session idle TTL) and
 ``SharedBlackboard`` (typed scratchpad with revision caps). Fills a gap vs
 AutoGen / CrewAI / LangGraph shared-memory stores that often lack explicit
-per-entry TTL eviction. Works with GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2. Never performs network I/O.
+per-entry TTL eviction. Works with GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

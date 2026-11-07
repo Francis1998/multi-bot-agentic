@@ -7,8 +7,8 @@
 Agents sometimes need collision-free destination names when a MIME message
 contains repeated attachment filenames. **multi-bot-agentic** includes
 `mime_attachment_filenames_unique` as a deterministic, allowlisted stdlib
-`email` parser that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+`email` parser that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 
 Unlike `mime_attachment_names`, this tool groups each decoded original name and
 assigns one unique name per occurrence. It never returns attachment payloads.

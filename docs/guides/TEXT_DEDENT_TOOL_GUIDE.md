@@ -7,8 +7,8 @@
 Agents often receive indented code blocks, templates, or quoted observations
 that need their common leading whitespace removed without changing inner
 indentation. **multi-bot-agentic** includes `text_dedent` as a deterministic,
-allowlisted stdlib `textwrap` transform that is safe for GPT-5.5 / Claude
-Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+allowlisted stdlib `textwrap` transform that is safe for GPT-6 Astra / Claude
+Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

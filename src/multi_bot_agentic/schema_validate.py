@@ -3,7 +3,7 @@
 Validates ``ToolResult`` shape and optional JSON-like metadata contracts before
 observations are fed back into the decision engine. Distinct from pydantic
 tool-calling schemas in LangChain/CrewAI — this is a lightweight, stdlib-only
-guardrail for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 tool loops.
+guardrail for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro tool loops.
 """
 
 from __future__ import annotations

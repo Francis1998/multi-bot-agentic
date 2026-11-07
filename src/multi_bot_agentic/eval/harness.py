@@ -68,7 +68,7 @@ class HarnessReport:
 class ScriptedLLMAdapter:
     """LLM adapter that returns fixture-scripted responses in order.
 
-    Compatible with GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+    Compatible with GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
     directive formats (`TOOL:` / `DONE:`) used by the decision engine.
     """
 

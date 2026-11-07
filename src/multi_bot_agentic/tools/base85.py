@@ -2,8 +2,8 @@
 
 Agents often need denser-than-Base64 opaque encodings for binary-safe text
 handoffs. Models invent alphabets. This tool uses stdlib ``base64.a85``
-(Adobe ASCII85) with no network access. Safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+(Adobe ASCII85) with no network access. Safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

@@ -8,8 +8,8 @@ Agents routinely need attribute values (`href`, `src`, `id`, `class`) from an
 HTML snippet before the next LLM turn. Inventing attributes in-model
 hallucinates URLs and drifts across turns. **multi-bot-agentic** includes
 `html_attr_extract` as a deterministic, allowlisted extractor via stdlib
-`html.parser` that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+`html.parser` that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 
 ## Usage
 
@@ -50,5 +50,5 @@ and optional `tag` / `max_results` arguments.
 ## Suggested repo metadata
 
 - **Description:** Multi-bot agentic runtime with allowlisted tools, safety
-  policy, and GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+  policy, and GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 - **Topics:** `agentic-ai`, `multi-agent`, `llm-tools`, `python`, `safety`

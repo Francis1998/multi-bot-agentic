@@ -6,8 +6,8 @@
 
 Agents often need to apply precise JSON updates without regenerating a complete
 document. **multi-bot-agentic** includes `json_patch_apply` as a deterministic,
-allowlisted RFC 6902 helper that is safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+allowlisted RFC 6902 helper that is safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Unlike `json_merge_patch`, JSON Patch addresses exact values with RFC 6901
 pointers and supports assertions and array edits.

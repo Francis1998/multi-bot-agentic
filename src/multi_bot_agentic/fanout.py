@@ -2,7 +2,7 @@
 
 Runs a caller-supplied worker over a small task list with a thread pool, then
 merges answers in input order. Workers are plain callables — no AgentRunner or
-LLM calls are required — so GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+LLM calls are required — so GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 integrations can inject their own adapters in tests or production.
 
 Compared with CrewAI/AutoGen concurrent crews or LangGraph parallel nodes, this

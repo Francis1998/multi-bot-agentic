@@ -6,8 +6,8 @@
 
 Agents sometimes need a fixed amount of indentation removed from pasted code,
 templates, or quoted observations. **multi-bot-agentic** includes
-`text_outdent` as a deterministic, allowlisted helper that is safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+`text_outdent` as a deterministic, allowlisted helper that is safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 This differs from `text_dedent`, which removes the common whitespace prefix
 across the block, and `text_indent`, which adds spaces. `text_outdent` removes

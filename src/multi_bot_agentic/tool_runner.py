@@ -3,7 +3,7 @@
 Wraps ``ToolAdapter.execute`` with a sliding-window rate limit so multi-bot
 loops cannot hammer the same tool. Distinct from ``SafetyPolicy`` step/timeout
 caps and from CrewAI/AutoGen global concurrency knobs — this is a per-tool
-call budget suitable for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+call budget suitable for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 tool loops.
 """
 

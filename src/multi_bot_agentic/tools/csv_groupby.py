@@ -4,8 +4,8 @@ Agents often need to aggregate long CSV snippets (sum, count, min, max, mean)
 by a key column before the next LLM turn. Asking a language model to aggregate
 tables invents totals and drops groups. This tool uses stdlib :mod:`csv` to
 group rows by one or more key columns and emit aggregated numeric columns. It
-never executes code and never makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+never executes code and never makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 """
 
 from __future__ import annotations

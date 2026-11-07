@@ -6,8 +6,8 @@ unsafe or unnecessary for model handoffs. This tool reuses the same stdlib-only
 safe YAML subset as ``yaml_format`` (no PyYAML dependency) and emits canonical
 JSON. It never executes code, never evaluates YAML tags/constructors, and never
 makes a network request — matching the ``toml_json``, ``yaml_format``, and
-``json_format`` contracts for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+``json_format`` contracts for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

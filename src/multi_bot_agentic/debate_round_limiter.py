@@ -3,8 +3,8 @@
 Caps debate rounds and emits HITL exhaust bands. Distinct from
 ``ConversationTurnBudgetGuard`` (session turns) and
 ``ConsensusConfidenceBandAdvisor`` (vote-share bands). Fills a gap vs
-AutoGen / CrewAI / LangGraph unbounded debate loops. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+AutoGen / CrewAI / LangGraph unbounded debate loops. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

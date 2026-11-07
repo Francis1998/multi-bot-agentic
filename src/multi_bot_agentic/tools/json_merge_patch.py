@@ -4,7 +4,7 @@ Agents often need to apply a partial JSON update onto a base document without
 losing sibling keys. Asking a language model to merge objects invents fields
 and drops nested maps. This tool applies RFC 7396 JSON Merge Patch using
 stdlib :mod:`json` only. It never executes code and never makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 """
 
 from __future__ import annotations

@@ -8,8 +8,8 @@ Agents routinely receive tabular data wrapped in HTML — documentation tables,
 email digests, dashboard snippets, and scraped pages. Letting a model transcribe
 those tables into CSV can shift cells, miss entities, or overrun the event log.
 **multi-bot-agentic** includes `html_table_csv` as a deterministic,
-allowlisted converter that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+allowlisted converter that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 
 ## Usage
 

@@ -2,8 +2,8 @@
 
 ![base32_encode demo](../../assets/demo/base32-encode.gif)
 
-Encode or decode UTF-8 text with stdlib Base32 before the next GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 turn.
+Encode or decode UTF-8 text with stdlib Base32 before the next GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro turn.
 
 ## Why
 

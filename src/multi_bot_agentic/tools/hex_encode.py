@@ -4,8 +4,8 @@ Agents often need a stable hex representation of a UTF-8 payload before hashing,
 embedding in a text-only channel, or comparing opaque blobs. Asking a model to
 encode bytes as hex can drop characters or invent casing. This tool encodes
 text to a hexadecimal string with an optional uppercase form and a hard input
-cap. It never executes code or makes network requests. Safe for GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+cap. It never executes code or makes network requests. Safe for GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 The document and ``uppercase`` flag may be supplied as separate arguments or as
 a single ``text`` value split on ``<<<HEX_ENCODE>>>``.

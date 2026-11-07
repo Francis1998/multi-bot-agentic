@@ -5,7 +5,7 @@ attachment previews, or relayed tool output — and need member metadata before
 choosing a parser. This tool lists ZIP entry names, uncompressed sizes,
 compressed sizes, and timestamps via the standard-library :mod:`zipfile` module.
 It never extracts members, never executes archive contents, and rejects invalid
-or oversized input. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2
+or oversized input. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro
 workers.
 """
 

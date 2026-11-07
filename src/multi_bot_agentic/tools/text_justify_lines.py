@@ -4,7 +4,7 @@ Agents sometimes need line-oriented observations aligned to a fixed width
 without asking a model to count columns or distribute spaces. This tool formats
 non-empty lines with left, right, center, or full justification, preserves line
 endings, and enforces input/output caps. It never executes code or makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Arguments may be supplied separately or in one ``text`` value split on
 ``<<<TEXT_JUSTIFY_LINES>>>`` with a ``width:alignment:skip_first`` suffix.

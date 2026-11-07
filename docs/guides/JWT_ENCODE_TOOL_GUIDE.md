@@ -8,7 +8,7 @@ Agents often need to mint HS256 JWTs for webhook handoffs or test fixtures
 alongside the existing decode-only `jwt_decode` inspector. Encoding in-model
 is error-prone (padding mistakes, wrong HMAC input). **multi-bot-agentic**
 includes `jwt_encode` as an allowlisted stdlib encoder (no PyJWT). It is safe
-for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers — and it
+for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers — and it
 never makes network requests.
 
 ## Usage

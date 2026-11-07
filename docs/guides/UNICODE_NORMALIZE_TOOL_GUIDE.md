@@ -8,7 +8,7 @@ Agents often receive text with mixed Unicode compatibility forms — pasted API
 responses, filenames, or user input that combines composed and decomposed code
 points. Normalizing in-model is unreliable. **multi-bot-agentic** includes
 `unicode_normalize` as a deterministic, allowlisted normalizer that is safe
-for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

@@ -13,7 +13,7 @@ The separator pattern allows alphanumeric separators (`[A-Za-z0-9_-]{1,8}`), so:
 | `text="test"`, `separator="t"` | `"es"` | `"test"` |
 | `text="apple"`, `separator="a"` | `"pple"` | `"apple"` |
 
-Agents using GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 that asked for a
+Agents using GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro that asked for a
 custom separator (branch tokens, cache keys) silently corrupted the slug.
 
 ## Fix

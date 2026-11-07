@@ -7,7 +7,7 @@ filter arrays invents keys and drops matches. This tool parses JSON with the
 stdlib and supports two deterministic modes: ``where`` (keep objects whose
 field equals a value) and ``pluck`` (collect one field from each object). It
 never executes code, never evaluates scripts, and never makes network requests.
-Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

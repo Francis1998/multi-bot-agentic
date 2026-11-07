@@ -7,8 +7,8 @@
 Agents sometimes need display titles for every heading or record without losing
 a document's line structure. **multi-bot-agentic** includes `text_title_lines`
 as a deterministic, allowlisted per-line formatter that is distinct from the
-whole-document `text_case` tool and safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+whole-document `text_case` tool and safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

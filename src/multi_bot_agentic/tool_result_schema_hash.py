@@ -3,8 +3,8 @@
 Compares an expected schema hash to the observed tool-result schema hash
 and emits HITL bands on drift. Distinct from ``ToolOutputSchemaGate``
 (required keys) and ``ToolResultPiiRedactionGate`` (PII). Fills a gap vs
-AutoGen / CrewAI / LangGraph tool-result schema drift. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+AutoGen / CrewAI / LangGraph tool-result schema drift. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

@@ -4,8 +4,8 @@ Agent toolkits (LangChain tools, CrewAI helpers, OpenAI/Anthropic agent demos)
 routinely exchange tab-separated spreadsheets for handoffs between workers.
 This tool parses TSV text with the stdlib ``csv`` module (``excel-tab`` dialect),
 validates rectangular tables, and re-serializes them with consistent newlines
-without executing code. Output stays portable across GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+without executing code. Output stays portable across GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

@@ -4,7 +4,7 @@ Agents often need to join two small CSV tables on a key column before the next
 LLM turn. Asking a language model to invent join results drops rows and
 duplicates keys. This tool uses stdlib :mod:`csv` to perform an inner or left
 join and emit the combined table. It never executes code and never makes
-network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
+network requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro.
 """
 
 from __future__ import annotations

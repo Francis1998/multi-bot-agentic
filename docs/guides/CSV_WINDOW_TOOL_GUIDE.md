@@ -7,7 +7,7 @@
 Agents often need consecutive row slices from a table without copying headers or
 manually chopping rows in a model turn. **multi-bot-agentic** includes
 `csv_window` as a deterministic, allowlisted stdlib `csv` sliding-window
-operation safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+operation safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 

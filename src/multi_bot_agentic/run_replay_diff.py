@@ -3,8 +3,8 @@
 Compare two event sequences for drift on ``event_type`` / ``state`` /
 normalized ``payload`` while ignoring timestamp fields. Distinct from
 ``EventLogCompactor`` (size compaction) — this is a thin, stdlib-only
-drift checker suitable for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 ODA runs. Fills a gap vs AutoGen/CrewAI, which often lack
+drift checker suitable for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro ODA runs. Fills a gap vs AutoGen/CrewAI, which often lack
 run-to-run drift diffs.
 """
 

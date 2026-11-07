@@ -6,8 +6,8 @@ folded iCalendar lines can drop `DTSTART`/`UID` values or invent fields.
 This tool uses only the Python standard library (no ``icalendar`` dependency),
 unfolds RFC 5545 line continuations, and extracts bounded VEVENT
 SUMMARY/DTSTART/DTEND/UID/LOCATION properties. It never executes code and
-never makes network requests. Safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+never makes network requests. Safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 Arguments accept a single ``text`` ICS body. Output is JSON Lines (one event
 object per line) capped at 100 events.

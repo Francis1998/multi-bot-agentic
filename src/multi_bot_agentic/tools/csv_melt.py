@@ -4,7 +4,7 @@ Agents often need wide CSV observations reshaped into long form before the next
 model turn. Asking a model to unpivot a table can drop identifiers or mismatch
 column names and values. This tool uses stdlib :mod:`csv` only and emits fixed
 ``variable`` / ``value`` columns. It never executes code or makes network
-requests. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+requests. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 The CSV and identifier columns may be supplied as separate ``text`` /
 ``id_vars`` arguments, with optional ``value_vars``, or as a single ``text``

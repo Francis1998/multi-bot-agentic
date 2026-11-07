@@ -3,8 +3,8 @@
 Routes a task text to the best ``bot_id`` by overlapping skill tags with
 tokenized task words. Distinct from ``StickyBotAffinityStore`` (session→bot
 pins) and ``BotVoteConsensusAggregator`` (post-answer voting) — this is a
-thin, stdlib-only skill-tag router for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 multi-bot crews. Fills a gap vs AutoGen/CrewAI/LangGraph/
+thin, stdlib-only skill-tag router for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro multi-bot crews. Fills a gap vs AutoGen/CrewAI/LangGraph/
 Semantic Kernel, which often hand-wire agent selection or use sticky roles
 without an explicit tag-overlap ranked router.
 """

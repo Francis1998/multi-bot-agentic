@@ -7,7 +7,7 @@
 Agents routinely need stable line numbers when quoting logs, diffs, or source
 snippets. Inventing numbers in-model drifts across turns. **multi-bot-agentic**
 includes `line_number` as a deterministic, allowlisted annotator that is safe
-for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 
@@ -42,5 +42,5 @@ A model requests it with `TOOL:line_number:<text>`.
 ## Suggested repo metadata
 
 - **Description:** Multi-bot agentic runtime with allowlisted tools, safety
-  policy, and GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+  policy, and GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 - **Topics:** `agentic-ai`, `multi-agent`, `llm-tools`, `python`, `safety`

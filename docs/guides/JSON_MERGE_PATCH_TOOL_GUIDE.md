@@ -7,8 +7,8 @@
 Agents routinely need to apply partial JSON updates onto a base document without
 losing sibling keys. Merging in-model invents fields and drops nested maps.
 **multi-bot-agentic** includes `json_merge_patch` as a deterministic RFC 7396
-merge via stdlib `json` that is safe for GPT-5.5 / Claude Sonnet 4.6 /
-Gemini 3.x / Kimi K2 workers.
+merge via stdlib `json` that is safe for GPT-6 Astra / Claude Opus 5.5 /
+Gemini 4 Argon / Kimi K3.1 Pro workers.
 
 ## Usage
 
@@ -46,5 +46,5 @@ Combined form: `{"a":1}<<<PATCH>>>{"b":2}`.
 ## Suggested repo metadata
 
 - **Description:** Multi-bot agentic runtime with allowlisted tools, safety
-  policy, and GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+  policy, and GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 - **Topics:** `agentic-ai`, `multi-agent`, `llm-tools`, `python`, `safety`

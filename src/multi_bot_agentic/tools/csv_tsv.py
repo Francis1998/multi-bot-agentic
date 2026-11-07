@@ -4,7 +4,7 @@ Agents often need to convert tabular snippets between comma-separated and
 tab-separated forms when moving data between tools, spreadsheets, and prompt
 payloads. This tool parses one format with the stdlib ``csv`` module and emits
 the other deterministically, without executing code. Output stays portable
-across GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+across GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations

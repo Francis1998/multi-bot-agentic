@@ -8,8 +8,8 @@
 pluck a field across objects — the gap popular agent runtimes fill with a small
 `jq`-style select. Filtering in-model invents keys and drops matches.
 **multi-bot-agentic** includes `json_query` as a deterministic, allowlisted
-select/pluck helper that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+select/pluck helper that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 
 ## Usage
 

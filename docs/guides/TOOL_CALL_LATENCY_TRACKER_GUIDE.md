@@ -5,7 +5,7 @@
 Record per-tool latency samples and read advisory **p50 / p95** percentiles.
 Never kills or blocks tools — callers decide how to react to slow calls.
 
-Works with **GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2** multi-bot
+Works with **GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro** multi-bot
 tool loops.
 
 Distinct from:

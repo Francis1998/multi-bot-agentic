@@ -2,8 +2,8 @@
 
 ![jsonl_parse demo](../../assets/demo/jsonl-parse.gif)
 
-Parse JSON Lines into a pretty JSON array before the next GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 turn.
+Parse JSON Lines into a pretty JSON array before the next GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro turn.
 
 ## Why
 

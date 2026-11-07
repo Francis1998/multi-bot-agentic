@@ -4,7 +4,7 @@ Resolves an ordered execution list from step ids + dependency edges.
 Distinct from ``BudgetedStepPlanner`` (token/cost caps) and
 ``SpeculativeToolPrefetch`` (next-tool ranking). Fills a gap vs AutoGen /
 CrewAI / LangGraph DAG planners that bury dependency order in graph runtimes.
-Works with GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs
+Works with GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs
 network I/O.
 """
 

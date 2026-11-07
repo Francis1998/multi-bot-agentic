@@ -4,8 +4,8 @@ Flags concurrent write conflicts on shared memory keys using a simple
 version-skew heuristic and emits HITL bands. Distinct from
 ``SharedMemoryQuotaGuard`` (byte quotas) and
 ``SharedBlackboardWriteLease`` (lease locking). Fills a gap vs AutoGen /
-CrewAI / LangGraph CRDT-style conflict surfacing. Works with GPT-5.5 /
-Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. Never performs network I/O.
+CrewAI / LangGraph CRDT-style conflict surfacing. Works with GPT-6 Astra /
+Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro. Never performs network I/O.
 """
 
 from __future__ import annotations

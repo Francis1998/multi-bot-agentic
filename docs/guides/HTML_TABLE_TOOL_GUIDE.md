@@ -8,8 +8,8 @@ Agents routinely receive useful tabular data wrapped in HTML: release notes,
 documentation pages, email digests, dashboards, and search-result snippets. Letting
 a model transcribe those tables can shift cells, miss HTML entities, or overrun
 the event log. **multi-bot-agentic** includes `html_table` as a deterministic,
-allowlisted extractor that is safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-Kimi K2 workers.
+allowlisted extractor that is safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon /
+Kimi K3.1 Pro workers.
 
 ## Usage
 

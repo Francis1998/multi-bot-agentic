@@ -2,7 +2,7 @@
 
 Agents needing sortable unique IDs often invent UUID variants. This tool
 generates Crockford-Base32 ULIDs or validates existing ones with no network
-access. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
+access. Safe for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro workers.
 """
 
 from __future__ import annotations
