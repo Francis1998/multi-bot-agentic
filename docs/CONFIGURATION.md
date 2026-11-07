@@ -10,7 +10,9 @@ cp .env.example .env
 
 - `fake`: deterministic provider used by tests and demos.
 - `openai`: calls the OpenAI chat completions API using `OPENAI_API_KEY`.
-- `claude_code`: invokes the local Claude Code CLI configured by `CLAUDE_CODE_COMMAND`.
+- `claude_code`: invokes the local Claude Code CLI configured by `CLAUDE_CODE_COMMAND` (default `claude -p`). The
+  prompt is written to the command's stdin, so the command must run Claude Code in print mode (`-p`/`--print`, its
+  non-interactive mode); plain `claude` starts an interactive session.
 - `gemini`: calls the Gemini `generateContent` API using `GEMINI_API_KEY`.
 - `kimi`: calls the Moonshot/Kimi chat completions API using `KIMI_API_KEY`.
 
@@ -22,7 +24,7 @@ environment variables below. For prices, see each provider's pricing page.
 | Provider | Default here | Other current models | Notes |
 | --- | --- | --- | --- |
 | OpenAI ([models](https://developers.openai.com/api/docs/guides/latest-model)) | `gpt-6.1-sol` | `gpt-6-astra` (highest intelligence), `gpt-6.1-terra` (fast), `gpt-6-luna` (fastest, lowest cost) | Reasoning models: the adapter sends `max_completion_tokens` (default 32768, which covers reasoning and visible output; set it with `OPENAI_MAX_COMPLETION_TOKENS`) and no `temperature`/`top_p` |
-| Anthropic via Claude Code CLI ([models](https://platform.claude.com/docs/en/models/overview)) | the CLI's own setting | `claude-opus-5-5` (recommended default), `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-1` | Choose one with `CLAUDE_CODE_COMMAND="claude --model claude-opus-5-5"` |
+| Anthropic via Claude Code CLI ([models](https://platform.claude.com/docs/en/models/overview)) | the CLI's own setting | `claude-opus-5-5` (recommended default), `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-1` | Choose one with `CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"` (keep `-p`, print mode) |
 | Google Gemini ([models](https://aistudio.google.com/docs/models)) | `gemini-3.8-flash` | `gemini-4-argon` (flagship reasoning), `gemini-3.6-flash`, `gemini-3.5-flash-lite` | `generateContent` API |
 | Kimi / Moonshot ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed`, `kimi-k3` | K3 fixes `temperature`/`top_p`/`n`/penalties and always reasons, so none of those are sent. `KIMI_MAX_COMPLETION_TOKENS` sets the budget (default 32768). K2 is being retired |
 
@@ -37,7 +39,7 @@ penalties, or logprobs. `tests/test_adapters.py` guards this for every provider.
 | Provider | Rule (official docs, checked 2026-11-07) | What the adapter does |
 | --- | --- | --- |
 | OpenAI GPT-6 | When reasoning effort is not `none`, remove `temperature`, `top_p`, and `top_logprobs` (and `logprobs` on Chat Completions). `gpt-6.1-sol` and `gpt-6-astra` support only `low`..`max`. `gpt-6.1-terra` and `gpt-6-luna` accept `temperature` only with `reasoning_effort: none` ([GPT-6 guide](https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md)) | Sends only `model`, `messages`, and `max_completion_tokens` |
-| Anthropic Claude 5.5 | A non-default `temperature`, `top_p`, or `top_k` returns 400. Since API version 2026-10-21, any of them returns 400 on every model. Use `output_config.effort` instead ([thinking](https://platform.claude.com/docs/en/build-with-claude/thinking.md), [effort](https://platform.claude.com/docs/en/build-with-claude/effort.md)) | The Claude Code CLI adapter runs only the configured command (for example `claude --model claude-opus-5-5`) and adds no flags |
+| Anthropic Claude 5.5 | A non-default `temperature`, `top_p`, or `top_k` returns 400. Since API version 2026-10-21, any of them returns 400 on every model. Use `output_config.effort` instead ([thinking](https://platform.claude.com/docs/en/build-with-claude/thinking.md), [effort](https://platform.claude.com/docs/en/build-with-claude/effort.md)) | The Claude Code CLI adapter runs only the configured command (for example `claude -p --model claude-opus-5-5`) and adds no flags of its own |
 | Google Gemini 3.x | Remove `temperature`, `top_p`, and `top_k`; if provided, they are ignored ([Gemini 3 guide](https://aistudio.google.com/docs/gemini-3.md)) | Sends only `contents`, with no `generationConfig` |
 | Kimi K3 | `temperature` is fixed at 1.0 (any other value errors), as are `top_p`, `n`, and penalties. Use top-level `reasoning_effort` (`low`/`high`/`max`) ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | Sends only `model`, `messages`, and `max_completion_tokens` |
 
@@ -60,7 +62,7 @@ multi-bot-agentic run --goal "Draft a launch checklist" --provider openai
 Claude Code CLI:
 
 ```bash
-export CLAUDE_CODE_COMMAND="claude --model claude-opus-5-5"
+export CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"
 multi-bot-agentic run --goal "Draft a launch checklist" --provider claude_code
 ```
 

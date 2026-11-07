@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from multi_bot_agentic.llm.base import LLMAdapter
-from multi_bot_agentic.llm.claude_code_cli import ClaudeCodeCLIAdapter
+from multi_bot_agentic.llm.claude_code_cli import DEFAULT_CLAUDE_CODE_COMMAND, ClaudeCodeCLIAdapter
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.llm.gemini import GeminiAdapter
 from multi_bot_agentic.llm.kimi import KimiAdapter
@@ -82,7 +82,8 @@ def build_llm_adapter(provider: str) -> LLMAdapter:
             max_completion_tokens=_positive_int_env("OPENAI_MAX_COMPLETION_TOKENS", DEFAULT_MAX_COMPLETION_TOKENS),
         )
     if provider == "claude_code":
-        return ClaudeCodeCLIAdapter(command=os.getenv("CLAUDE_CODE_COMMAND", "claude"))
+        command = os.getenv("CLAUDE_CODE_COMMAND", "").strip() or DEFAULT_CLAUDE_CODE_COMMAND
+        return ClaudeCodeCLIAdapter(command=command)
     if provider == "gemini":
         return GeminiAdapter(
             api_key=_required_env("GEMINI_API_KEY"),

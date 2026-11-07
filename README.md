@@ -95,7 +95,7 @@ To use a real model, export its key and pick the provider, for example
 | Provider (`--provider`) | Adapter | Default | Also current | Credential |
 | --- | --- | --- | --- | --- |
 | OpenAI (`openai`) | `OpenAIAdapter` | `gpt-6.1-sol` | `gpt-6-astra`, `gpt-6.1-terra`, `gpt-6-luna` | `OPENAI_API_KEY` |
-| Anthropic via Claude Code CLI (`claude_code`) | `ClaudeCodeCLIAdapter` | the CLI's configured model (recommended: `CLAUDE_CODE_COMMAND="claude --model claude-opus-5-5"`) | `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-1` | local `claude` |
+| Anthropic via Claude Code CLI (`claude_code`) | `ClaudeCodeCLIAdapter` | the CLI's configured model (recommended: `CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"`; keep `-p`, print mode) | `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-1` | local `claude` |
 | Google Gemini (`gemini`) | `GeminiAdapter` | `gemini-3.8-flash` | `gemini-4-argon` | `GEMINI_API_KEY` |
 | Kimi / Moonshot (`kimi`) | `KimiAdapter` | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed`, `kimi-k3` | `KIMI_API_KEY` |
 | Deterministic (`fake`) | `FakeLLMAdapter` | offline, used by CI | n/a | none |
