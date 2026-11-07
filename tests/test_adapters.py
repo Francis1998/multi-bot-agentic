@@ -145,6 +145,37 @@ def test_claude_code_adapter_maps_timeout_to_runtime_error(monkeypatch: MonkeyPa
         adapter.complete(request, timeout_seconds=1.0)
 
 
+@pytest.mark.parametrize("configured", [None, "", "   "])
+def test_claude_code_default_command_runs_print_mode(monkeypatch: MonkeyPatch, configured: str | None) -> None:
+    """The default Claude Code command must be non-interactive print mode.
+
+    The adapter writes the prompt to stdin and reads the reply from stdout. Plain
+    ``claude`` starts an interactive session, so it can never answer a piped prompt;
+    ``claude -p`` reads stdin, prints the response, and exits. A blank
+    ``CLAUDE_CODE_COMMAND`` (e.g. copied from ``.env.example``) uses the default.
+    """
+
+    if configured is None:
+        monkeypatch.delenv("CLAUDE_CODE_COMMAND", raising=False)
+    else:
+        monkeypatch.setenv("CLAUDE_CODE_COMMAND", configured)
+    seen: list[list[str]] = []
+    prompts: list[object] = []
+
+    def fake_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        seen.append(command)
+        prompts.append(kwargs.get("input"))
+        return subprocess.CompletedProcess(command, 0, stdout="DONE: ok", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    adapter = build_llm_adapter("claude_code")
+    request = ModelRequest(goal="demo", observations=(Observation(source="user", content="demo"),))
+
+    assert adapter.complete(request, timeout_seconds=1.0).text == "DONE: ok"
+    assert seen == [["claude", "-p"]]
+    assert isinstance(prompts[0], str) and "Goal: demo" in prompts[0]
+
+
 def test_kimi_adapter_default_uses_latest_k3_stack(monkeypatch: MonkeyPatch) -> None:
     """Kimi adapter defaults should stay aligned with the current K3 stack (K2 is being retired)."""
 
@@ -273,8 +304,8 @@ def test_claude_code_adapter_adds_no_sampling_flags(monkeypatch: MonkeyPatch) ->
         return subprocess.CompletedProcess(command, 0, stdout="DONE: ok", stderr="")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    adapter = ClaudeCodeCLIAdapter(command="claude --model claude-opus-5-5")
+    adapter = ClaudeCodeCLIAdapter(command="claude -p --model claude-opus-5-5")
     request = ModelRequest(goal="demo", observations=(Observation(source="user", content="demo"),))
 
     assert adapter.complete(request, timeout_seconds=1.0).text == "DONE: ok"
-    assert seen == [["claude", "--model", "claude-opus-5-5"]]
+    assert seen == [["claude", "-p", "--model", "claude-opus-5-5"]]

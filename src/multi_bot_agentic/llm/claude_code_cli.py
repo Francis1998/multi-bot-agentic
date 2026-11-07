@@ -8,9 +8,17 @@ import subprocess
 from multi_bot_agentic.llm.base import render_tool_catalog
 from multi_bot_agentic.models import ModelOutput, ModelRequest
 
+# Print mode (-p) is Claude Code's non-interactive mode: it reads the prompt from stdin,
+# prints the reply, and exits. Plain ``claude`` would start an interactive session.
+DEFAULT_CLAUDE_CODE_COMMAND = "claude -p"
+
 
 class ClaudeCodeCLIAdapter:
-    """Adapter that consumes output from a local Claude Code CLI command."""
+    """Adapter that consumes output from a local Claude Code CLI command.
+
+    The prompt is written to the command's stdin, so the command must run Claude Code
+    non-interactively (print mode, ``-p``), e.g. ``claude -p --model claude-opus-5-5``.
+    """
 
     provider_name = "claude_code"
 

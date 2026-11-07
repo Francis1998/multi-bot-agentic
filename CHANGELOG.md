@@ -27,6 +27,7 @@
 
 ### Fixed
 
+- The `claude_code` provider now defaults to `CLAUDE_CODE_COMMAND="claude -p"`, Claude Code's non-interactive print mode. The adapter writes the prompt to stdin and reads the reply from stdout, but the previous default (`claude`) starts an interactive session, so it could not answer. A blank `CLAUDE_CODE_COMMAND` now falls back to the default instead of failing with "command cannot be empty". If you set the variable yourself, include `-p` (e.g. `claude -p --model claude-opus-5-5`).
 - `AgentRunner.resume()` now restores the bot that was active when the checkpoint was written (checkpoints record `active_bot_id`) and executes `HANDOFF:` decisions. Previously a resumed multi-bot run silently reverted to the constructor's bot scope (so a `writer`-scoped run could call planner-only tools) and failed with `unsupported action for _act: handoff`. Resuming a bot-scoped checkpoint on a runner without that bot registered now fails closed with a `ValueError`.
 
 ### Added
