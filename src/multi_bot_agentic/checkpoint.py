@@ -25,6 +25,7 @@ class CheckpointSnapshot:
         step: Next zero-based loop step to execute.
         state: Lifecycle state recorded at checkpoint time.
         observations: Observations restored into the runner.
+        active_bot_id: Bot whose tool scope was active at checkpoint time, if any.
     """
 
     run_id: str
@@ -32,6 +33,7 @@ class CheckpointSnapshot:
     step: int
     state: RunState
     observations: tuple[Observation, ...]
+    active_bot_id: str | None = None
 
     def to_payload(self) -> dict[str, Any]:
         """Return a JSON-serializable checkpoint payload.
@@ -40,12 +42,15 @@ class CheckpointSnapshot:
             Payload suitable for the event log.
         """
 
-        return {
+        payload: dict[str, Any] = {
             "goal": self.goal,
             "step": self.step,
             "state": self.state.value,
             "observations": [observation.to_dict() for observation in self.observations],
         }
+        if self.active_bot_id is not None:
+            payload["active_bot_id"] = self.active_bot_id
+        return payload
 
 
 def observation_from_dict(payload: dict[str, Any]) -> Observation:
@@ -76,6 +81,7 @@ def save_checkpoint(
     step: int,
     state: RunState,
     observations: tuple[Observation, ...],
+    active_bot_id: str | None = None,
 ) -> CheckpointSnapshot:
     """Persist a checkpoint event and return the snapshot.
 
@@ -86,6 +92,7 @@ def save_checkpoint(
         step: Next step index to resume from.
         state: State at checkpoint time.
         observations: Observations to restore on resume.
+        active_bot_id: Bot whose tool scope is active, restored on resume.
 
     Returns:
         Saved checkpoint snapshot.
@@ -97,6 +104,7 @@ def save_checkpoint(
         step=step,
         state=state,
         observations=observations,
+        active_bot_id=active_bot_id,
     )
     event_log.append(run_id, state, EventType.CHECKPOINT, snapshot.to_payload())
     return snapshot
@@ -119,11 +127,13 @@ def load_latest_checkpoint(event_log: SQLiteEventLog, run_id: str) -> Checkpoint
             continue
         payload = event.payload
         observations = tuple(observation_from_dict(item) for item in payload.get("observations", []))
+        active_bot_id = payload.get("active_bot_id")
         latest = CheckpointSnapshot(
             run_id=run_id,
             goal=str(payload.get("goal", "")),
             step=int(payload.get("step", 0)),
             state=RunState(str(payload.get("state", RunState.CREATED.value))),
             observations=observations,
+            active_bot_id=str(active_bot_id) if active_bot_id is not None else None,
         )
     return latest

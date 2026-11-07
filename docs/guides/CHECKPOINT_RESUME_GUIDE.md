@@ -45,5 +45,8 @@ result = runner.resume("run-1")
 ## Safety
 
 - Checkpoints store observation text already accepted by the runner; they do not grant new tools.
+- Checkpoints record the active bot (`active_bot_id`) for multi-bot runs. `resume` restores that bot's
+  tool scope, executes later `HANDOFF:` directives exactly like `run`, and raises `ValueError` if the
+  checkpoint's bot is not registered on the resuming runner (fail closed instead of widening scope).
 - Resume still enforces `SafetyPolicy` step budgets, tool allowlists, and cancellation files.
 - Only the latest checkpoint for a `run_id` is loaded.

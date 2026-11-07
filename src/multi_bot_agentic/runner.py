@@ -96,81 +96,13 @@ class AgentRunner:
             EventType.RUN_CREATED,
             {"goal": goal, "provider": self.provider.provider_name},
         )
-
-        try:
-            for step in range(self.safety_policy.max_steps):
-                self.safety_policy.validate_step(step)
-                if self.safety_policy.is_cancelled():
-                    return self._cancel(selected_run_id, state_machine, step, "cancellation requested")
-
-                self._transition(selected_run_id, state_machine, RunState.OBSERVING)
-                for observation in observations:
-                    self.event_log.append(
-                        selected_run_id,
-                        state_machine.state,
-                        EventType.OBSERVATION,
-                        observation.to_dict(),
-                    )
-
-                self._transition(selected_run_id, state_machine, RunState.DECIDING)
-                decision = self.decision_engine.decide(observations, step, self.safety_policy)
-                self.event_log.append(
-                    selected_run_id,
-                    state_machine.state,
-                    EventType.DECISION,
-                    decision.to_dict(),
-                )
-
-                if decision.action == "finish":
-                    return self._succeed(selected_run_id, state_machine, step + 1, decision)
-                if decision.action == "cancel":
-                    return self._cancel(
-                        selected_run_id,
-                        state_machine,
-                        step + 1,
-                        str(decision.payload.get("reason", "cancelled")),
-                    )
-                if decision.action == "fail":
-                    return self._fail(
-                        selected_run_id,
-                        state_machine,
-                        step + 1,
-                        str(decision.payload.get("reason", "failed")),
-                    )
-
-                if decision.action == "handoff":
-                    self._transition(selected_run_id, state_machine, RunState.ACTING)
-                    handoff_observation = self._handoff(selected_run_id, state_machine.state, decision)
-                    observations = (*observations, handoff_observation)
-                    save_checkpoint(
-                        self.event_log,
-                        run_id=selected_run_id,
-                        goal=goal,
-                        step=step + 1,
-                        state=state_machine.state,
-                        observations=observations,
-                    )
-                    continue
-
-                self._transition(selected_run_id, state_machine, RunState.ACTING)
-                new_observation = self._act(selected_run_id, state_machine.state, goal, observations, decision)
-                observations = (*observations, new_observation)
-                save_checkpoint(
-                    self.event_log,
-                    run_id=selected_run_id,
-                    goal=goal,
-                    step=step + 1,
-                    state=state_machine.state,
-                    observations=observations,
-                )
-
-        except (InvalidTransitionError, SafetyError, OSError, RuntimeError, ValueError) as error:
-            return self._fail(selected_run_id, state_machine, self.safety_policy.max_steps, str(error))
-
-        return self._fail(selected_run_id, state_machine, self.safety_policy.max_steps, "step budget exhausted")
+        return self._run_loop(selected_run_id, goal, observations, state_machine, start_step=0)
 
     def resume(self, run_id: str) -> RunResult:
         """Resume a run from its latest checkpoint.
+
+        The bot that was active when the checkpoint was written is restored, so a
+        resumed run keeps that bot's tool scope instead of the constructor's.
 
         Args:
             run_id: Existing run identifier.
@@ -179,7 +111,8 @@ class AgentRunner:
             Final run result after continuation.
 
         Raises:
-            ValueError: If no checkpoint exists for ``run_id``.
+            ValueError: If no usable checkpoint exists for ``run_id`` or the
+                checkpoint's active bot is not registered on this runner.
         """
 
         snapshot = load_latest_checkpoint(self.event_log, run_id)
@@ -191,9 +124,40 @@ class AgentRunner:
             raise ValueError(f"checkpoint for run_id={run_id} has no observations")
 
         self.safety_policy.validate_goal(snapshot.goal)
-        state_machine = RunStateMachine()
-        observations = snapshot.observations
-        start_step = max(0, snapshot.step)
+        if snapshot.active_bot_id is not None:
+            bot = self.bots.get(snapshot.active_bot_id)
+            if bot is None:
+                raise ValueError(f"checkpoint active bot is not registered: {snapshot.active_bot_id}")
+            self.active_bot_id = bot.bot_id
+            self.safety_policy = replace(self.safety_policy, allowed_tools=bot.allowed_tools)
+        return self._run_loop(
+            run_id,
+            snapshot.goal,
+            snapshot.observations,
+            RunStateMachine(),
+            start_step=max(0, snapshot.step),
+        )
+
+    def _run_loop(
+        self,
+        run_id: str,
+        goal: str,
+        observations: tuple[Observation, ...],
+        state_machine: RunStateMachine,
+        start_step: int,
+    ) -> RunResult:
+        """Drive Observe -> Decide -> Act iterations shared by ``run`` and ``resume``.
+
+        Args:
+            run_id: Run identifier.
+            goal: User goal.
+            observations: Observations accumulated so far.
+            state_machine: Run state machine for this invocation.
+            start_step: Zero-based step to start from.
+
+        Returns:
+            Final run result.
+        """
 
         try:
             for step in range(start_step, self.safety_policy.max_steps):
@@ -237,15 +201,19 @@ class AgentRunner:
                     )
 
                 self._transition(run_id, state_machine, RunState.ACTING)
-                new_observation = self._act(run_id, state_machine.state, snapshot.goal, observations, decision)
+                if decision.action == "handoff":
+                    new_observation = self._handoff(run_id, state_machine.state, decision)
+                else:
+                    new_observation = self._act(run_id, state_machine.state, goal, observations, decision)
                 observations = (*observations, new_observation)
                 save_checkpoint(
                     self.event_log,
                     run_id=run_id,
-                    goal=snapshot.goal,
+                    goal=goal,
                     step=step + 1,
                     state=state_machine.state,
                     observations=observations,
+                    active_bot_id=self.active_bot_id,
                 )
 
         except (InvalidTransitionError, SafetyError, OSError, RuntimeError, ValueError) as error:

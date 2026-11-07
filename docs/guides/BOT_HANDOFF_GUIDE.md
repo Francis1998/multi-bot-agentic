@@ -49,4 +49,5 @@ HANDOFF:writer:draft the final answer
 
 - Handoffs are only accepted for bots present in the registry.
 - After handoff, tools outside the destination bot allowlist are blocked.
+- The active bot is checkpointed, so `AgentRunner.resume(run_id)` keeps the post-handoff scope.
 - Step budgets, cancellation, and prompt bounds still apply.
