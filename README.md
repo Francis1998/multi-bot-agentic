@@ -1,1021 +1,156 @@
 # multi-bot-agentic
 
-`multi-bot-agentic` is a standalone AI-agent engineering showcase: a deterministic agent coordinator with explicit **Observe -> Decide -> Act** loops, durable event logs, rationale traces, provider adapters, and bounded safety controls.
+[![ci](https://github.com/Francis1998/multi-bot-agentic/actions/workflows/ci.yml/badge.svg)](https://github.com/Francis1998/multi-bot-agentic/actions/workflows/ci.yml)
+[![python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-3776AB)](pyproject.toml)
+[![license: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![MCP 2026-07-28 + legacy](https://img.shields.io/badge/MCP-2026--07--28%20%2B%20legacy-6E56CF)](docs/guides/MCP_TOOLS_GUIDE.md)
 
-It is built as a portfolio-quality recreation of the `multi-bot` product idea without depending on private infrastructure. The default path runs fully offline with a deterministic fake provider. Real adapters are included for OpenAI GPT-6 (default `gpt-6.1-sol`), Claude Opus/Sonnet 5.5 via the Claude Code CLI, Gemini (default `gemini-3.8-flash`), and Kimi K3 (default `kimi-k3.1-pro`).
+**A deterministic, auditable orchestrator for multi-bot AI agents.** Models propose, and a rule-based
+**Observe → Decide → Act** engine decides. Every decision, tool call, and MCP call is written to a
+replayable SQLite event log. It runs fully offline with a deterministic fake provider, and it works with GPT-6,
+Claude 5.5, Gemini, Kimi K3, and any [Model Context Protocol](https://modelcontextprotocol.io) server. It is
+a portfolio-quality recreation of the `multi-bot` product idea, built without private infrastructure.
 
-![multi-bot-agentic animated demo](docs/demo.gif)
+![MCP tool bridge demo: official MCP servers in both protocol eras, an MCP-calling run, and its replay](assets/demo/mcp-tools.gif)
 
-## MCP Tool Bridge: Use Tools From Any MCP Server
+## Why
 
-![MCP tool bridge demo](assets/demo/mcp-tools.gif)
+- **The model is an input, not the control plane.** LLM output becomes an observation. A deterministic decision
+  engine picks the next action and records a `RationaleTrace`: the rule, the observations it used, and the
+  actions it rejected.
+- **Every run is auditable.** Lifecycle transitions, observations, decisions, and tool and MCP calls are
+  persisted per run. `replay` and `report` never call a provider, so postmortems are safe and deterministic.
+- **Tools are explicit and bounded.** Built-in and MCP tools pass the same allowlist and per-bot scopes. MCP
+  calls also get per-call timeouts and result byte caps. Built-in tools run offline and in-process with
+  size-limited inputs. A model can only request a tool; the engine decides whether it runs.
+- **Provider-neutral.** One adapter interface covers GPT-6, the Claude Code CLI, Gemini, and Kimi K3, and every
+  adapter sends parameters that current reasoning models accept.
+- **CI-friendly.** The fake provider exercises the real runtime, so lint, types, tests, a smoke run, and
+  offline evaluation need no API keys.
 
-Bots can call tools from any [Model Context Protocol](https://modelcontextprotocol.io) server through a
-dependency-free stdio client. It speaks MCP 2026-07-28 and falls back to the legacy `initialize` handshake for
-older servers. Tools appear as `mcp__<server>__<tool>`, pass the same allowlist and deterministic decision
-engine as built-in tools, and are recorded in the durable event log. The config file uses the Claude Desktop
-`mcpServers` format.
+## How It Works
+
+```mermaid
+flowchart LR
+    goal([Goal]) --> observe[Observe]
+    observe --> decide{"Decide<br/>deterministic rules<br/>+ rationale trace"}
+    decide -->|call_llm| llm["LLM adapter<br/>GPT-6 · Claude 5.5 · Gemini · Kimi K3 · fake"]
+    decide -->|call_tool| tool["Allowlisted tool<br/>built-in or mcp__server__tool"]
+    decide -->|handoff| bot["Bot handoff<br/>scoped tool allowlist"]
+    decide -->|finish / fail / cancel| done([Terminal state])
+    llm --> observe
+    tool --> observe
+    bot --> observe
+    observe -.-> log[("SQLite event log<br/>replay · report · resume")]
+    decide -.-> log
+    tool -.-> log
+```
+
+The model only ever returns text: `TOOL:<name>:<payload>`, `HANDOFF:<bot>:<summary>`, or `DONE:<answer>`. It
+never executes anything itself. See [Architecture](docs/ARCHITECTURE.md) and [Safety](docs/SAFETY.md).
+
+![Observe → Decide → Act → Replay animation](docs/demo.gif)
+
+## 60-Second Quickstart
 
 ```bash
+python -m venv .venv && . .venv/bin/activate
+python -m pip install -e ".[dev]"
+
+# Offline run with the deterministic fake provider, then inspect the durable log
+multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log data/runs.sqlite --run-id demo
+multi-bot-agentic replay --event-log data/runs.sqlite --run-id demo --event-type decision --format text
+multi-bot-agentic report --event-log data/runs.sqlite --run-id demo
+
+# Tools from an MCP server (bundled demo server, works offline)
 multi-bot-agentic mcp-tools --mcp-config examples/mcp/mcp.json
 MULTIBOT_FAKE_TOOL=mcp__notes__search_notes multi-bot-agentic run --provider fake \
   --mcp-config examples/mcp/mcp.json --goal "release checklist"
 ```
 
-See the [MCP Tool Bridge Guide](docs/guides/MCP_TOOLS_GUIDE.md).
+To use a real model, export its key and pick the provider, for example
+`export OPENAI_API_KEY=... && multi-bot-agentic run --provider openai --goal "..."`. For a full scenario, see the
+[release-readiness walkthrough](docs/use-cases/USE-CASE-mcp-release-readiness.md).
 
-![DeadLetterToolQueue](assets/demo/dead-letter-tool-queue.gif)
+## Feature Map
 
-![BotHandoffReceiptStore](assets/demo/bot-handoff-receipt.gif)
-
-![ToolCallQuotaGuard](assets/demo/tool-call-quota-guard.gif)
-![BotTurnFairnessScheduler](assets/demo/bot-turn-fairness-scheduler.gif)
-![HitlEscalationCooldownGate](assets/demo/hitl-escalation-cooldown-gate.gif)
-![BotRoleConflictDetector](assets/demo/bot-role-conflict-detector.gif)
-![PlanStepDependencyResolver](assets/demo/plan-step-dependency-resolver.gif)
-![BlackboardEntryTtlEvictor](assets/demo/blackboard-entry-ttl-evictor.gif)
-![BotHeartbeatLivenessWatchdog](assets/demo/bot-heartbeat-liveness-watchdog.gif)
-![SharedBlackboardWriteLease](assets/demo/shared-blackboard-write-lease.gif)
-![FanInBarrierGate](assets/demo/fan-in-barrier-gate.gif)
-![ToolCallWaveScheduler](assets/demo/tool-call-wave-scheduler.gif)
-![DeterministicRunSeedGuard](assets/demo/deterministic-run-seed-guard.gif)
-![CriticPassBudgetLimiter](assets/demo/critic-pass-budget-limiter.gif)
-![VoteTieBreakPolicy](assets/demo/vote-tie-break-policy.gif)
-![BotSpawnBudgetLimiter](assets/demo/bot-spawn-budget-limiter.gif)
-![AgentHandoffDepthLimiter](assets/demo/agent-handoff-depth-limiter.gif)
-![ConsensusQuorumFloorGuard](assets/demo/consensus-quorum-floor-guard.gif)
-![OrchestratorStallWatchdog](assets/demo/orchestrator-stall-watchdog.gif)
-![PlannerReplanBudgetLimiter](assets/demo/planner-replan-budget-limiter.gif)
-![SharedMemoryConflictBandGuard](assets/demo/shared-memory-conflict-band-guard.gif)
-![ToolResultPiiRedactionGate](assets/demo/tool-result-pii-redaction-gate.gif)
-![ToolResultSchemaHashGate](assets/demo/tool-result-schema-hash-gate.gif)
-![FanInSkewBandGuard](assets/demo/fan-in-skew-band-guard.gif)
-![ToolInvocationDeadlineGuard](assets/demo/tool-invocation-deadline-guard.gif)
-![CriticTimeoutBandGuard](assets/demo/critic-timeout-band-guard.gif)
-![BlackboardWriteAmplificationBandGuard](assets/demo/blackboard-write-amplification-band-guard.gif)
-![CriticAgreementEntropyGate](assets/demo/critic-agreement-entropy-gate.gif)
-![MultiBotLatencyBudgetAllocator](assets/demo/multi-bot-latency-budget-allocator.gif)
-![ToolResultCardinalityGate](assets/demo/tool-result-cardinality-gate.gif)
-![CriticPairwiseKappaGate](assets/demo/critic-pairwise-kappa-gate.gif)
-![ToolSandboxCpuQuotaGuard](assets/demo/tool-sandbox-cpu-quota-guard.gif)
-![CriticLatencySloBandGuard](assets/demo/critic-latency-slo-band-guard.gif)
-![CriticSelfConsistencyBandGuard](assets/demo/critic-self-consistency-band-guard.gif)
-![OrchestratorCascadeFailureAdvisor](assets/demo/orchestrator-cascade-failure-advisor.gif)
-![MessageBusBackpressureAdvisor](assets/demo/message-bus-backpressure-advisor.gif)
-![BlackboardStaleEntryAdvisor](assets/demo/blackboard-stale-entry-advisor.gif)
-![PlannerDepthCapAdvisor](assets/demo/planner-depth-cap-advisor.gif)
-![BotCapabilityDriftAdvisor](assets/demo/bot-capability-drift.gif)
-![ConsensusQuorumBandGuard](assets/demo/consensus-quorum-band.gif)
-![PlanStepCycleDetectorGuard](assets/demo/plan-step-cycle-detector.gif)
-![AgentHandoffLatencyAdvisor](assets/demo/agent-handoff-latency.gif)
-![SharedMemoryPoisoningGuard](assets/demo/shared-memory-poisoning.gif)
-![ToolResultPoisoningGuard](assets/demo/tool-result-poisoning.gif)
-![ToolRetryBudgetBandGuard](assets/demo/tool-retry-budget-band-guard.gif)
-![CriticTokenBudgetBandGuard](assets/demo/critic-token-budget-band-guard.gif)
-![ToolSandboxDiskQuotaGuard](assets/demo/tool-sandbox-disk-quota-guard.gif)
-![OrchestratorFairnessAgingAdvisor](assets/demo/orchestrator-fairness-aging-advisor.gif)
-![PlannerCostCeilingAdvisor](assets/demo/planner-cost-ceiling-advisor.gif)
-![ToolSandboxMemoryQuotaGuard](assets/demo/tool-sandbox-memory-quota-guard.gif)
-![SharedMemoryTtlEvictionAdvisor](assets/demo/shared-memory-ttl-eviction-advisor.gif)
-![PlannerBeamWidthLimiter](assets/demo/planner-beam-width-limiter.gif)
-![ToolSandboxEgressClassGuard](assets/demo/tool-sandbox-egress-class-guard.gif)
-![PlannerGoalDriftGuard](assets/demo/planner-goal-drift-guard.gif)
-![ConsensusTimeoutBandGuard](assets/demo/consensus-timeout-band-guard.gif)
-
-![CriticVerdictDiversityGate](assets/demo/critic-verdict-diversity-gate.gif)
-![ToolArgByteBudgetGuard](assets/demo/tool-arg-byte-budget-guard.gif)
-![SharedMemoryQuotaGuard](assets/demo/shared-memory-quota-guard.gif)
-![DebateRoundLimiter](assets/demo/debate-round-limiter.gif)
-![ConsensusConfidenceBandAdvisor](assets/demo/consensus-confidence-band-advisor.gif)
-![ToolResultFingerprintDeduper](assets/demo/tool-result-fingerprint-deduper.gif)
-![BotSkillTagRouter](assets/demo/bot-skill-tag-router.gif)
-![SessionTokenBudgetLedger](assets/demo/session-token-budget-ledger.gif)
-![BotVoteConsensusAggregator](assets/demo/bot-vote-consensus-aggregator.gif)
-![SessionTtlExpirer](assets/demo/session-ttl-expirer.gif)
-![ToolCallLatencyTracker](assets/demo/tool-call-latency-tracker.gif)
-![CriticBotVerdictGate](assets/demo/critic-bot-verdict.gif)
-![ConversationTurnBudgetGuard](assets/demo/conversation-turn-budget.gif)
-![ToolPermissionAllowlist](assets/demo/tool-permission-allowlist.gif)
-![StickyBotAffinityStore](assets/demo/sticky-bot-affinity.gif)
-![RunDeadlineWatchdog](assets/demo/run-deadline-watchdog.gif)
-![ToolCallIdempotencyCache](assets/demo/tool-call-idempotency-cache.gif)
-
-### ToolSandboxNetworkExfilGuard
-
-![ToolSandboxNetworkExfilGuard](assets/demo/tool-sandbox-network-exfil-guard.gif)
-
-Offline HITL exfil_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox network-exfil guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_NETWORK_EXFIL_GUARD_GUIDE.md`.
-### AgentDeadlockDetectorGuard
-
-![AgentDeadlockDetectorGuard](assets/demo/agent-deadlock-detector-guard.gif)
-
-Offline HITL deadlock_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-deadlock detectors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_DEADLOCK_DETECTOR_GUARD_GUIDE.md`.
-
-### PromptLeakBandAdvisor
-
-![PromptLeakBandAdvisor](assets/demo/prompt-leak-band-advisor.gif)
-
-Offline HITL leak_score bands. Gap vs AutoGen/CrewAI/LangGraph prompt-leak band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PROMPT_LEAK_BAND_ADVISOR_GUIDE.md`.
-
-
-
-### ToolArgSchemaDriftGuard
-
-![ToolArgSchemaDriftGuard](assets/demo/tool-arg-schema-drift.gif)
-
-Offline HITL schema_drift_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-argument schema-drift guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_ARG_SCHEMA_DRIFT_GUARD_GUIDE.md`.
-
-### PlannerStepBudgetBandAdvisor
-
-![PlannerStepBudgetBandAdvisor](assets/demo/planner-step-budget-band.gif)
-
-Offline HITL steps_used_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner step-budget monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_STEP_BUDGET_BAND_ADVISOR_GUIDE.md`.
-
-### ToolSandboxSyscallDenylistGuard
-
-![ToolSandboxSyscallDenylistGuard](assets/demo/tool-sandbox-syscall-denylist.gif)
-
-Offline HITL denied_syscall_rate bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox syscall denylist guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_SYSCALL_DENYLIST_GUARD_GUIDE.md`.
-
-
-### BlackboardCasWriteSkewGuard
-
-![BlackboardCasWriteSkewGuard](assets/demo/blackboard-cas-write-skew.gif)
-
-Offline HITL write_skew_score bands. Gap vs AutoGen/CrewAI/LangGraph shared-blackboard CAS/write-skew guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_CAS_WRITE_SKEW_GUARD_GUIDE.md`.
-### PlannerHorizonBandAdvisor
-
-![PlannerHorizonBandAdvisor](assets/demo/planner-horizon-band.gif)
-
-Offline HITL horizon_steps_ratio bands. Gap vs LangGraph/CrewAI/AutoGen planner-horizon monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_HORIZON_BAND_ADVISOR_GUIDE.md`.
-
-### CriticQuorumHysteresisAdvisor
-
-![CriticQuorumHysteresisAdvisor](assets/demo/critic-quorum-hysteresis.gif)
-
-Offline HITL advisor for `hysteresis_score` bands. Gap vs AutoGen/CrewAI/LangGraph critic-quorum hysteresis monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-### OrchestratorFanoutBudgetBandAdvisor
-
-![OrchestratorFanoutBudgetBandAdvisor](assets/demo/orchestrator-fanout-budget-band.gif)
-
-Offline HITL advisor for `fanout_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph orchestrator fan-out budget monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-### SubgraphRecursionCapAdvisor
-
-![SubgraphRecursionCapAdvisor](assets/demo/subgraph-recursion-cap.gif)
-
-Offline HITL advisor for `recursion_depth_ratio` bands. Gap vs LangGraph/CrewAI subgraph recursion-cap monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-### WorkerStarvationBandAdvisor
-
-![WorkerStarvationBandAdvisor](assets/demo/worker-starvation-band.gif)
-
-Offline HITL `starvation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker-starvation band monitors. See `docs/guides/WORKER_STARVATION_BAND_ADVISOR_GUIDE.md`.
-
-### ToolPermissionDriftAdvisor
-
-![ToolPermissionDriftAdvisor](assets/demo/tool-permission-drift.gif)
-
-Offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-permission drift monitors. See `docs/guides/TOOL_PERMISSION_DRIFT_ADVISOR_GUIDE.md`.
-
-### BlackboardLeaseThrashAdvisor
-
-![BlackboardLeaseThrashAdvisor](assets/demo/blackboard-lease-thrash.gif)
-
-Offline HITL `thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard lease-thrash monitors. See `docs/guides/BLACKBOARD_LEASE_THRASH_ADVISOR_GUIDE.md`.
-
-
-### SharedKvWriteAmplificationAdvisor
-
-![SharedKvWriteAmplificationAdvisor](assets/demo/shared-kv-write-amplification.gif)
-
-Offline HITL `write_amp_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-KV write-amplification monitors. See `docs/guides/SHARED_KV_WRITE_AMPLIFICATION_ADVISOR_GUIDE.md`.
-
-### HandoffPayloadBloatAdvisor
-
-![HandoffPayloadBloatAdvisor](assets/demo/handoff-payload-bloat.gif)
-
-Offline HITL `payload_bloat_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff payload-bloat monitors. See `docs/guides/HANDOFF_PAYLOAD_BLOAT_ADVISOR_GUIDE.md`.
-
-### SupervisorIdleSkewAdvisor
-
-![SupervisorIdleSkewAdvisor](assets/demo/supervisor-idle-skew.gif)
-
-Offline HITL `idle_skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen supervisor idle-skew monitors. See `docs/guides/SUPERVISOR_IDLE_SKEW_ADVISOR_GUIDE.md`.
-
-### BlackboardReadStalenessAdvisor
-
-![BlackboardReadStalenessAdvisor](assets/demo/blackboard-read-staleness.gif)
-
-Offline HITL `staleness_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen blackboard read-staleness monitors. See `docs/guides/BLACKBOARD_READ_STALENESS_ADVISOR_GUIDE.md`.
-
-### ToolSideEffectReplayBandAdvisor
-
-![ToolSideEffectReplayBandAdvisor](assets/demo/tool-side-effect-replay-band.gif)
-
-Offline HITL `replay_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool side-effect replay monitors. See `docs/guides/TOOL_SIDE_EFFECT_REPLAY_BAND_ADVISOR_GUIDE.md`.
-
-
-
-
-
-### CriticFanoutSkewAdvisor
-
-![CriticFanoutSkewAdvisor](assets/demo/critic-fanout-skew.gif)
-
-Offline HITL `skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen critic-fanout skew monitors. See `docs/guides/CRITIC_FANOUT_SKEW_ADVISOR_GUIDE.md`.
-
-
-### SharedLockContentionBandAdvisor
-
-![SharedLockContentionBandAdvisor](assets/demo/shared-lock-contention-band.gif)
-
-Offline HITL `contention_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-lock contention monitors. See `docs/guides/SHARED_LOCK_CONTENTION_BAND_ADVISOR_GUIDE.md`.
-
-
-
-### ConsensusQuorumStallAdvisor
-
-![ConsensusQuorumStallAdvisor](assets/demo/consensus-quorum-stall.gif)
-
-Offline HITL `stall_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen consensus quorum-stall monitors. See `docs/guides/CONSENSUS_QUORUM_STALL_ADVISOR_GUIDE.md`.
-
-
-
-### CriticMajorityCaptureBandAdvisor
-
-![CriticMajorityCaptureBandAdvisor](assets/demo/critic-majority-capture.gif)
-
-Offline HITL `capture_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen critic majority-capture monitors. See `docs/guides/CRITIC_MAJORITY_CAPTURE_BAND_ADVISOR_GUIDE.md`.
-
-
-### AgentHandoffLoopBandAdvisor
-
-![AgentHandoffLoopBandAdvisor](assets/demo/agent-handoff-loop.gif)
-
-Offline HITL `loop_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent handoff-loop monitors. See `docs/guides/AGENT_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
-
-
-### WorkerHeartbeatMissBandAdvisor
-
-![WorkerHeartbeatMissBandAdvisor](assets/demo/worker-heartbeat-miss.gif)
-
-Offline HITL `miss_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen worker heartbeat-miss monitors. See `docs/guides/WORKER_HEARTBEAT_MISS_BAND_ADVISOR_GUIDE.md`.
-
-### SupervisorRestartThrashAdvisor
-
-![SupervisorRestartThrashAdvisor](assets/demo/supervisor-restart-thrash.gif)
-
-Offline HITL `restart_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen supervisor restart-thrash monitors. See `docs/guides/SUPERVISOR_RESTART_THRASH_ADVISOR_GUIDE.md`.
-
-
-### ToolResultSchemaDriftBandAdvisor
-
-![ToolResultSchemaDriftBandAdvisor](assets/demo/tool-result-schema-drift-band.gif)
-
-Offline HITL `drift_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result schema-drift monitors. See `docs/guides/TOOL_RESULT_SCHEMA_DRIFT_BAND_ADVISOR_GUIDE.md`.
-
-### SubgraphCancelLeakAdvisor
-
-![SubgraphCancelLeakAdvisor](assets/demo/subgraph-cancel-leak.gif)
-
-Offline HITL `leak_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen subgraph cancel-leak monitors. See `docs/guides/SUBGRAPH_CANCEL_LEAK_ADVISOR_GUIDE.md`.
-
-### PlannerToolMismatchBandAdvisor
-
-![PlannerToolMismatchBandAdvisor](assets/demo/planner-tool-mismatch-band.gif)
-
-Offline HITL `mismatch_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner-tool mismatch monitors. See `docs/guides/PLANNER_TOOL_MISMATCH_BAND_ADVISOR_GUIDE.md`.
-
-### OrchestratorHeartbeatGapAdvisor
-
-![OrchestratorHeartbeatGapAdvisor](assets/demo/orchestrator-heartbeat-gap.gif)
-
-Offline HITL `heartbeat_gap_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen orchestrator heartbeat monitors. See `docs/guides/ORCHESTRATOR_HEARTBEAT_GAP_ADVISOR_GUIDE.md`.
-
-### FanInBarrierStallAdvisor
-
-![FanInBarrierStallAdvisor](assets/demo/fan-in-barrier-stall.gif)
-
-Offline HITL `stall_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen fan-in barrier stall monitors. See `docs/guides/FAN_IN_BARRIER_STALL_ADVISOR_GUIDE.md`.
-
-### AgentLoopTokenBleedAdvisor
-
-![AgentLoopTokenBleedAdvisor](assets/demo/agent-loop-token-bleed.gif)
-
-Offline HITL `token_bleed_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent-loop token-bleed monitors. See `docs/guides/AGENT_LOOP_TOKEN_BLEED_ADVISOR_GUIDE.md`.
-
-### PlannerCriticOscillationBandAdvisor
-
-![PlannerCriticOscillationBandAdvisor](assets/demo/planner-critic-oscillation-band.gif)
-
-Offline HITL `oscillation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner-critic oscillation monitors. See `docs/guides/PLANNER_CRITIC_OSCILLATION_BAND_ADVISOR_GUIDE.md`.
-![ToolTimeoutCascadeBandAdvisor](assets/demo/tool-timeout-cascade-band.gif)
-### ToolTimeoutCascadeBandAdvisor
-
-![ToolTimeoutCascadeBandAdvisor](assets/demo/tool-timeout-cascade-band.gif)
-
-Offline HITL `cascade_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-timeout cascade monitors. See `docs/guides/TOOL_TIMEOUT_CASCADE_BAND_ADVISOR_GUIDE.md`.
-![ActorMailboxOverflowAdvisor](assets/demo/actor-mailbox-overflow.gif)
-### ActorMailboxOverflowAdvisor
-
-![ActorMailboxOverflowAdvisor](assets/demo/actor-mailbox-overflow.gif)
-
-Offline HITL `mailbox_depth_ratio` bands. Gap vs Ray/Akka/Orleans actor-mailbox overflow monitors. See `docs/guides/ACTOR_MAILBOX_OVERFLOW_ADVISOR_GUIDE.md`.
-### MemoryNamespaceLeakAdvisor
-
-![MemoryNamespaceLeakAdvisor](assets/demo/memory-namespace-leak.gif)
-
-Offline HITL `leak_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen memory-namespace leak monitors. See `docs/guides/MEMORY_NAMESPACE_LEAK_ADVISOR_GUIDE.md`.
-
-### HandoffTimeoutBandAdvisor
-
-![HandoffTimeoutBandAdvisor](assets/demo/handoff-timeout-band.gif)
-
-Offline HITL `timeout_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen handoff-timeout band monitors. See `docs/guides/HANDOFF_TIMEOUT_BAND_ADVISOR_GUIDE.md`.
-
-### CriticDisagreementSpreadAdvisor
-
-![CriticDisagreementSpreadAdvisor](assets/demo/critic-disagreement-spread.gif)
-
-Offline HITL `disagreement_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph critic disagreement-spread monitors. See `docs/guides/CRITIC_DISAGREEMENT_SPREAD_ADVISOR_GUIDE.md`.
-
-### ToolSideEffectLedgerAdvisor
-
-![ToolSideEffectLedgerAdvisor](assets/demo/tool-side-effect-ledger.gif)
-
-Offline HITL `side_effect_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool side-effect ledger monitors. See `docs/guides/TOOL_SIDE_EFFECT_LEDGER_ADVISOR_GUIDE.md`.
-
-### ToolResultSchemaLagAdvisor
-
-![ToolResultSchemaLagAdvisor](assets/demo/tool-result-schema-lag.gif)
-
-Offline HITL advisor for `lag_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result schema lag monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-### ParallelToolCollisionAdvisor
-
-![ParallelToolCollisionAdvisor](assets/demo/parallel-tool-collision.gif)
-
-Offline HITL advisor for `collision_ratio` bands. Gap vs AutoGen/CrewAI/LangGraph parallel tool-collision monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-### PlannerReplanThrashAdvisor
-
-![PlannerReplanThrashAdvisor](assets/demo/planner-replan-thrash.gif)
-
-Offline HITL advisor for `replan_thrash_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen planner replan-thrash monitors. Optional polish via GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-### ToolPermissionEscalationBandAdvisor
-
-![ToolPermissionEscalationBandAdvisor](assets/demo/tool-permission-escalation-band.gif)
-
-Offline HITL escalation_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-permission escalation monitors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_PERMISSION_ESCALATION_BAND_ADVISOR_GUIDE.md`.
-
-### CriticTimeoutCascadeGuard
-
-![CriticTimeoutCascadeGuard](assets/demo/critic-timeout-cascade.gif)
-
-Offline HITL cascade_score bands. Gap vs AutoGen/CrewAI/LangGraph critic-timeout cascade guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_TIMEOUT_CASCADE_GUARD_GUIDE.md`.
-
-
-### ConsensusVoteStuffingBandAdvisor
-
-![ConsensusVoteStuffingBandAdvisor](assets/demo/consensus-vote-stuffing.gif)
-
-Offline HITL stuffing_score bands. Gap vs AutoGen/CrewAI/LangGraph consensus vote-stuffing band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CONSENSUS_VOTE_STUFFING_ADVISOR_GUIDE.md`.
-
-
-### AgentCapabilityRevocationBandAdvisor
-
-![AgentCapabilityRevocationBandAdvisor](assets/demo/agent-capability-revocation.gif)
-
-Offline HITL revocation_score bands. Gap vs AutoGen/CrewAI/LangGraph agent-capability revocation band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_CAPABILITY_REVOCATION_ADVISOR_GUIDE.md`.
-
-### PlanGoalContradictionBandAdvisor
-
-![PlanGoalContradictionBandAdvisor](assets/demo/plan-goal-contradiction-band.gif)
-
-Offline HITL contradiction_score bands. Gap vs AutoGen/CrewAI/LangGraph plan-goal contradiction band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLAN_GOAL_CONTRADICTION_BAND_ADVISOR_GUIDE.md`.
-
-### ToolResultSizeBombGuard
-
-![ToolResultSizeBombGuard](assets/demo/tool-result-size-bomb.gif)
-
-Offline HITL result_bytes bands. Gap vs AutoGen/CrewAI/LangGraph tool-result size-bomb guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_SIZE_BOMB_GUARD_GUIDE.md`.
-
-### MessageBusPoisonPillGuard
-
-![MessageBusPoisonPillGuard](assets/demo/message-bus-poison-pill.gif)
-
-Offline HITL poison_score bands. Gap vs AutoGen/CrewAI/LangGraph message-bus poison-pill guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/MESSAGE_BUS_POISON_PILL_GUARD_GUIDE.md`.
-
-### OrphanTaskSweeperGuard
-
-![OrphanTaskSweeperGuard](assets/demo/orphan-task-sweeper-guard.gif)
-
-Offline HITL orphan_count bands. Gap vs AutoGen/CrewAI/LangGraph orphan-task sweepers. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/ORPHAN_TASK_SWEEPER_GUARD_GUIDE.md`.
-
-### ToolSandboxDnsRebindGuard
-
-![ToolSandboxDnsRebindGuard](assets/demo/tool-sandbox-dns-rebind-guard.gif)
-
-Offline HITL rebind_score bands. Gap vs AutoGen/CrewAI/LangGraph tool-sandbox DNS-rebinding guards. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SANDBOX_DNS_REBIND_GUARD_GUIDE.md`.
-
-### CriticCollusionBandAdvisor
-
-![CriticCollusionBandAdvisor](assets/demo/critic-collusion-band-advisor.gif)
-
-Offline HITL collusion_score bands. Gap vs AutoGen/CrewAI/LangGraph critic-collusion band advisors. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_COLLUSION_BAND_ADVISOR_GUIDE.md`.
-
-## Why It Exists
-
-Most agent demos let the LLM decide everything. This repo takes the production-minded path:
-
-1. The LLM is an input source, not the control plane.
-2. A deterministic decision engine chooses actions.
-3. Every decision has a rationale trace.
-4. Every lifecycle transition is persisted.
-5. Every external integration goes through an adapter.
-6. Safety controls bound scope, runtime, tools, and cancellation.
-
-## Use Cases: Issues This Solves
-
-### 1. "My agent did something, but I cannot explain why."
-
-LLM-first agents often skip straight from prompt to action. When something goes wrong, the transcript may show what the model said, but not which control rule allowed the action.
-
-`multi-bot-agentic` writes every decision as a durable event with a `RationaleTrace`: rule id, observations used, rejected actions, and explanation. You can replay the run later and inspect exactly why the engine chose `call_llm`, `call_tool`, `finish`, or `cancel`.
-
-```bash
-multi-bot-agentic replay --event-log data/runs.sqlite --event-type decision --format text
-```
-
-### 2. "I want to use AI agents, but I do not want the model directly executing tools."
-
-Many agent frameworks let the model choose and invoke tools directly. That is convenient, but risky for production workflows where tool access should be explicit, bounded, and auditable.
-
-This repo treats model output as an observation. The deterministic decision engine interprets constrained text like `TOOL:checklist:<payload>`, checks the safety policy, and only then executes an allowlisted tool adapter.
-
-### 3. "I need the same agent flow to work with GPT-6, Claude 5.5, Gemini, and Kimi K3."
-
-Provider-specific SDKs and response shapes make agent code hard to port. A prototype built around one model often leaks provider details into the orchestration layer.
-
-`multi-bot-agentic` normalizes providers behind one adapter interface:
-
-- `OpenAIAdapter` for GPT-6 (`gpt-6.1-sol` by default) and OpenAI-compatible chat completions.
-- `ClaudeCodeCLIAdapter` for local Claude Code CLI workflows with `claude-opus-5-5` or `claude-sonnet-5-5`.
-- `GeminiAdapter` for Gemini `generateContent` (`gemini-3.8-flash` by default, `gemini-4-argon` for flagship reasoning).
-- `KimiAdapter` for Moonshot/Kimi K3 chat completions (`kimi-k3.1-pro` by default).
-- `FakeLLMAdapter` for deterministic CI and demos.
-
-The runner consumes all provider responses as `ModelOutput`, so orchestration logic stays provider-neutral.
-
-### 4. "I need a safe demo path that does not require API keys."
-
-Portfolio and CI demos should not depend on live model credentials, model availability, or network behavior.
-
-The fake provider produces deterministic model-like outputs that the real runtime consumes. It still exercises Observe -> Decide -> Act, tool routing, safety checks, event logging, replay, and reports.
-
-```bash
-multi-bot-agentic run --goal "Create a launch checklist for an AI agent platform" --provider fake
-```
-
-### 5. "Agent runs fail silently or leave no durable audit trail."
-
-Long-running agent tasks need post-run inspection. Without durable state, crashes and restarts turn into guesswork.
-
-The sqlite event log records lifecycle transitions, observations, decisions, action requests, action results, failures, cancellations, and completion. Replay does not call any provider or tool, so postmortems are safe and deterministic.
-
-```bash
-multi-bot-agentic report --event-log data/runs.sqlite
-```
-
-### 6. "The agent keeps looping or spending tokens without finishing."
-
-Unbounded agent loops are a common failure mode. They waste time, cost money, and make incident response harder.
-
-`SafetyPolicy` bounds run scope with `max_steps`, provider/tool timeouts, prompt size limits, cancellation files, and tool allowlists. If the run reaches its budget, the decision engine finishes or fails through explicit lifecycle events.
-
-### 7. "I need to compare AI provider behavior without rewriting my orchestration."
-
-Teams often want to compare GPT-6.1 Sol, Gemini 3.8 Flash, Kimi K3.1 Pro, and Claude Opus 5.5, but provider-specific code makes comparisons noisy.
-
-With provider adapters, you can keep the same runner, same decision engine, same event log, and same replay/report UX while swapping the provider:
-
-```bash
-multi-bot-agentic run --goal "Draft a migration plan" --provider openai
-multi-bot-agentic run --goal "Draft a migration plan" --provider gemini
-multi-bot-agentic run --goal "Draft a migration plan" --provider kimi
-multi-bot-agentic run --goal "Draft a migration plan" --provider claude_code
-```
-
-### 8. "I want agents to produce useful artifacts, not just chat text."
-
-Agent demos often end with prose. Real workflows need structured, repeatable artifacts.
-
-The built-in `checklist` tool turns a goal into a deterministic launch checklist and records the tool result in the event log. It is intentionally simple, but it demonstrates the production pattern: model suggests, policy validates, adapter executes, event log records.
-
-### 9. "I need a clean teaching or interview example for agent architecture."
-
-Agent systems can become hard to explain when planning, tool use, model calls, retries, and state are mixed together.
-
-This repo keeps the boundaries visible:
-
-- `runner.py`: owns Observe -> Decide -> Act.
-- `decision.py`: deterministic rules and rationale traces.
-- `lifecycle.py`: state-machine transitions.
-- `event_log.py`: durable sqlite events.
-- `llm/`: provider adapters.
-- `tools/`: allowlisted tool adapters.
-- `safety.py`: bounds and cancellation.
-
-### 10. "I need CI to prove the agent works without real provider credentials."
-
-Live provider tests are useful, but they should not be required for every pull request.
-
-CI runs lint, format, typecheck, tests, and a fake-provider smoke demo across Python 3.10, 3.11, and 3.12. Live provider calls remain operator-triggered because they require credentials and external systems.
-
-## Architecture At A Glance
-
-```text
-Goal
-  |
-  v
-Observe  -> durable observation event
-  |
-  v
-Decide   -> deterministic rule + rationale trace
-  |
-  v
-Act      -> LLM adapter or allowlisted tool
-  |
-  v
-Event log + replay
-```
-
-## Quick Demo
-
-```bash
-python -m venv .venv
-. .venv/bin/activate
-python -m pip install -e ".[dev]"
-ruff check .
-ruff format --check .
-mypy src tests
-pytest
-multi-bot-agentic run --goal "Create a launch checklist for an AI agent platform" --provider fake
-```
-
-Replay the durable event log:
-
-```bash
-multi-bot-agentic replay --event-log data/runs.sqlite
-multi-bot-agentic replay --event-log data/runs.sqlite --format text
-multi-bot-agentic report --event-log data/runs.sqlite
-```
-
-## What This Showcases
-
-- Explicit Observe -> Decide -> Act runtime loop.
-- Deterministic decision engine with rationale traces.
-- State-machine lifecycle: created, observing, deciding, acting, succeeded, failed, cancelled.
-- Durable sqlite event log with replay.
-- MCP tool bridge: dual-era (2026-07-28 + legacy) stdio client that exposes any MCP server's tools as
-  allowlisted, namespaced, event-logged tools (`run --mcp-config`, `mcp-tools`).
-- Typed multi-bot handoffs with per-bot tool allowlists.
-- HITL approval gate for sensitive tools via durable JSON request files.
-- Parallel fan-out helpers for capped, order-preserving multi-bot task batches.
-- LLM adapters for OpenAI GPT-6, Claude 5.5 via the Claude Code CLI, Gemini 3.8 Flash and 4 Argon, and Kimi K3. They send reasoning-model-safe parameters (`max_completion_tokens`, no fixed sampling knobs).
-- Tool adapters with allowlisted execution, including deterministic checklist generation.
-- Safety controls for max steps, prompt bounds, cancellation, and timeouts.
-- Human-readable replay and run reports for inspecting durable rationale traces.
-- Production-minded layout: `src/`, `tests/`, `scripts/`, `migrations/`, `.github/workflows/`, env config, docs.
-
-## Providers
-
-| Provider | Adapter | Default model (override) | Live credential |
+| Capability | What you get | Code | Docs |
 | --- | --- | --- | --- |
-| Fake | deterministic local provider | n/a | none |
-| OpenAI GPT-6 / OpenAI-compatible | `OpenAIAdapter` | `gpt-6.1-sol` (`OPENAI_MODEL`; also `gpt-6-astra`, `gpt-6.1-terra`, `gpt-6-luna`) | `OPENAI_API_KEY` |
-| Anthropic Claude via Claude Code | `ClaudeCodeCLIAdapter` | CLI setting (`claude --model claude-opus-5-5` or `claude-sonnet-5-5`) | local `claude` command |
-| Google Gemini | `GeminiAdapter` | `gemini-3.8-flash` (`GEMINI_MODEL`; `gemini-4-argon` for flagship reasoning) | `GEMINI_API_KEY` |
-| Kimi K3 / Moonshot | `KimiAdapter` | `kimi-k3.1-pro` (`KIMI_MODEL`; also `kimi-k3.1-pro-highspeed`, `kimi-k3`) | `KIMI_API_KEY` |
+| Deterministic ODA loop | Rule-based decisions with rationale traces and an explicit run state machine | `runner.py`, `decision.py`, `lifecycle.py` | [Architecture](docs/ARCHITECTURE.md) |
+| Durable event log | Append-only SQLite log per run. `replay` and `report` never call providers | `event_log.py`, `cli.py` | [Replay diff](docs/guides/RUN_REPLAY_DIFF_GUIDE.md) |
+| Checkpoint & resume | Resume an interrupted run; the active bot's tool scope is restored | `checkpoint.py` | [Checkpoint resume](docs/guides/CHECKPOINT_RESUME_GUIDE.md) |
+| Multi-bot handoffs | `HANDOFF:<bot>:<summary>` with per-bot tool allowlists | `bots.py` | [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md) |
+| **MCP tool bridge** | Tools from any MCP server, with a dual-era (2026-07-28 + legacy) stdio client and no dependencies | `mcp/` | [MCP tools](docs/guides/MCP_TOOLS_GUIDE.md) |
+| Provider adapters | GPT-6, Claude Code CLI, Gemini, Kimi K3, and a fake provider, all sending reasoning-safe parameters | `llm/` | [Configuration](docs/CONFIGURATION.md) |
+| Safety controls | Step budgets, timeouts, cancellation file, tool allowlists, prompt bounds | `safety.py` | [Safety](docs/SAFETY.md) |
+| Human-in-the-loop | File-backed approval gate for sensitive tools | `approval.py` | [HITL gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md) |
+| Parallel fan-out | Capped, order-preserving task batches | `fanout.py` | [Fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md) |
+| Tool-call hygiene | Rate limits, PII redaction, result truncation, per-bot permissions | `tool_runner.py`, `observation_redactor.py`, `tool_result_truncator.py`, `tool_permission.py` | [Rate limiter](docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md) |
+| Offline evaluation | Golden-path fixtures scored on tool sequence and answer | `eval/` | [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md) |
+| 122 built-in tools | Offline, in-process tools for text, JSON, CSV, HTML, MIME, and encodings | `tools/` | [Tools catalog](docs/TOOLS.md) |
+| Advisors & guards | 150+ offline HITL guards for multi-bot failure modes | `*_band.py` and friends | [Advisor catalog](docs/ADVISOR_CATALOG.md) |
 
-Model IDs were verified against provider docs on 2026-11-06 ([details](docs/CONFIGURATION.md#current-model-stack)).
-No adapter sends `temperature`/`top_p`/`top_k`. Current GPT-6, Claude 5.5, Gemini 3.x, and Kimi K3 models
-reject, fix, or ignore them ([provider parameter rules](docs/CONFIGURATION.md#provider-parameter-rules)).
+## Current Model Stack
 
-All adapters normalize output into `ModelOutput`. The runner consumes that output as an observation before the decision engine selects the next action.
+| Provider (`--provider`) | Adapter | Default | Also current | Credential |
+| --- | --- | --- | --- | --- |
+| OpenAI (`openai`) | `OpenAIAdapter` | `gpt-6.1-sol` | `gpt-6-astra`, `gpt-6.1-terra`, `gpt-6-luna` | `OPENAI_API_KEY` |
+| Anthropic via Claude Code CLI (`claude_code`) | `ClaudeCodeCLIAdapter` | the CLI's configured model (recommended: `CLAUDE_CODE_COMMAND="claude --model claude-opus-5-5"`) | `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-1` | local `claude` |
+| Google Gemini (`gemini`) | `GeminiAdapter` | `gemini-3.8-flash` | `gemini-4-argon` | `GEMINI_API_KEY` |
+| Kimi / Moonshot (`kimi`) | `KimiAdapter` | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed`, `kimi-k3` | `KIMI_API_KEY` |
+| Deterministic (`fake`) | `FakeLLMAdapter` | offline, used by CI | n/a | none |
 
-## Built-In Safe Tools
+Verified against provider docs on 2026-11-06. Every adapter normalizes output into `ModelOutput`, which the runner
+treats as an observation. `OPENAI_BASE_URL` points the OpenAI adapter at any OpenAI-compatible gateway. No adapter
+sends `temperature`, `top_p`, or `top_k`: current GPT-6, Claude 5.5, Gemini 3.x, and Kimi K3 models reject, fix, or
+ignore them ([parameter rules](docs/CONFIGURATION.md#provider-parameter-rules)).
 
-- `checklist`: deterministic launch checklist generator used by the fake-provider demo.
-- `content_type_sniff`: sniffs likely content type from a bounded text or base64
-  byte prefix (`json`, `xml`, `html`, `csv`, `tsv`, `markdown`, `plain`) and
-  returns a confidence score without network access. Empty or oversized input
-  returns a structured failure. A model requests it with
-  `TOOL:content_type_sniff:<payload>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini
-  3.x / Kimi K2 workers that need a parser hint before the next step.
-- `cron_next`: returns the next N UTC fire times for a classic 5-field cron expression (`count` default 5, max 20; optional `from_iso`). Invalid fields return a structured failure. Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 scheduling agents.
-- `echo`: safe text echo for adapter tests.
-- `readonly_file`: root-contained read-only file reader.
-- `calculator`: sandboxed arithmetic evaluator. It parses expressions into an AST
-  and walks an allowlist of numeric literals and `+ - * / // % **` operators —
-  never `eval` — so names, calls, and attribute access are rejected and exponents
-  are bounded against CPU/memory exhaustion. Results that are not real numbers
-  (for example a fractional power of a negative base) or not finite (overflow to
-  `inf`, or `nan`) are refused rather than returned as opaque values. A model
-  requests it with `TOOL:calculator:2 + 3 * 4`, matching the same
-  model-suggests / policy-validates / adapter-executes pattern as every other
-  tool.
-- `json_format`: validates a JSON document and returns it canonicalized (sorted
-  keys, 2-space indent). Invalid input yields a structured failure with the
-  parser's message instead of raising, and the non-standard `NaN`/`Infinity`/
-  `-Infinity` tokens (which RFC 8259 forbids and strict parsers reject) are
-  rejected rather than round-tripped into invalid output. A model requests it
-  with `TOOL:json_format:{"b":1,"a":2}`, giving agents a safe way to verify and
-  normalize JSON produced by earlier steps.
-- `uuid_nil`: returns the RFC 4122 nil UUID `00000000-0000-0000-0000-000000000000` (default) or the max UUID when `mode=max`. Useful as a placeholder id in crewAI / LangGraph-style agent pipelines. Unsupported modes return a structured failure. A model requests it with `TOOL:uuid_nil:` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need a stable sentinel identifier.
-- `yaml_format`: validates a constrained safe YAML subset and returns it
-  canonicalized (sorted mapping keys, 2-space indentation). It supports block
-  mappings/sequences, JSON-style flow collections, and finite scalar values
-  using the Python stdlib only; unsupported full-YAML features such as anchors,
-  tags, document markers, and constructors return structured failures. A model
-  requests it with `TOOL:yaml_format:enabled: true`, giving agents a safe way to
-  normalize YAML handoff snippets.
-- `toml_format`: validates TOML (via `tomllib` on Python 3.11+ or `tomli` when
-  available) and returns a deterministic serialization with sorted keys for
-  tables/arrays/strings/ints/floats/bools. Dates/times, non-finite floats, empty
-  or oversized input, and a missing parser return structured failures. A model
-  requests it with `TOOL:toml_format:enabled = true`, giving agents a safe way to
-  normalize TOML configuration snippets.
-- `toml_json`: converts between TOML and JSON text for agent handoffs
-  (`direction`: `to_json` default or `to_toml`). Parsing uses `tomllib`/`tomli`
-  or strict `json.loads`; output is canonical JSON (sorted keys, 2-space indent)
-  or deterministic TOML (same dumper as `toml_format`). Dates/times, JSON null,
-  non-finite numbers, empty or oversized input, and missing parsers return
-  structured failures. A model requests it with `TOOL:toml_json:enabled = true`,
-  giving agents a safe way to bridge TOML configuration and JSON payloads.
-- `tsv_format`: validates tab-separated spreadsheet text via stdlib `csv`
-  (`excel-tab` dialect) and returns canonical TSV with consistent newlines.
-  Empty or oversized input, uneven column counts (header defines width), and
-  malformed tables return structured failures; trailing blank rows are stripped.
-  A model requests it with `TOOL:tsv_format:model\tscore`, giving agents a safe
-  way to normalize TSV handoff snippets.
-- `json_merge_patch`: applies RFC 7396 JSON Merge Patch (`base`+`patch`,
-  or `text` with `<<<PATCH>>>`) via stdlib `json`. Empty, oversized,
-  malformed, or over-deep requests return a structured failure. A model
-  requests it with `TOOL:json_merge_patch:<json>` for GPT-5.5 /
-  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic
-  partial JSON updates.
-- `line_number`: prefixes each text line with a 1-based line number
-  (optional `start` / `separator`). Empty or oversized input and invalid
-  start/separator values return a structured failure. A model requests it
-  with `TOOL:line_number:<text>` for GPT-5.5 / Claude Sonnet 4.6 /
-  Gemini 3.x / Kimi K2 workers that need stable line citations.
-- `csv_filter`: filters CSV rows where a named column equals or contains a
-  value (`mode`: `equals` default or `contains`; `case_insensitive`: true
-  default) via stdlib `csv`. Empty, oversized, malformed, unknown-column, or
-  over-bounds requests return a structured failure. A model requests it with
-  `TOOL:csv_filter:<csv><<<CSV_FILTER>>>column<<<=>>>value` (or
-  `column<<<~>>>value`) for deterministic tabular predicates before the next
-  turn.
-- `csv_groupby`: groups CSV rows by key columns and aggregates numeric
-  value columns (`agg`: `sum` default, `count`, `min`, `max`, `mean`) via
-  stdlib `csv`. Empty, oversized, malformed, unknown-column, or non-numeric
-  requests return a structured failure. A model requests it with
-  `TOOL:csv_groupby:<csv>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers that need deterministic tabular aggregation before the
-  next turn.
-- `csv_join`: joins two CSV tables on a key column (`how`: `inner` default or
-  `left`; `on` or `left_on`+`right_on`) via stdlib `csv`. Supply sides as
-  `left`+`right`, or `text`+`right`. Empty, oversized, malformed, or
-  unknown-column requests return a structured failure. A model requests it
-  with `TOOL:csv_join:<csv>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers that need deterministic tabular lookup joins before the
-  next turn.
-- `csv_pivot`: pivots long CSV to wide (`index`/`columns`/`values`) or
-  unpivots wide columns (`id_vars`/`value_vars`) via stdlib `csv`. Empty,
-  oversized, malformed, or unknown-column requests return a structured
-  failure. A model requests it with `TOOL:csv_pivot:<csv>` for GPT-5.5 /
-  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic
-  tabular reshape before the next turn.
-- `csv_stack`: vertically concatenates CSV documents that share an identical
-  header, accepting a `csvs` list or `text` split by `<<<CSV_STACK>>>`. It
-  rejects malformed input, mismatched headers, uneven rows, and bounded-size
-  violations for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-- `csv_tsv`: converts between CSV and TSV text for agent handoffs
-  (`direction`: `csv_to_tsv` default or `tsv_to_csv`). Parsing and serialization
-  use stdlib `csv` only; an optional single-character `delimiter` overrides the
-  input separator. Empty or oversized input, invalid direction/delimiter,
-  uneven column counts, and malformed tables return structured failures. A model
-  requests it with `TOOL:csv_tsv:model,score`, giving agents a safe way to bridge
-  CSV and TSV handoff snippets across GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers.
-- `xml_escape`: escapes or unescapes XML special characters (`&`, `<`, `>`) via stdlib `xml.sax.saxutils.escape`/`unescape` (`mode: escape|unescape`; default `escape`). Empty, oversized, or unsupported-mode requests return a structured failure. A model requests it with `TOOL:xml_escape:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic XML entity escaping.
-- `xml_parse`: parses XML via stdlib `xml.etree.ElementTree` into a compact
-  indented text tree (tag names, `@attr=value` pairs, direct text nodes).
-  Empty or oversized input, DOCTYPE/ENTITY declarations (XXE hardening), and
-  malformed XML return structured failures; rendering is depth- and
-  element-capped. A model requests it with `TOOL:xml_parse:<root>...</root>`,
-  giving agents a safe way to summarize XML handoff snippets.
-- `json_path`:
-- `json_pointer`: extracts one value from a JSON document using RFC 6901 JSON Pointer (`/foo/0/bar`, `~0`/`~1` escapes); agents may split document and pointer on `<<<JSON_POINTER>>>` for `TOOL:json_pointer:...` directives. Distinct from `json_path`.
-PLACEHOLDER
-- `jwt_decode`: base64url-decodes a JWT header and payload into JSON claims without verifying the signature. Empty, oversized, or malformed tokens return a structured failure. Output is never trusted as authenticated. A model requests it with `TOOL:jwt_decode:<jwt>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need opaque claim inspection.
-- `json_query`: filters JSON object arrays (`where` field equals
-  value) or plucks a field across objects (`pluck`) via stdlib
-  `json`. Empty, oversized, malformed, or unsupported-mode requests
-  return a structured failure. A model requests it with
-  `TOOL:json_query:<json><<<JSON_QUERY>>>{...}` for GPT-5.5 /
-  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need
-  deterministic array select beyond `json_path`.
-- `json_path_KEEP`: extracts one value from a JSON document using a small deterministic
-  path dialect (`.foo.bar`, `items[0].name`, or `$`/empty for the whole document).
-  Supply `text`+`path`, or a single payload split on `<<<JSON_PATH>>>` for
-  `TOOL:json_path:...` directives. Recursive descent, filters, scripts, pipes,
-  oversized input, and oversized serialized results return structured failures;
-  the tool uses `json.loads` only and never executes code.
-- `spreadsheet_slice`: parses CSV text and returns a deterministic row/column
-  subset as JSON (`header` + `rows`). Row ranges use zero-based, end-exclusive
-  body-row slices via `rows=1:3` or `row_start`/`row_end`; columns may be selected
-  by exact header name and/or zero-based index. A single `TOOL:spreadsheet_slice`
-  payload can embed options after `<<<SPREADSHEET_SLICE>>>`. Empty input,
-  oversized tables, blank headers, invalid ranges, missing names, ambiguous
-  names, and out-of-bounds indexes return structured failures; the tool uses
-  stdlib `csv` only and never executes code.
-- `redact`: scrubs common PII (email addresses, phone numbers, US Social
-  Security numbers, IPv4 addresses) from text, replacing each match with a typed
-  placeholder such as `[EMAIL]` and reporting per-category counts in the tool
-  metadata. A model requests it with `TOOL:redact:<text>`, giving agents a safe
-  way to sanitize content before it is persisted to the durable event log.
-- `hash`: computes a hex digest of text with a small allowlist of well-known
-  algorithms (`md5`, `sha1`, `sha256`, `sha512`; default `sha256`). Empty,
-  oversized, or unsupported-algorithm requests return a structured failure. A
-  model requests it with `TOOL:hash:<text>`, giving agents a deterministic
-  fingerprint for deduplication, cache keys, or integrity checks between steps.
-- `base58`: encodes text to Bitcoin-alphabet Base58 or decodes Base58 back to text (`mode: encode|decode`; default `encode`; accepts `text` or `data`). Decoding requires valid Base58 that yields UTF-8; empty, oversized, unsupported-mode, or invalid payloads return a structured failure. A model requests it with `TOOL:base58:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need lookalike-safe opaque handoffs.
-- `pluralize`: pluralize/singularize a single English word (`mode: pluralize|singularize`; accepts `text` or `word`; common irregulars; max 2000 chars). Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-- `punycode`: encode/decode domain text via Punycode/IDNA (`mode: encode|decode`; accepts `text` or `domain`; max 2000 chars). Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-- `base85`: encodes text to Adobe ASCII85/Base85 or decodes back (`mode: encode|decode`; default `encode`; accepts `text` or `data`). Safe for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-- `base32_encode`: encodes text to standard Base32 or decodes Base32 back to text (`mode: encode|decode`; default `encode`) via stdlib `base64.b32encode`/`b32decode`. Decoding requires valid Base32 that yields UTF-8; empty, oversized, unsupported-mode, or invalid payloads return a structured failure. A model requests it with `TOOL:base32_encode:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic Base32 handoffs.
-- `base64`: encodes text to standard Base64 or decodes Base64 back to text
-  (`operation: encode|decode`; default `encode`). Decoding validates the payload
-  strictly and requires the decoded bytes to be valid UTF-8, so invalid Base64 or
-  non-text payloads return a structured failure. A model requests it with
-  `TOOL:base64:<text>`, giving agents a safe way to move opaque payloads between
-  steps.
-- `url_encode`: percent-encodes text via stdlib `urllib.parse.quote` (optional
-  `safe` default `/`, `plus` for space-as-`+`). Empty, oversized, or invalid
-  option requests return a structured failure. A model requests it with
-  `TOOL:url_encode:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers that need deterministic URL encoding.
-- `url_parse`: splits an absolute URL into its components (scheme, host, port,
-  path, query, grouped query parameters, fragment) using the standard library —
-  never a network request. Relative URLs, empty input, and invalid ports return a
-  structured failure. A model requests it with `TOOL:url_parse:<url>`, giving
-  agents a safe way to route on a host or inspect a query parameter relayed by an
-  earlier step.
-- `uuid4`: generates random version-4 UUID identifier(s) (optional `count`
-  requests it with `TOOL:yaml_to_json:enabled: true`, giving GPT-5.5 /
-- `yaml_to_json`: converts a constrained safe YAML subset to canonical JSON
-  1..16, default 1). Output is one UUID string or newline-joined UUIDs when
-  `count` > 1. These are opaque identifiers for GPT-5.5 / Claude Sonnet 4.6 /
-  Gemini 3.x / Kimi K2 workflows — not cryptographic secrets or keying material.
-  Out-of-range or non-integer `count` returns a structured failure. A model
-  requests it with `TOOL:uuid4:`.
-- `uuid5`: computes a deterministic version-5 UUID from a name and a namespace
-  (`dns`, `url`, `oid`, `x500`, or a custom UUID string; default `dns`). Because
-  a v5 UUID is a hash of `(namespace, name)`, the same inputs always yield the
-  same id — keeping the runtime deterministic, unlike a random v4 UUID. Empty,
-  oversized, or unusable-namespace requests return a structured failure. A model
-  requests it with `TOOL:uuid5:<name>`, giving agents stable primary keys,
-  idempotency keys, or correlation ids shared across steps.
-- `slugify`: converts free-form text into a URL- and filesystem-safe ASCII slug.
-  It strips diacritics, lowercases, collapses every run of non-alphanumeric
-  characters into a single separator (default `-`, overridable), trims the ends,
-  and can cap the length on a word boundary via `max_length`. Empty, oversized,
-  unusable-separator, invalid-`max_length`, or slug-empty requests return a
-  structured failure. A model requests it with `TOOL:slugify:<text>`, giving
-  agents deterministic branch names, path segments, cache-file names, and anchor
-  ids from arbitrary text.
-- `datetime`: normalizes an ISO-8601 timestamp to a canonical UTC form
-  (`YYYY-MM-DDTHH:MM:SS+00:00`) and reports its Unix epoch and weekday. A
-  trailing `Z` (Zulu) designator and numeric offsets are both accepted; a naive
-  timestamp fails unless `assume_utc=true` is passed. It reads no wall-clock
-  `now`, so it stays fully deterministic. Empty, oversized, unparseable, or
-  naive-without-`assume_utc` requests return a structured failure. A model
-  requests it with `TOOL:datetime:<timestamp>`, giving agents one canonical
-  instant to compare, sort, and log timestamps that arrive in mixed shapes.
-- `duration`: parses an ISO-8601 duration (`PT1H30M`, `P1DT2H`, `P2W`, with an
-  optional leading `-` and a fractional smallest component) into its total
-  length in seconds plus a normalized component breakdown. Only fixed-length
-  components (weeks, days, hours, minutes, seconds) are supported; calendar
-  components (years/months) are refused because they have no fixed second
-  length. It reads no wall-clock `now`, so it stays fully deterministic. Empty,
-  oversized, calendar, componentless, or unparseable requests return a
-  structured failure. A model requests it with `TOOL:duration:<duration>`,
-  giving agents one exact scalar for retry backoffs, TTLs, and time budgets.
-- `diff`: produces a deterministic unified diff between two texts via
-  `difflib`. Supply sides as `text`+`other`, or as a single `text` split on the
-  `<<<DIFF>>>` sentinel (so `TOOL:diff:...` still works with one payload).
-  Optional `context` controls hunk size (default 3). Empty/oversized sides,
-  ambiguous splits, and invalid context return a structured failure. Gives
-  agents a trustworthy before/after comparison for observations and tool
-  outputs — matching the gap popular agent frameworks fill with a dedicated
-  diff/patch tool.
-- `regex_replace`: applies a bounded regex find/replace (`text` / `pattern` /
-  `repl`, optional `count`) via stdlib `re`. Empty or oversized input, patterns
-  over 200 chars, nested-quantifier ReDoS shapes, and match counts over the
-  cap return a structured failure. A model requests it with
-  `TOOL:regex_replace:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers that need deterministic substitutions before the next turn.
-- `text_case`: converts text to `lower`, `upper`, `title`, `snake`, `kebab`, or `camel` (default `lower`; max 20_000 chars). Supply `text`+`case`, or a single payload split on `<<<TEXT_CASE>>>`. Empty, oversized, or unsupported `case` values return a structured failure. A model requests it with `TOOL:text_case:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic case transforms.
-- `text_indent`: indents every non-empty line by N spaces (default 2, max 32;
-  optional `skip_first`). Supply `text`+`spaces`/`skip_first`, or a single
-  payload split on `<<<TEXT_INDENT>>>`. Empty, oversized, or invalid option
-  requests return a structured failure. A model requests it with
-  `TOOL:text_indent:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers that need deterministic indentation.
-- `csv_select_columns`: selects and reorders CSV columns by name via stdlib `csv` (max 500 rows, 64 columns). Supply `text`+`columns`, or a single payload split on `<<<CSV_SELECT>>>`. Empty, oversized, malformed, unknown-column, or over-bounds requests return a structured failure. A model requests it with `TOOL:csv_select_columns:<csv><<<CSV_SELECT>>>col1,col2` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic tabular projection.
-- `csv_unique`: deduplicates CSV rows by named column(s) via stdlib `csv`
-  (keep first occurrence; max 500 rows, 64 columns). Supply `text`+`columns`,
-  or a single payload split on `<<<CSV_UNIQUE>>>`. Empty, oversized, malformed,
-  unknown-column, or over-bounds requests return a structured failure. A model
-  requests it with `TOOL:csv_unique:<csv><<<CSV_UNIQUE>>>col1,col2` for
-  GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need
-  deterministic tabular deduplication.
-- `csv_window`: emits sliding windows of CSV data rows with the header preserved once
-  per window (`window_size` required; `step` default 1; optional `start_row`/`index`).
-  It rejects malformed input and bounded-size violations for GPT-5.5 /
-  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-- `text_sort_lines`: sorts multi-line text ascending or descending (`order`
-  default `asc`) with optional `unique` dedupe after sort. Empty, oversized, or
-  unsupported-order requests return a structured failure. A model requests it
-  with `TOOL:text_sort_lines:<text>`, giving agents a stable line order for
-  checklists, tags, and other line-oriented observations.
-- `unicode_normalize`: normalizes Unicode text via stdlib `unicodedata` to
-  NFC (default), NFD, NFKC, or NFKD. Empty, oversized, or unsupported-form
-  requests return a structured failure. A model requests it with
-  `TOOL:unicode_normalize:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini
-  3.x / Kimi K2 workers that need canonical text before comparison or hashing.
-- `text_wrap`: wraps or fills text via stdlib `textwrap` (`mode` `wrap` default
-  or `fill`, `width` default 80). Empty, oversized, invalid-width, or
-  unsupported-mode requests return a structured failure. A model requests it
-  with `TOOL:text_wrap:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers that need bounded line reflow for logs and previews.
-- `html_attr_extract`: extracts HTML attribute values via stdlib
-  `html.parser` (required `attr`; optional `tag` filter and `max_results`).
-  Empty, oversized, or invalid-bound requests return a structured failure.
-  A model requests it with `TOOL:html_attr_extract:<html>` for GPT-5.5 /
-  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic
-  attribute extraction from markup handoffs.
-- `html_entities`: encodes or decodes HTML entities via stdlib `html`
-  (`mode` `encode` default or `decode`; encode optionally escapes quotes).
-  Empty, oversized, unsupported-mode, or invalid-quote requests return a
-  structured failure. A model requests it with `TOOL:html_entities:<text>`
-  for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need
-  deterministic entity escaping before render or compare.
-- `html_strip`: strips HTML markup to plain text via the stdlib HTML parser.
-  Documents containing `<script>` or `<style>` are rejected; empty or oversized
-  input returns a structured failure. A model requests it with
-  `TOOL:html_strip:<html>`, giving agents a deterministic way to turn scraped
-  snippets into readable text without inventing or leaking markup.
-- `html_markdown`: converts safe HTML fragments to Markdown (headings, links,
-  lists, bold/italic, code, paragraphs) via stdlib `html.parser`. Documents
-  containing `<script>` or `<style>` are rejected; empty or oversized input
-  returns a structured failure. A model requests it with
-  `TOOL:html_markdown:<html>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers that need deterministic HTML→Markdown handoffs.
-- `html_table`: extracts the first HTML table, or a 1-based `table_index`, and
-  renders it as GitHub-flavored markdown or CSV. It uses stdlib `html.parser`
-  only, rejects `<script>`/`<style>`, caps document/output chars plus rows and
-  columns, and returns structured metadata for GPT-5.5 / Claude Sonnet 4.6 /
-  Gemini 3.x / Kimi K2 workers that need safe tabular observations from HTML.
-- `html_table_csv`: converts the first HTML table (default) or every table
-  (`all=true`) to CSV text via stdlib `html.parser`. It rejects `<script>`/
-  `<style>`, caps document and output chars, and returns structured failures for
-  empty, oversized, or table-less input. A model requests it with
-  `TOOL:html_table_csv:<html>` for deterministic CSV handoffs across GPT-5.5 /
-  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-- `mime_attachment_names`, `text_outdent`: parses bounded raw MIME with stdlib `email` and
-  returns only a JSON list of decoded attachment `filename`/`name` parameters.
-  Empty, oversized, or defective input returns a structured failure; payloads
-  are never returned or written. A model requests it with
-  `TOOL:mime_attachment_names:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
-  Gemini 3.x / Kimi K2 workers that need safe attachment routing metadata.
-- `mime_attachment_sizes`: parses bounded raw MIME with stdlib `email` and
-  returns only a JSON list of attachment `filename`/`size` objects. Sizes use
-  `Content-Length` when present, otherwise decoded payload byte length.
-  Payloads are never returned or written. A model requests it with
-  `TOOL:mime_attachment_sizes:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
-  Gemini 3.x / Kimi K2 workers that need safe attachment size metadata.
-- `mime_attachment_cid_map`: parses bounded raw MIME and returns a JSON map of Content-ID
-  tokens to attachment `filename`/`content_type` objects without payloads. A model
-  requests it with `TOOL:mime_attachment_cid_map:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
-  Gemini 3.x / Kimi K2 workers.
-- `mime_attachment_disposition`: parses bounded raw MIME with stdlib `email`
-  and returns only Content-Disposition `filename`/`disposition` objects for
-  attachment and inline parts, including unnamed disposition records. Payloads
-  are never returned or written. Empty, oversized, or defective input returns a
-  structured failure. A model requests it with
-  `TOOL:mime_attachment_disposition:<raw>` for GPT-5.5 /
-  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need safe routing
-  metadata without attachment content.
-- `mime_attachment_encoding`: parses bounded raw MIME and returns only named
-- `mime_attachment_filenames_unique`: maps duplicate MIME attachment filenames to unique names (`file-2.pdf`); no payloads. A model requests it with `TOOL:mime_attachment_filenames_unique:<raw>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-  attachment `filename`/`encoding` objects. Content-Transfer-Encoding tokens
-  are normalized, missing values default to `7bit`, and payloads are never
-  decoded or returned. A model requests it with
-  `TOOL:mime_attachment_encoding:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
-  Gemini 3.x / Kimi K2 workers.
-- `mime_multipart`: parses a raw MIME message via stdlib `email` and returns
-  JSON summaries of each part (`content_type`, `charset`, `size`, `payload
-  preview`). Empty or oversized input returns a structured failure. A model
-  requests it with `TOOL:mime_multipart:<raw>` for GPT-5.5 / Claude Sonnet
-  4.6 / Gemini 3.x / Kimi K2 workers that need part metadata before parsing
-  attachments.
-- `template_render`: fills simple `{var}` or Jinja-like `{{ var }}`
-  placeholders from scalar JSON variables. It HTML-escapes every substituted
-  value, rejects expressions/filters/attribute access instead of evaluating
-  them, caps template/variable/output sizes, and supports a single directive
-  payload split on `<<<TEMPLATE_VARS>>>`. A model requests it with
-  `TOOL:template_render:Hello {name}<<<TEMPLATE_VARS>>>{"name":"Ada"}` for safe,
-  repeatable snippets without raw string surgery.
-- `zip_list`: lists ZIP archive member metadata (`name`, `size`, `compress_size`,
-  `date`) from base64-encoded bytes via stdlib `zipfile`. It never extracts or
-  executes archive members; invalid base64, non-ZIP payloads, and empty or
-  oversized input return structured failures. A model requests it with
-  `TOOL:zip_list:<base64>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi
-  K2 workers inspecting small attachment bundles.
+## Documentation Map
+
+- **Start:** [Quickstart](docs/QUICKSTART.md), [Configuration](docs/CONFIGURATION.md) (model stack, MCP, safety
+  settings), and the [release-readiness walkthrough](docs/use-cases/USE-CASE-mcp-release-readiness.md)
+- **Concepts:** [Architecture](docs/ARCHITECTURE.md), [Safety](docs/SAFETY.md)
+- **Core guides:** [MCP tools](docs/guides/MCP_TOOLS_GUIDE.md),
+  [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md),
+  [Checkpoint resume](docs/guides/CHECKPOINT_RESUME_GUIDE.md),
+  [HITL approval gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md),
+  [Parallel fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md),
+  [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md),
+  [Rate-limited tool runner](docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md),
+  [Observation redactor](docs/guides/OBSERVATION_REDACTOR_GUIDE.md)
+- **Catalogs:** [Built-in tools](docs/TOOLS.md), [Advisor & guard catalog](docs/ADVISOR_CATALOG.md),
+  [All guides](docs/guides/), [Use cases](docs/use-cases/README.md)
+- **Project:** [CHANGELOG](CHANGELOG.md) and demo assets ([`assets/demo/`](assets/demo/); `docs/demo.gif` is
+  rendered by `scripts/render_demo_gif.py`, and `docs/demo.svg` is a static architecture card)
+
+## Use Cases
+
+These are the problems the project was built for. Each one is explained in
+[Problems this solves](docs/use-cases/PROBLEMS_THIS_SOLVES.md), and the
+[issue index](docs/use-cases/README.md) links regression stories from real fixes.
+
+1. "My agent did something, but I can't explain why." Rationale traces and replay answer that.
+2. "I don't want the model executing tools directly." Text directives go through an allowlisted engine.
+3. "The same agent flow must work across GPT-6, Claude, Gemini, and Kimi." One adapter interface covers them.
+4. "I need a safe demo path without API keys." The deterministic fake provider runs the real runtime.
+5. "Runs fail silently or leave no audit trail." Every run gets a durable SQLite event log plus `report`.
+6. "The agent loops or burns tokens." Step budgets, timeouts, and cancellation stop it.
+7. "I want to compare providers without rewriting orchestration." Swap `--provider`; nothing else changes.
+8. "Agents should produce artifacts, not just chat." Allowlisted tools with recorded results do the work.
+9. "I need a clean example of agent architecture." Each module has one clear job.
+10. "CI must prove the agent works without credentials." `scripts/check.sh` runs on Python 3.10–3.12.
 
 ## Repository Layout
 
 ```text
-src/multi_bot_agentic/   runtime, lifecycle, decision engine, event log, adapters
-tests/                   deterministic unit and integration tests
-scripts/                 demo and verification scripts
+src/multi_bot_agentic/   runtime, decision engine, event log, adapters (llm/), tools (tools/), MCP bridge (mcp/)
+tests/                   deterministic unit and integration tests (MCP server fixtures in tests/fixtures/mcp/)
 examples/mcp/            demo MCP server and mcpServers configs (bundled + official servers)
+scripts/                 check, demo, and GIF rendering scripts
 migrations/              sqlite schema scaffold
-docs/                    architecture, safety, config, quickstart, demo
+docs/                    architecture, safety, configuration, quickstart, guides, catalogs, use cases
 .github/workflows/       CI for lint, format, typecheck, tests, demo smoke
 ```
-
-## Documentation
-
-- [MCP Tool Bridge Guide](docs/guides/MCP_TOOLS_GUIDE.md)
-- [Typed Bot Handoff Guide](docs/guides/BOT_HANDOFF_GUIDE.md)
-- [HITL Approval Gate Guide](docs/guides/HITL_APPROVAL_GATE_GUIDE.md)
-- [Parallel Fan-Out Guide](docs/guides/PARALLEL_FANOUT_GUIDE.md)
-- [Text Margin Lines Tool Guide](docs/guides/TEXT_MARGIN_LINES_TOOL_GUIDE.md)
-
-- [Quickstart](docs/QUICKSTART.md)
-- [Configuration](docs/CONFIGURATION.md)
-- [Content Type Sniff Tool Guide](docs/guides/CONTENT_TYPE_SNIFF_TOOL_GUIDE.md)
-- [Cron Next Tool Guide](docs/guides/CRON_NEXT_TOOL_GUIDE.md)
-- [Safety](docs/SAFETY.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [JSON Path Tool Guide](docs/guides/JSON_PATH_TOOL_GUIDE.md)
-- [JSON Query Tool Guide](docs/guides/JSON_QUERY_TOOL_GUIDE.md)
-- [JWT Decode Tool Guide](docs/guides/JWT_DECODE_TOOL_GUIDE.md)
-- [Hex Encode Tool Guide](docs/guides/HEX_ENCODE_TOOL_GUIDE.md)
-- [URL Encode Tool Guide](docs/guides/URL_ENCODE_TOOL_GUIDE.md)
-- [JSON Merge Patch Tool Guide](docs/guides/JSON_MERGE_PATCH_TOOL_GUIDE.md)
-- [Spreadsheet Slice Tool Guide](docs/guides/SPREADSHEET_SLICE_TOOL_GUIDE.md)
-- [HTML Attribute Extract Tool Guide](docs/guides/HTML_ATTR_EXTRACT_TOOL_GUIDE.md)
-- [HTML Entities Tool Guide](docs/guides/HTML_ENTITIES_TOOL_GUIDE.md)
-- [HTML Markdown Tool Guide](docs/guides/HTML_MARKDOWN_TOOL_GUIDE.md)
-- [HTML Table Tool Guide](docs/guides/HTML_TABLE_TOOL_GUIDE.md)
-- [HTML Table CSV Tool Guide](docs/guides/HTML_TABLE_CSV_TOOL_GUIDE.md)
-- [ICS Parse Tool Guide](docs/guides/ICS_PARSE_TOOL_GUIDE.md)
-- [MIME Attachment CID Map Tool Guide](docs/guides/MIME_ATTACHMENT_CID_MAP_TOOL_GUIDE.md)
-- [MIME Attachment Names Tool Guide](docs/guides/MIME_ATTACHMENT_NAMES_TOOL_GUIDE.md)
-- [MIME Attachment Disposition Tool Guide](docs/guides/MIME_ATTACHMENT_DISPOSITION_TOOL_GUIDE.md)
-- [MIME Multipart Tool Guide](docs/guides/MIME_MULTIPART_TOOL_GUIDE.md)
-- [Template Render Tool Guide](docs/guides/TEMPLATE_RENDER_TOOL_GUIDE.md)
-- [TOML Format Tool Guide](docs/guides/TOML_FORMAT_TOOL_GUIDE.md)
-- [TSV Format Tool Guide](docs/guides/TSV_FORMAT_TOOL_GUIDE.md)
-- [Text Title Lines Tool Guide](docs/guides/TEXT_TITLE_LINES_TOOL_GUIDE.md)
-- [Text Sort Lines Tool Guide](docs/guides/TEXT_SORT_LINES_TOOL_GUIDE.md)
-- [Text Squeeze Whitespace Tool Guide](docs/guides/TEXT_SQUEEZE_WS_TOOL_GUIDE.md)
-- [Text Indent Tool Guide](docs/guides/TEXT_INDENT_TOOL_GUIDE.md)
-- [Text Case Tool Guide](docs/guides/TEXT_CASE_TOOL_GUIDE.md)
-- [CSV Select Columns Tool Guide](docs/guides/CSV_SELECT_COLUMNS_TOOL_GUIDE.md)
-- [CSV Sort Tool Guide](docs/guides/CSV_SORT_TOOL_GUIDE.md)
-- [CSV Unique Tool Guide](docs/guides/CSV_UNIQUE_TOOL_GUIDE.md)
-- [CSV Window Tool Guide](docs/guides/CSV_WINDOW_TOOL_GUIDE.md)
-- [Unicode Normalize Tool Guide](docs/guides/UNICODE_NORMALIZE_TOOL_GUIDE.md)
-- [UUID4 Tool Guide](docs/guides/UUID4_TOOL_GUIDE.md)
-- [Text Wrap Tool Guide](docs/guides/TEXT_WRAP_TOOL_GUIDE.md)
-- [Line Number Tool Guide](docs/guides/LINE_NUMBER_TOOL_GUIDE.md)
-- [Regex Replace Tool Guide](docs/guides/REGEX_REPLACE_TOOL_GUIDE.md)
-- [CSV Filter Tool Guide](docs/guides/CSV_FILTER_TOOL_GUIDE.md)
-- [CSV Group-By Tool Guide](docs/guides/CSV_GROUPBY_TOOL_GUIDE.md)
-- [CSV Join Tool Guide](docs/guides/CSV_JOIN_TOOL_GUIDE.md)
-- [CSV Pivot Tool Guide](docs/guides/CSV_PIVOT_TOOL_GUIDE.md)
-- [CSV TSV Tool Guide](docs/guides/CSV_TSV_TOOL_GUIDE.md)
-- [YAML Format Tool Guide](docs/guides/YAML_FORMAT_TOOL_GUIDE.md)
-- [ZIP List Tool Guide](docs/guides/ZIP_LIST_TOOL_GUIDE.md)
 
 ## Verification
 
@@ -1023,482 +158,20 @@ docs/                    architecture, safety, config, quickstart, demo
 scripts/check.sh
 ```
 
-`scripts/check.sh` runs ruff, format check, mypy, pytest, and a fake-provider smoke run with replay/report. CI runs the same script on Python 3.10, 3.11, and 3.12.
-
-For a richer local demo:
-
-```bash
-scripts/run_demo.sh
-```
-
-## Visual Asset
-
-The README GIF is reproducible:
-
-```bash
-python scripts/render_demo_gif.py
-```
-
-The repo also keeps `docs/demo.svg` as a static architecture card.
-
-![OrchestratorRetryStormBandAdvisor](assets/demo/orchestrator-retry-storm-band.gif)
-### OrchestratorRetryStormBandAdvisor
-
-![OrchestratorRetryStormBandAdvisor](assets/demo/orchestrator-retry-storm-band.gif)
-
-
-![ConsensusParticipationSkewAdvisor](assets/demo/consensus-participation-skew.gif)
-### ConsensusParticipationSkewAdvisor
-
-![ConsensusParticipationSkewAdvisor](assets/demo/consensus-participation-skew.gif)
-
-
-### ToolSandboxEscapeAttemptBandAdvisor
-
-![ToolSandboxEscapeAttemptBandAdvisor](assets/demo/tool-sandbox-escape.gif)
-
-Offline HITL `attempt_ratio` bands vs LangGraph/CrewAI/AutoGen tool sandbox-escape attempt monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolPermissionEscalationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-
-### ToolBudgetExhaustionBandAdvisor
-
-![ToolBudgetExhaustionBandAdvisor](assets/demo/tool-budget-exhaustion.gif)
-
-Offline HITL `exhaustion_ratio` bands vs LangGraph/CrewAI/AutoGen tool budget-exhaustion monitors. Distinct from `ToolCallQuotaGuard` / `ToolRetryBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-
-### OrchestratorFanInStallBandAdvisor
-
-![OrchestratorFanInStallBandAdvisor](assets/demo/orchestrator-fan-in-stall.gif)
-
-Offline HITL `stall_ratio` bands vs LangGraph/CrewAI/AutoGen orchestrator fan-in stall monitors. Distinct from `AgentHandoffLoopBandAdvisor` / `ConsensusQuorumStallAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-
-### ToolIdempotencyCollisionBandAdvisor
-
-![ToolIdempotencyCollisionBandAdvisor](assets/demo/tool-idempotency-collision.gif)
-
-Offline HITL `collision_ratio` bands vs LangGraph/CrewAI/AutoGen tool idempotency-collision monitors. Distinct from `ToolSideEffectReplayBandAdvisor` / `ToolResultSchemaDriftBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-
-### MessageBusPartitionBandAdvisor
-
-![MessageBusPartitionBandAdvisor](assets/demo/message-bus-partition.gif)
-
-Offline HITL `partition_ratio` bands vs LangGraph/CrewAI/AutoGen message-bus partition monitors. Distinct from `OrchestratorFanInStallBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-
-### SharedMemoryQuotaThrashBandAdvisor
-
-![SharedMemoryQuotaThrashBandAdvisor](assets/demo/shared-memory-quota-thrash.gif)
-
-Offline HITL `thrash_ratio` bands vs LangGraph/CrewAI/AutoGen shared-memory quota thrash monitors. Distinct from `SharedKvWriteAmplificationAdvisor` / `BlackboardReadStalenessAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2.
-
-
-### CriticLatencySkewBandAdvisor
-
-![CriticLatencySkewBandAdvisor](assets/demo/critic-latency-skew.gif)
-
-Gap vs LangGraph/CrewAI/AutoGen critic latency-skew monitors. Distinct from `CriticLatencySloBandGuard` / `CriticTimeoutBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_LATENCY_SKEW_BAND_ADVISOR_GUIDE.md`.
-
-### SubgraphDeadlockResidualBandAdvisor
-
-![SubgraphDeadlockResidualBandAdvisor](assets/demo/subgraph-deadlock-residual.gif)
-
-Gap vs LangGraph/CrewAI/AutoGen subgraph deadlock-residual monitors. Distinct from `SubgraphCancelLeakAdvisor` / `AgentHandoffLoopBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUBGRAPH_DEADLOCK_RESIDUAL_BAND_ADVISOR_GUIDE.md`.
-
-### PlannerContextOverflowBandAdvisor
-
-![PlannerContextOverflowBandAdvisor](assets/demo/planner-context-overflow.gif)
-
-Gap vs LangGraph/CrewAI/AutoGen planner context-overflow monitors. Distinct from `PlannerStepBudgetBandAdvisor` / `PlannerHorizonBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_CONTEXT_OVERFLOW_BAND_ADVISOR_GUIDE.md`.
-
-### WorkerQueueDepthBandAdvisor
-
-![WorkerQueueDepthBandAdvisor](assets/demo/worker-queue-depth.gif)
-
-HITL `queue_depth_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen worker-queue depth monitors. Distinct from `WorkerStarvationBandAdvisor` / `WorkerHeartbeatMissBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_QUEUE_DEPTH_BAND_ADVISOR_GUIDE.md`.
-
-### HandoffSchemaDriftBandAdvisor
-
-![HandoffSchemaDriftBandAdvisor](assets/demo/handoff-schema-drift.gif)
-
-HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen handoff-schema drift monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `AgentHandoffLoopBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HANDOFF_SCHEMA_DRIFT_BAND_ADVISOR_GUIDE.md`.
-
-### AgentAffinitySkewBandAdvisor
-
-![AgentAffinitySkewBandAdvisor](assets/demo/agent-affinity-skew.gif)
-
-HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent-affinity skew monitors. Distinct from `FanInSkewBandAdvisor` / `SharedStateWriteSkewBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_AFFINITY_SKEW_BAND_ADVISOR_GUIDE.md`.
-
-### CriticCalibrationDriftBandAdvisor
-
-![CriticCalibrationDriftBandAdvisor](assets/demo/critic-calibration-drift.gif)
-
-HITL `drift_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic-calibration drift monitors. Distinct from `CriticCollusionBandAdvisor` / `CriticLatencySkewBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_CALIBRATION_DRIFT_BAND_ADVISOR_GUIDE.md`.
-
-### PlannerGoalChurnBandAdvisor
-
-![PlannerGoalChurnBandAdvisor](assets/demo/planner-goal-churn.gif)
-
-HITL `churn_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen planner goal-churn monitors. Distinct from `PlannerContextOverflowBandAdvisor` / `PlanGoalContradictionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/PLANNER_GOAL_CHURN_BAND_ADVISOR_GUIDE.md`.
-
-### SharedKvLeaseExpiryBandAdvisor
-
-![SharedKvLeaseExpiryBandAdvisor](assets/demo/shared-kv-lease-expiry.gif)
-
-HITL `expiry_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen shared-KV lease-expiry monitors. Distinct from `BlackboardWriteLeaseAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_KV_LEASE_EXPIRY_BAND_ADVISOR_GUIDE.md`.
-
-
-### ToolSchemaCompatBandAdvisor
-
-![ToolSchemaCompatBandAdvisor](assets/demo/tool-schema-compat.gif)
-
-HITL `compat_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool-schema compatibility monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SCHEMA_COMPAT_BAND_ADVISOR_GUIDE.md`.
-
-
-### AgentTokenBudgetSkewBandAdvisor
-
-![AgentTokenBudgetSkewBandAdvisor](assets/demo/agent-token-budget-skew.gif)
-
-HITL `skew_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent token-budget skew monitors. Distinct from `SessionTokenBudgetLedger` / `CriticTokenBudgetBandGuard`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_TOKEN_BUDGET_SKEW_BAND_ADVISOR_GUIDE.md`.
-
-
-### CriticScoreInflationBandAdvisor
-
-![CriticScoreInflationBandAdvisor](assets/demo/critic-score-inflation.gif)
-
-HITL `inflation_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen critic score-inflation monitors. Distinct from `CriticCalibrationDriftBandAdvisor` / `CriticCollusionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/CRITIC_SCORE_INFLATION_BAND_ADVISOR_GUIDE.md`.
-
-
-### WorkerMailboxOverflowBandAdvisor
-
-![WorkerMailboxOverflowBandAdvisor](assets/demo/worker-mailbox-overflow.gif)
-
-HITL `overflow_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen worker mailbox overflow monitors. Distinct from `WorkerQueueDepthBandAdvisor` / `WorkerStarvationBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/WORKER_MAILBOX_OVERFLOW_BAND_ADVISOR_GUIDE.md`.
-
-
-### AgentAffinityDecayBandAdvisor
-
-![AgentAffinityDecayBandAdvisor](assets/demo/agent-affinity-decay.gif)
-
-HITL `decay_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen agent affinity-decay monitors. Distinct from `AgentAffinitySkewBandAdvisor` / `StickyBotAffinityStore`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_AFFINITY_DECAY_BAND_ADVISOR_GUIDE.md`.
-
-
-### HitlTimeoutCascadeBandAdvisor
-
-![HitlTimeoutCascadeBandAdvisor](assets/demo/hitl-timeout-cascade.gif)
-
-HITL `cascade_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen HITL timeout-cascade monitors. Distinct from `HandoffTimeoutBandAdvisor` / `ToolTimeoutCascadeBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_TIMEOUT_CASCADE_BAND_ADVISOR_GUIDE.md`.
-
-
-### MemoryCompactionLagBandAdvisor
-
-![MemoryCompactionLagBandAdvisor](assets/demo/memory-compaction-lag.gif)
-
-HITL `lag_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen memory-compaction lag monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedKvLeaseExpiryBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/MEMORY_COMPACTION_LAG_BAND_ADVISOR_GUIDE.md`.
-
-
-### BlackboardWriteContentionBandAdvisor
-
-![BlackboardWriteContentionBandAdvisor](assets/demo/blackboard-write-contention.gif)
-
-HITL `contention_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen blackboard write-contention monitors. Distinct from `SharedBlackboardWriteLease` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_WRITE_CONTENTION_BAND_ADVISOR_GUIDE.md`.
-
-
-### ToolSideEffectOrphanBandAdvisor
-
-![ToolSideEffectOrphanBandAdvisor](assets/demo/tool-side-effect-orphan.gif)
-
-HITL `orphan_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool side-effect orphan monitors. Distinct from `ToolSideEffectLedgerAdvisor` / `ToolSideEffectReplayBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SIDE_EFFECT_ORPHAN_BAND_ADVISOR_GUIDE.md`.
-
-
-### HitlApprovalStarvationBandAdvisor
-
-![HitlApprovalStarvationBandAdvisor](assets/demo/hitl-approval-starvation.gif)
-
-HITL `starvation_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen HITL approval-starvation monitors. Distinct from `HitlTimeoutCascadeBandAdvisor` / `HitlApprovalGate`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_APPROVAL_STARVATION_BAND_ADVISOR_GUIDE.md`.
-
-
-### SupervisorHandoffLoopBandAdvisor
-
-![SupervisorHandoffLoopBandAdvisor](assets/demo/supervisor-handoff-loop.gif)
-
-HITL `loop_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen supervisor handoff-loop monitors. Distinct from `AgentHandoffLoopBandAdvisor` / `HandoffSchemaDriftBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUPERVISOR_HANDOFF_LOOP_BAND_ADVISOR_GUIDE.md`.
-
-
-### SubgraphRetryAmplificationBandAdvisor
-
-![SubgraphRetryAmplificationBandAdvisor](assets/demo/subgraph-retry-amplification.gif)
-
-HITL `amplification_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen subgraph retry-amplification monitors. Distinct from `ToolRetryBudgetBandGuard` / `ToolTimeoutCascadeBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SUBGRAPH_RETRY_AMPLIFICATION_BAND_ADVISOR_GUIDE.md`.
+`scripts/check.sh` runs `ruff check`, `ruff format --check`, `mypy src tests`, `pytest`, and a fake-provider
+smoke run with replay and report. CI runs the same script on Python 3.10, 3.11, and 3.12. For a richer local
+demo, run `scripts/run_demo.sh`.
+
+## Contributing
+
+- Run `scripts/check.sh` before pushing. It's exactly what CI runs.
+- **New advisor, guard, or limiter entries go in [`docs/ADVISOR_CATALOG.md`](docs/ADVISOR_CATALOG.md), not in
+  this README.** Use a `### ClassName` heading, a demo GIF, a one-paragraph summary, and a guide link.
+- New built-in tools need four things: registration in `build_default_tools()`, an entry in the
+  `SafetyPolicy.allowed_tools` default, an entry in [`docs/TOOLS.md`](docs/TOOLS.md), and a guide in
+  `docs/guides/`.
+- Keep this README a short showcase. Link new guides from the Documentation Map only if they're core.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-<!-- PORTFOLIO-USE-CASES -->
-
-## Production use cases
-
-Real issues this agent solves — deterministic ODA loop, rationale traces, durable event log,
-GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 adapters, and safety controls (timeouts, bounded scope, cancellation).
-
-| Issue | Problem | Solution doc |
-|-------|---------|--------------|
-| #001 | Non-deterministic agent loops hard to debug | [doc](docs/use-cases/ISSUE-001-non-deterministic-agent-loops-hard-to-de.md) |
-| #002 | Long-running tasks need cancellation | [doc](docs/use-cases/ISSUE-002-long-running-tasks-need-cancellation.md) |
-| #003 | Tool failures should not crash the run | [doc](docs/use-cases/ISSUE-003-tool-failures-should-not-crash-the-run.md) |
-| #005 | Unreadable files should not crash the run | [doc](docs/use-cases/ISSUE-005-unreadable-files-should-not-crash-the-run.md) |
-| #007 | OpenAI-compatible gateways may return structured content | [doc](docs/use-cases/ISSUE-007-openai-compatible-structured-content.md) |
-| #011 | PII redaction missed parenthesized area-code phone numbers | [doc](docs/use-cases/ISSUE-011-redaction-misses-parenthesized-phone.md) |
-| #012 | PII redaction over-redacted non-address dotted numbers | [doc](docs/use-cases/ISSUE-012-redaction-over-redacts-invalid-ipv4.md) |
-
-Full index: [docs/use-cases/README.md](docs/use-cases/README.md)
-
-## Agentic design
-
-- **Decision engine** — deterministic step selection with logged rationale
-- **State machine** — `created → observing → deciding → acting → succeeded | failed | cancelled`
-- **Event log** — SQLite/JSON audit trail for replay
-- **Tool adapters** — pluggable HTTP/LLM/retrieval integrations
-- **Safety** — timeouts, cancellation tokens, bounded run scope
-
-- `json_diff_paths`: compares two bounded JSON documents and returns only the
-  sorted paths whose values differ, using dotted object keys and bracketed array
-  indexes. Supply `text`+`other`, or one directive payload split on
-  `<<<JSON_DIFF_PATHS>>>`. Empty, malformed, non-finite, oversized, or
-  over-expanded input returns a structured failure. A model requests it with
-  `TOOL:json_diff_paths:<before><<<JSON_DIFF_PATHS>>><after>` for GPT-5.5 /
-  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need compact change
-  routing without echoing both documents.
-
-- `json_patch_apply`: applies bounded RFC 6902 JSON Patch arrays with
-  `add`/`remove`/`replace`/`move`/`copy`/`test` operations via stdlib only.
-  Supply `text`+`patch`, or split one directive payload on `<<<JSON_PATCH>>>`;
-  documents are capped at 20,000 characters and patches at 200 operations for
-  GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-
-- `text_justify_lines`: formats bounded non-empty lines with left, right,
-  center, or full justification at widths up to 500 while preserving line
-  endings and never truncating content. It supports `text` options or the
-  `<<<TEXT_JUSTIFY_LINES>>>` sentinel for GPT-5.5 / Claude Sonnet 4.6 /
-  Gemini 3.x / Kimi K2 workers.
-
-- `text_slug_lines`: slugifies every bounded document line independently while
-  preserving original line endings. It supports configurable separators,
-  casing, empty-line handling, and the `<<<TEXT_SLUG_LINES>>>` sentinel for
-  GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-
-- `text_title_lines`: title-cases every bounded document line independently while
-  preserving original line endings. It supports `skip_empty`, `lowercase_first`, and the
-  `<<<TEXT_TITLE_LINES>>>` sentinel for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers.
-
-- `text_margin_lines`: adds left/right ASCII margins to non-empty lines for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers.
-
-- `mime_multipart_flatten`: recursively flattens nested multipart MIME via
-  stdlib `email` into a JSON array of leaf-part metadata (`content_type`,
-  `filename`, `content_id`, `size`, `depth`), max 20_000 chars and 200 leaf
-  parts. Payload bytes are never returned. Empty, oversized, or malformed
-  input returns a structured failure. A model requests it with
-  `TOOL:mime_multipart_flatten:<raw>` for GPT-5.5 / Claude Sonnet 4.6 /
-  Gemini 3.x / Kimi K2 workers that need a safe inventory of nested email
-  parts, inspired by mail pipelines in popular agent frameworks.
-
-
-
-
-- `html_links_extract`: extracts HTML anchor `href`+`text` pairs as compact
-- `semver_compare`: compares two semantic versions (`major.minor.patch` with optional pre-release) and returns `-1`/`0`/`1` plus a human relation. Supply `version_a`+`version_b`, or a payload split on `<<<SEMVER_COMPARE>>>`. Empty or invalid versions return a structured failure. A model requests it with `TOOL:semver_compare:<a><<<SEMVER_COMPARE>>><b>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic version gating.
-- `csv_fillna`: fills empty CSV cells with a constant via stdlib `csv` (`fill_value` default empty string; optional `columns` subset). Supply `text`+`fill_value`, or a payload split on `<<<CSV_FILLNA>>>` (optional `<<<COLUMNS>>>col1,col2`). Empty, oversized, malformed, unknown-column, or over-bounds requests return a structured failure. A model requests it with `TOOL:csv_fillna:<csv>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic tabular fillna.
-  JSON via stdlib `html.parser` (`max_links` default 100, range 1..500).
-  Documents containing `script`/`style` are rejected. Empty, link-less,
-  oversized, or invalid `max_links` requests return a structured failure. A
-  model requests it with `TOOL:html_links_extract:<html>` for GPT-5.5 /
-  Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 research workers.
-- `ics_parse`: parses iCalendar (`.ics`) text and extracts VEVENT `SUMMARY`/`DTSTART`/`DTEND`/`UID`/`LOCATION` as JSON Lines via stdlib only (max 20_000 chars, 100 events). Empty, oversized, or VEVENT-less requests return a structured failure. A model requests it with `TOOL:ics_parse:<ics>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need deterministic calendar field extraction.
-- `markdown_toc`: builds a nested Markdown table of contents from ATX
-  headings (`#`..`######`) up to `max_level` (default 3, range 1..6) with
-  GitHub-like slug anchors. Supply `text`+`max_level`, or a payload split on
-  `<<<MARKDOWN_TOC>>>`. Empty, heading-less, oversized, or invalid `max_level`
-  requests return a structured failure. A model requests it with
-  `TOOL:markdown_toc:<markdown>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 documentation workers.
-- `text_unique_lines`: deduplicates lines in first-seen order (optional `strip`,
-  default true) while preserving original line endings. Supply `text`+`strip`,
-  or a single payload split on `<<<TEXT_UNIQUE_LINES>>>`. Empty, oversized, or
-  invalid `strip` requests return a structured failure. A model requests it with
-  `TOOL:text_unique_lines:<text>` for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x /
-  Kimi K2 workers that need stable dedupe without sorting.
-- `text_collapse_blank`: collapses runs of consecutive blank or
-  whitespace-only lines to at most `max_blank` lines (default 1, range
-  0..100) while preserving non-blank line endings. Supply `text`+`max_blank`,
-  or a single payload split on `<<<TEXT_COLLAPSE_BLANK>>>`. Empty, oversized,
-  or invalid `max_blank` requests return a structured failure. A model
-  requests it with `TOOL:text_collapse_blank:<text>` for GPT-5.5 / Claude
-  Sonnet 4.6 / Gemini 3.x / Kimi K2 workers that need to tidy noisy blank-line
-  runs before the next turn.
-
-## HITL approval gate
-
-`HitlApprovalGate` persists pending/approved/rejected tool approvals as JSON under an approval directory for operator review.
-
-## Parallel fan-out
-
-`ParallelFanOut` runs capped task batches via `ThreadPoolExecutor`, preserves input order, and merges successful answers without requiring `AgentRunner` LLM calls.
-
-## Checkpoint resume
-
-Durable checkpoint resume for ODA runs is available via `resume`.
-
-- **ToolCallQuotaGuard**: Per-tool call quota per session advisory/hard deny — see `docs/guides/TOOL_CALL_QUOTA_GUARD_GUIDE.md`
-- **HitlEscalationCooldownGate**: Cooldown after HITL deny/reject to block immediate re-escalation (advisory/hard; never network I/O) — see `docs/guides/HITL_ESCALATION_COOLDOWN_GATE_GUIDE.md`
-- **BotRoleConflictDetector**: Exclusive role-tag collision detector (advisory/hard; never network I/O) — see `docs/guides/BOT_ROLE_CONFLICT_DETECTOR_GUIDE.md`
-- **PlanStepDependencyResolver**: Topological plan-step ordering with cycle detection — see `docs/guides/PLAN_STEP_DEPENDENCY_RESOLVER_GUIDE.md`
-- **BlackboardEntryTtlEvictor**: Per-key TTL eviction for shared blackboard entries — see `docs/guides/BLACKBOARD_ENTRY_TTL_EVICTOR_GUIDE.md`
-- **BotHeartbeatLivenessWatchdog**: Per-bot heartbeat liveness (alive/stale/unknown) — see `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md`
-- **SharedBlackboardWriteLease**: Exclusive time-bounded blackboard write leases — see `docs/guides/SHARED_BLACKBOARD_WRITE_LEASE_GUIDE.md`
-- **CriticPassBudgetLimiter**: Cap critic re-pass loops with HITL exhaust bands — see `docs/guides/CRITIC_PASS_BUDGET_LIMITER_GUIDE.md`
-- **VoteTieBreakPolicy**: Deterministic multi-bot vote tie-break with HITL bands — see `docs/guides/VOTE_TIE_BREAK_POLICY_GUIDE.md`
-- **BotSpawnBudgetLimiter**: Cap dynamic bot spawns per session with HITL bands — see `docs/guides/BOT_SPAWN_BUDGET_LIMITER_GUIDE.md`
-- **AgentHandoffDepthLimiter**: Cap chained bot handoff depth with HITL bands — see `docs/guides/AGENT_HANDOFF_DEPTH_LIMITER_GUIDE.md`
-- **ConsensusQuorumFloorGuard**: Require min yes-votes before consensus with HITL bands — see `docs/guides/CONSENSUS_QUORUM_FLOOR_GUARD_GUIDE.md`
-
-- **ToolResultSchemaHashGate**: Flag tool-result schema hash drift with HITL bands — see `docs/guides/TOOL_RESULT_SCHEMA_HASH_GATE_GUIDE.md`
-- **CriticTimeoutBandGuard**: Flag critic-pass waits vs timeout with HITL bands — see `docs/guides/CRITIC_TIMEOUT_BAND_GUARD_GUIDE.md`
-- **ToolInvocationDeadlineGuard**: Flag per-tool invocation deadline pressure with HITL bands — see `docs/guides/TOOL_INVOCATION_DEADLINE_GUARD_GUIDE.md`
-- **MultiBotLatencyBudgetAllocator**: Allocate per-bot latency shares vs a session budget with HITL bands — see `docs/guides/MULTI_BOT_LATENCY_BUDGET_ALLOCATOR_GUIDE.md`
-- **ToolResultCardinalityGate**: Gate tool result row/item counts with HITL bands — see `docs/guides/TOOL_RESULT_CARDINALITY_GATE_GUIDE.md`
-- **CriticPairwiseKappaGate**: Gate critic pairwise Cohen-kappa with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_PAIRWISE_KAPPA_GATE_GUIDE.md`
-- **ToolSandboxCpuQuotaGuard**: Flag tool-sandbox CPU quota with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_SANDBOX_CPU_QUOTA_GUARD_GUIDE.md`
-- **CriticLatencySloBandGuard**: Flag critic-pass latency vs SLO with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_LATENCY_SLO_BAND_GUARD_GUIDE.md`
-- **CriticSelfConsistencyBandGuard**: Flag critic disagreement-rate with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_SELF_CONSISTENCY_BAND_GUARD_GUIDE.md`
-- **OrchestratorCascadeFailureAdvisor**: Advise orchestrator cascade-depth with HITL bands (ok/elevated/blocked) — see `docs/guides/ORCHESTRATOR_CASCADE_FAILURE_ADVISOR_GUIDE.md`
-- **BlackboardStaleEntryAdvisor**: Flag/advise blackboard stale-entry age with HITL bands (ok/elevated/blocked) — see `docs/guides/BLACKBOARD_STALE_ENTRY_ADVISOR_GUIDE.md`
-- **PlannerDepthCapAdvisor**: HITL bands (ok/elevated/blocked) — see `docs/guides/PLANNER_DEPTH_CAP_ADVISOR_GUIDE.md`
-- **MessageBusBackpressureAdvisor**: Advise message-bus queue-depth backpressure with HITL bands (ok/elevated/blocked) — see `docs/guides/MESSAGE_BUS_BACKPRESSURE_ADVISOR_GUIDE.md`
-- **BotCapabilityDriftAdvisor**: Advise bot capability drift_ratio with HITL bands (ok/elevated/blocked) — see `docs/guides/BOT_CAPABILITY_DRIFT_ADVISOR_GUIDE.md`
-- **ConsensusQuorumBandGuard**: Flag consensus shortfall_ratio with HITL bands (ok/elevated/blocked) — see `docs/guides/CONSENSUS_QUORUM_BAND_GUARD_GUIDE.md`
-- **PlanStepCycleDetectorGuard**: Flag plan-step cycle score with HITL bands (ok/elevated/blocked) — see `docs/guides/PLAN_STEP_CYCLE_DETECTOR_GUARD_GUIDE.md`
-- **AgentHandoffLatencyAdvisor**: Advise agent-handoff latency with HITL bands (ok/elevated/blocked) — see `docs/guides/AGENT_HANDOFF_LATENCY_ADVISOR_GUIDE.md`
-- **SharedMemoryPoisoningGuard**: Flag shared-memory poisoning score with HITL bands (ok/elevated/blocked) — see `docs/guides/SHARED_MEMORY_POISONING_GUARD_GUIDE.md`
-- **ToolResultPoisoningGuard**: Flag tool-result poisoning score with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_RESULT_POISONING_GUARD_GUIDE.md`
-- **ToolRetryBudgetBandGuard**: Flag tool retry_count vs soft/hard budgets with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_RETRY_BUDGET_BAND_GUARD_GUIDE.md`
-- **CriticTokenBudgetBandGuard**: Flag critic token budget with HITL bands (ok/elevated/blocked) — see `docs/guides/CRITIC_TOKEN_BUDGET_BAND_GUARD_GUIDE.md`
-- **ToolSandboxDiskQuotaGuard**: Flag tool-sandbox disk quota with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_SANDBOX_DISK_QUOTA_GUARD_GUIDE.md`
-- **OrchestratorFairnessAgingAdvisor**: Advise orchestrator wait-age fairness with HITL bands (ok/elevated/blocked) — see `docs/guides/ORCHESTRATOR_FAIRNESS_AGING_ADVISOR_GUIDE.md`
-- **PlannerCostCeilingAdvisor**: Advise planner USD cost vs ceiling with HITL bands (ok/elevated/blocked) — see `docs/guides/PLANNER_COST_CEILING_ADVISOR_GUIDE.md`
-- **ToolSandboxMemoryQuotaGuard**: Flag tool-sandbox memory quota with HITL bands (ok/elevated/blocked) — see `docs/guides/TOOL_SANDBOX_MEMORY_QUOTA_GUARD_GUIDE.md`
-- **SharedMemoryTtlEvictionAdvisor**: Advise shared-memory TTL eviction with HITL bands (ok/elevated/blocked) — see `docs/guides/SHARED_MEMORY_TTL_EVICTION_ADVISOR_GUIDE.md`
-- **PlannerBeamWidthLimiter**: Cap planner beam width with HITL bands (ok/elevated/blocked) — see `docs/guides/PLANNER_BEAM_WIDTH_LIMITER_GUIDE.md`
-- **ToolSandboxEgressClassGuard**: Classify tool sandbox egress risk with HITL bands — see `docs/guides/TOOL_SANDBOX_EGRESS_CLASS_GUARD_GUIDE.md`
-- **CriticAgreementEntropyGate**: Gate critic verdict agreement entropy with HITL bands — see `docs/guides/CRITIC_AGREEMENT_ENTROPY_GATE_GUIDE.md`
-- **BlackboardWriteAmplificationBandGuard**: Flag blackboard write-amplification (writes/reads) with HITL bands — see `docs/guides/BLACKBOARD_WRITE_AMPLIFICATION_BAND_GUARD_GUIDE.md`
-- **FanInSkewBandGuard**: Flag fan-in completion-time skew with HITL bands — see `docs/guides/FAN_IN_SKEW_BAND_GUARD_GUIDE.md`
-- **PlannerGoalDriftGuard**: Flag planner goal drift with HITL bands — see `docs/guides/PLANNER_GOAL_DRIFT_GUARD_GUIDE.md`
-- **ConsensusTimeoutBandGuard**: Flag consensus waits vs timeout with HITL bands — see `docs/guides/CONSENSUS_TIMEOUT_BAND_GUARD_GUIDE.md`
-- **ToolResultPiiRedactionGate**: Gate tool-result PII with HITL bands — see `docs/guides/TOOL_RESULT_PII_REDACTION_GATE_GUIDE.md`
-- **SharedMemoryConflictBandGuard**: Flag shared-memory version skew with HITL bands — see `docs/guides/SHARED_MEMORY_CONFLICT_BAND_GUARD_GUIDE.md`
-- **PlannerReplanBudgetLimiter**: Cap planner replan attempts with HITL bands — see `docs/guides/PLANNER_REPLAN_BUDGET_LIMITER_GUIDE.md`
-- **OrchestratorStallWatchdog**: Flag stalled orchestrator loops with HITL bands — see `docs/guides/ORCHESTRATOR_STALL_WATCHDOG_GUIDE.md`
-- **CriticVerdictDiversityGate**: Flag echo-chamber critic verdicts with HITL bands — see `docs/guides/CRITIC_VERDICT_DIVERSITY_GATE_GUIDE.md`
-- **ToolArgByteBudgetGuard**: Cap serialized tool-argument bytes with HITL bands — see `docs/guides/TOOL_ARG_BYTE_BUDGET_GUARD_GUIDE.md`
-- **SharedMemoryQuotaGuard**: Per-bot shared-blackboard write quota with HITL bands — see `docs/guides/SHARED_MEMORY_QUOTA_GUARD_GUIDE.md`
-- **DebateRoundLimiter**: Cap multi-bot debate rounds with HITL exhaust bands — see `docs/guides/DEBATE_ROUND_LIMITER_GUIDE.md`
-- **ConsensusConfidenceBandAdvisor**: Map winning vote share into HITL confidence bands — see `docs/guides/CONSENSUS_CONFIDENCE_BAND_ADVISOR_GUIDE.md`
-- **DeterministicRunSeedGuard**: Pin/validate deterministic run seeds for reproducible multi-bot runs — see `docs/guides/DETERMINISTIC_RUN_SEED_GUARD_GUIDE.md`
-- **ToolCallWaveScheduler**: Dependency-depth parallel tool-call waves — see `docs/guides/TOOL_CALL_WAVE_SCHEDULER_GUIDE.md`
-- **FanInBarrierGate**: Fan-in barrier releasing after N distinct bot arrivals — see `docs/guides/FAN_IN_BARRIER_GATE_GUIDE.md`
-- **ToolResultFingerprintDeduper**: Fingerprint-hash tool-result dedupe per session to avoid re-injecting identical observations (never network I/O) — see `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md`
-- **BotSkillTagRouter**: Route tasks to bots by skill-tag overlap ranking — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md`
-- **SessionTokenBudgetLedger**: Soft/hard cumulative token budget per session — see `docs/guides/SESSION_TOKEN_BUDGET_LEDGER_GUIDE.md`
-- **BotVoteConsensusAggregator**: Majority/plurality vote across bot answers — see `docs/guides/BOT_VOTE_CONSENSUS_AGGREGATOR_GUIDE.md`
-- **SessionTtlExpirer**: Per-session idle TTL with advisory/hard expiry — see `docs/guides/SESSION_TTL_EXPIRER_GUIDE.md`
-- **ToolCallLatencyTracker**: Per-tool latency samples with advisory p50/p95 — see `docs/guides/TOOL_CALL_LATENCY_TRACKER_GUIDE.md`
-- **CriticBotVerdictGate**: Critic accept/revise/reject verdict gate — see `docs/guides/CRITIC_BOT_VERDICT_GUIDE.md`
-- **ConversationTurnBudgetGuard**: Max turns per session advisory/hard gate — see `docs/guides/CONVERSATION_TURN_BUDGET_GUIDE.md`
-- **ToolPermissionAllowlist**: Per-bot tool ACL allow/deny gate — see `docs/guides/TOOL_PERMISSION_ALLOWLIST_GUIDE.md`
-- **StickyBotAffinityStore**: session→bot sticky affinity for multi-bot continuity — see `docs/guides/STICKY_BOT_AFFINITY_GUIDE.md`
-- **RunDeadlineWatchdog**: advisory wall-clock run deadline (remaining/expired) — see `docs/guides/RUN_DEADLINE_WATCHDOG_GUIDE.md`
-- **ToolCallIdempotencyCache**: hash-keyed tool result replay for retries — see `docs/guides/TOOL_CALL_IDEMPOTENCY_CACHE_GUIDE.md`
-- **ToolResultTruncator**: soft mid-string cap for oversized tool results before LLM context — see `docs/guides/TOOL_RESULT_TRUNCATOR_GUIDE.md`
-- **SharedBlackboard**: typed cross-bot scratchpad with revision caps — see `docs/guides/SHARED_BLACKBOARD_GUIDE.md`
-- **RateLimitedToolRunner**: per-tool sliding-window call budget — see `docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md`
-- **AdaptiveConcurrencyLimiter**: global in-flight tool cap with adaptive shrink — see `docs/guides/ADAPTIVE_CONCURRENCY_LIMITER_GUIDE.md`
-- **ToolCircuitBreaker**: per-tool failure isolation (closed/open/half-open) — see `docs/guides/TOOL_CIRCUIT_BREAKER_GUIDE.md`
-- **ObservationRedactor**: PII/token scrub before event logs — see `docs/guides/OBSERVATION_REDACTOR_GUIDE.md`
-- **ToolArgumentSanitizer**: scrub secrets from tool args before execute — see `docs/guides/TOOL_ARGUMENT_SANITIZER_GUIDE.md`
-- **ConversationSummarizer**: extractive rolling summary (head/tail + keywords) — see `docs/guides/CONVERSATION_SUMMARIZER_GUIDE.md`
-- **ToolResultSchemaValidator**: validate ToolResult before observe — see `docs/guides/TOOL_RESULT_SCHEMA_VALIDATOR_GUIDE.md`
-- **BudgetedStepPlanner**: token/cost-aware step caps before LLM calls — see `docs/guides/BUDGETED_STEP_PLANNER_GUIDE.md`
-- **ToolRetryBackoffPolicy**: jittered exponential tool retries — see `docs/guides/TOOL_RETRY_BACKOFF_GUIDE.md`
-- **EventLogCompactor**: bounded head/tail event-log compaction — see `docs/guides/EVENT_LOG_COMPACTOR_GUIDE.md`
-- **RunReplayDiff**: run-to-run event-log drift diff (ignores timestamps) — see `docs/guides/RUN_REPLAY_DIFF_GUIDE.md`
-- **SpeculativeToolPrefetch**: speculative next-tool ranking (never executes) — see `docs/guides/SPECULATIVE_TOOL_PREFETCH_GUIDE.md`
-
-| Gap filled by `ConsensusConfidenceBandAdvisor` | Missing vote-share confidence bands after consensus | `ConsensusConfidenceBandAdvisor` — see `docs/guides/CONSENSUS_CONFIDENCE_BAND_ADVISOR_GUIDE.md` |
-| Gap filled by `DeterministicRunSeedGuard` | Missing explicit run-seed reproducibility guard | `DeterministicRunSeedGuard` — see `docs/guides/DETERMINISTIC_RUN_SEED_GUARD_GUIDE.md` |
-| Gap filled by `ToolCallQuotaGuard` | Missing per-session per-tool call quota | `ToolCallQuotaGuard` — see `docs/guides/TOOL_CALL_QUOTA_GUARD_GUIDE.md` |
-| Gap filled by `BotTurnFairnessScheduler` | Missing turn fairness across bots | `BotTurnFairnessScheduler` — see `docs/guides/BOT_TURN_FAIRNESS_SCHEDULER_GUIDE.md` |
-| Gap filled by `BotRoleConflictDetector` | Missing exclusive role-collision detection | `BotRoleConflictDetector` — see `docs/guides/BOT_ROLE_CONFLICT_DETECTOR_GUIDE.md` |
-| Gap filled by `PlanStepDependencyResolver` | Missing explicit plan-step dependency resolver | `PlanStepDependencyResolver` — see `docs/guides/PLAN_STEP_DEPENDENCY_RESOLVER_GUIDE.md` |
-| Gap filled by `BlackboardEntryTtlEvictor` | Missing per-entry blackboard TTL eviction | `BlackboardEntryTtlEvictor` — see `docs/guides/BLACKBOARD_ENTRY_TTL_EVICTOR_GUIDE.md` |
-| Gap filled by `BotHeartbeatLivenessWatchdog` | Missing per-bot heartbeat liveness | `BotHeartbeatLivenessWatchdog` — see `docs/guides/BOT_HEARTBEAT_LIVENESS_WATCHDOG_GUIDE.md` |
-| Gap filled by `SharedBlackboardWriteLease` | Missing exclusive blackboard write leases | `SharedBlackboardWriteLease` — see `docs/guides/SHARED_BLACKBOARD_WRITE_LEASE_GUIDE.md` |
-| Gap filled by `ToolCallWaveScheduler` | Missing explicit dependency-depth tool waves | `ToolCallWaveScheduler` — see `docs/guides/TOOL_CALL_WAVE_SCHEDULER_GUIDE.md` |
-| Gap filled by `FanInBarrierGate` | Missing explicit fan-in barrier gate | `FanInBarrierGate` — see `docs/guides/FAN_IN_BARRIER_GATE_GUIDE.md` |
-| Gap filled by `ToolResultFingerprintDeduper` | Missing tool-result fingerprint dedupe | `ToolResultFingerprintDeduper` — see `docs/guides/TOOL_RESULT_FINGERPRINT_DEDUPER_GUIDE.md` |
-| Gap filled by `HitlEscalationCooldownGate` | Missing HitlEscalationCooldownGate capability | `HitlEscalationCooldownGate` — see `docs/guides/HITL_ESCALATION_COOLDOWN_GATE_GUIDE.md` |
-| Gap filled by `BotSkillTagRouter` | Missing skill-tag overlap bot router | `BotSkillTagRouter` — see `docs/guides/BOT_SKILL_TAG_ROUTER_GUIDE.md` |
-| Gap filled by `SessionTokenBudgetLedger` | Missing per-session soft/hard cumulative token ledger | `SessionTokenBudgetLedger` — see `docs/guides/SESSION_TOKEN_BUDGET_LEDGER_GUIDE.md` |
-| Gap filled by `BotVoteConsensusAggregator` | Missing majority/plurality bot consensus | `BotVoteConsensusAggregator` — see `docs/guides/BOT_VOTE_CONSENSUS_AGGREGATOR_GUIDE.md` |
-| Gap filled by `SessionTtlExpirer` | Missing per-session idle TTL | `SessionTtlExpirer` — see `docs/guides/SESSION_TTL_EXPIRER_GUIDE.md` |
-| Gap filled by `ToolCallLatencyTracker` | Missing local per-tool p50/p95 latency | `ToolCallLatencyTracker` — see `docs/guides/TOOL_CALL_LATENCY_TRACKER_GUIDE.md` |
-| Gap filled by `CriticBotVerdictGate` | Missing critic accept/revise/reject gate | `CriticBotVerdictGate` — see `docs/guides/CRITIC_BOT_VERDICT_GUIDE.md` |
-| Gap filled by `ConversationTurnBudgetGuard` | Missing per-session turn budget | `ConversationTurnBudgetGuard` — see `docs/guides/CONVERSATION_TURN_BUDGET_GUIDE.md` |
-| Gap filled by `ToolPermissionAllowlist` | Missing per-bot tool ACL | `ToolPermissionAllowlist` — see `docs/guides/TOOL_PERMISSION_ALLOWLIST_GUIDE.md` |
-| Gap filled by `StickyBotAffinityStore` | Missing sticky session→bot pin | `StickyBotAffinityStore` — see `docs/guides/STICKY_BOT_AFFINITY_GUIDE.md` |
-| Gap filled by `RunDeadlineWatchdog` | Missing wall-clock advisory deadline | `RunDeadlineWatchdog` — see `docs/guides/RUN_DEADLINE_WATCHDOG_GUIDE.md` |
-| Gap filled by `ToolCallIdempotencyCache` | Missing local tool idempotency | `ToolCallIdempotencyCache` — see `docs/guides/TOOL_CALL_IDEMPOTENCY_CACHE_GUIDE.md` |
-| Gap vs popular stacks for `DeadLetterToolQueue` | Missing local HITL control | `DeadLetterToolQueue` adds offline HITL-safe behavior for GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2 |
-| Gap filled by `BotHandoffReceiptStore` | Missing structured bot handoff audit | `BotHandoffReceiptStore` — see `docs/guides/BOT_HANDOFF_RECEIPT_GUIDE.md` |
-
-
-### ToolResultTruncationBandAdvisor
-
-![ToolResultTruncationBandAdvisor](assets/demo/tool-result-truncation.gif)
-
-Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_TRUNCATION_BAND_ADVISOR_GUIDE.md`.
-
-
-### SharedStateWriteSkewBandAdvisor
-
-![SharedStateWriteSkewBandAdvisor](assets/demo/shared-state-write-skew.gif)
-
-Gap vs LangGraph/CrewAI/AutoGen shared-state write-skew monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_STATE_WRITE_SKEW_BAND_ADVISOR_GUIDE.md`.
-
-
-### AgentMemoryPoisonBandAdvisor
-
-![AgentMemoryPoisonBandAdvisor](assets/demo/agent-memory-poison.gif)
-
-Gap vs LangGraph/CrewAI/AutoGen agent-memory poison monitors. Distinct from `SharedMemoryConflictBandAdvisor` / `PromptLeakBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_MEMORY_POISON_BAND_ADVISOR_GUIDE.md`.
-
-### OrchestratorPriorityInversionBandAdvisor
-
-![OrchestratorPriorityInversionBandAdvisor](assets/demo/orchestrator-priority-inversion.gif)
-
-Offline HITL `inversion_ratio` bands vs LangGraph/CrewAI/AutoGen orchestrator priority-inversion monitors. Distinct from `OrchestratorFanInStallBandAdvisor` / `OrchestratorRetryStormBandAdvisor`.
-
-### ConsensusVoteLatencySkewBandAdvisor
-
-![ConsensusVoteLatencySkewBandAdvisor](assets/demo/consensus-vote-latency-skew.gif)
-
-Offline HITL `skew_ratio` bands vs LangGraph/CrewAI/AutoGen consensus vote latency-skew monitors. Distinct from `ConsensusQuorumStallAdvisor` / `ConsensusConfidenceBandAdvisor`.
-
-### PlannerToolMismatchCascadeBandAdvisor
-
-![PlannerToolMismatchCascadeBandAdvisor](assets/demo/planner-tool-mismatch-cascade.gif)
-
-Offline HITL `mismatch_ratio` bands vs LangGraph/CrewAI/AutoGen planner-tool mismatch cascade monitors. Distinct from `PlannerToolMismatchBandAdvisor` / `PlanGoalContradictionBandAdvisor`.
+MIT. See [LICENSE](LICENSE).
