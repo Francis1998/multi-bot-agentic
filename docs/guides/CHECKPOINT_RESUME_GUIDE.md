@@ -100,5 +100,7 @@ $ multi-bot-agentic report --event-log runs.sqlite --run-id run-1 | grep event_c
 - Checkpoints record the active bot (`active_bot_id`) for multi-bot runs. `resume` restores that bot's
   tool scope, executes later `HANDOFF:` directives exactly like `run`, and raises `ValueError` if the
   checkpoint's bot is not registered on the resuming runner (fail closed instead of widening scope).
+  A checkpoint without a bot resumes with the runner's constructor scope, never with a scope that an
+  earlier `run` or `resume` on the same runner handed off to.
 - Resume still enforces `SafetyPolicy` step budgets, tool allowlists, and cancellation files.
 - Only the latest checkpoint for a `run_id` is loaded.

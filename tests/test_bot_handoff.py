@@ -8,7 +8,7 @@ import pytest
 
 from multi_bot_agentic.bots import BotSpec
 from multi_bot_agentic.decision import DeterministicDecisionEngine
-from multi_bot_agentic.event_log import SQLiteEventLog
+from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
 from multi_bot_agentic.models import ModelOutput, ModelRequest, Observation, RunState
 from multi_bot_agentic.runner import AgentRunner, build_default_tools
 from multi_bot_agentic.safety import SafetyPolicy
@@ -254,3 +254,89 @@ def test_resume_rejects_checkpoint_bot_missing_from_registry(tmp_path: Path) -> 
             runner.resume("resume-missing-bot")
     finally:
         log.close()
+
+
+def _executed_tools(events: list[EventRecord]) -> list[object]:
+    """Return the tools a run actually executed, in order."""
+
+    return [
+        event.payload.get("tool")
+        for event in events
+        if event.event_type == "action_result" and event.payload.get("kind") == "tool"
+    ]
+
+
+@pytest.mark.parametrize("previous_call", ["run", "resume"])
+def test_each_run_starts_with_the_constructor_bot_scope(tmp_path: Path, previous_call: str) -> None:
+    """A handoff lasts only for its own run, so reusing a runner must not leak a bot's tools.
+
+    ``run`` used to start from the bot that the runner's previous ``run`` handed off to (or
+    that its previous ``resume`` restored). The next, unrelated run could then call that
+    bot's tools, here the writer-only ``echo``, although it should start as ``planner`` and
+    its own event log has no handoff that would allow it.
+    """
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        if previous_call == "run":
+            provider = _ScriptedProvider("HANDOFF:writer:draft now", "DONE: drafted", "TOOL:echo:leak", "DONE: planned")
+            runner = _resume_runner(log, tmp_path, provider)
+            runner.run("Coordinate planner then writer", run_id="earlier")
+        else:
+            _interrupted_handoff_run(log, tmp_path, "earlier")
+            provider = _ScriptedProvider("DONE: drafted", "TOOL:echo:leak", "DONE: planned")
+            runner = _resume_runner(log, tmp_path, provider)
+            runner.resume("earlier")
+        assert runner.active_bot_id == "writer"
+        result = runner.run("Plan the next release", run_id="next")
+        events = log.list_events("next")
+    finally:
+        log.close()
+
+    assert (result.state, result.answer) == (RunState.SUCCEEDED, "planned")
+    assert _executed_tools(events) == []
+    checkpoint_bots = {event.payload.get("active_bot_id") for event in events if event.event_type == "checkpoint"}
+    assert checkpoint_bots == {"planner"}
+    rejected = [
+        event.payload["payload"]["reason"]
+        for event in events
+        if event.event_type == "decision" and event.payload["rationale"]["rule_id"] == "model.disallowed-tool-request"
+    ]
+    assert rejected == ["requested tool is not allowlisted: echo"]
+
+
+def test_resume_starts_from_the_constructor_scope_not_an_earlier_handoff(tmp_path: Path) -> None:
+    """A checkpoint without a bot resumes with the constructor's scope, as on a fresh runner.
+
+    This runner keeps no bot active, so the interrupted run may use every policy tool. A
+    handoff to ``writer`` made by an earlier run on the same runner used to stay in force,
+    and the resumed run lost ``checklist`` although its own log never handed off.
+    """
+
+    def unscoped_runner(provider: _ScriptedProvider) -> AgentRunner:
+        return AgentRunner(
+            provider=provider,
+            event_log=log,
+            tools=build_default_tools(root=tmp_path),
+            safety_policy=SafetyPolicy(max_steps=6, allowed_tools=frozenset({"checklist", "echo"})),
+            bots=_bots(),
+        )
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        with pytest.raises(_SimulatedCrash):
+            unscoped_runner(_ScriptedProvider("Planning first", _SimulatedCrash())).run("Ship it", run_id="interrupted")
+        runner = unscoped_runner(
+            _ScriptedProvider("HANDOFF:writer:draft now", "DONE: drafted", "TOOL:checklist:ship it", "DONE: shipped")
+        )
+        runner.run("Hand the draft to the writer", run_id="earlier")
+        assert runner.active_bot_id == "writer"
+        result = runner.resume("interrupted")
+        events = log.list_events("interrupted")
+    finally:
+        log.close()
+
+    assert (result.state, result.answer) == (RunState.SUCCEEDED, "shipped")
+    assert _executed_tools(events) == ["checklist"]
+    assert runner.active_bot_id is None
+    assert runner.safety_policy.allowed_tools == frozenset({"checklist", "echo"})

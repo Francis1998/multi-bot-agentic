@@ -14,7 +14,7 @@ thin, auditable `HANDOFF:bot_id:summary` directive without rewriting the runner.
 
 - `BotSpec` registry (`bot_id`, `name`, `allowed_tools`)
 - Decision parsing for `HANDOFF:<bot_id>:<summary>`
-- Runner switches `active_bot_id` and replaces the live tool allowlist
+- Runner switches `active_bot_id` and replaces the live tool allowlist for the rest of that run
 - Unknown bots are rejected (`fail`)
 
 ## Gap vs CrewAI / AutoGen / LangGraph
@@ -49,5 +49,8 @@ HANDOFF:writer:draft the final answer
 
 - Handoffs are only accepted for bots present in the registry.
 - After handoff, tools outside the destination bot allowlist are blocked.
+- A handoff lasts only for its own run. Every `run()` starts as the constructor's `active_bot_id`
+  (here `planner`), so reusing a runner never gives a new run the tools of a bot that an earlier run
+  handed off to.
 - The active bot is checkpointed, so `AgentRunner.resume(run_id)` keeps the post-handoff scope.
 - Step budgets, cancellation, and prompt bounds still apply.

@@ -157,7 +157,9 @@ Credentials are read from environment variables and are never written to the eve
 
 Handoffs only succeed for bots registered in the runner registry. Destination
 bots receive a replaced tool allowlist; tools outside that frozenset remain
-blocked. Unknown bot ids fail closed.
+blocked. Unknown bot ids fail closed. A handoff lasts only for its own run:
+every `run()` starts with the runner's constructor bot and allowlist, so a
+reused runner never hands one run's bot scope to the next.
 
 ## Known Limits
 

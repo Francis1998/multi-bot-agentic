@@ -109,7 +109,7 @@ class AgentRunner:
             tools: Registered tool adapters by name.
             safety_policy: Runtime safety controls.
             bots: Optional registered bots for typed handoffs.
-            active_bot_id: Optional initially active bot id.
+            active_bot_id: Optional bot that is active when each run starts.
             tool_specs: Optional tool catalog advertised to the provider (for example MCP
                 tools). Only specs for registered tools allowed by the live safety policy
                 are sent, so bot handoffs also narrow what the model sees.
@@ -129,6 +129,8 @@ class AgentRunner:
                 self.safety_policy,
                 allowed_tools=self.bots[self.active_bot_id].allowed_tools,
             )
+        self._initial_bot_id = self.active_bot_id
+        self._initial_allowed_tools = self.safety_policy.allowed_tools
         self.decision_engine = DeterministicDecisionEngine(
             provider_name=provider.provider_name,
             bots=self.bots or None,
@@ -136,6 +138,10 @@ class AgentRunner:
 
     def run(self, goal: str, run_id: str | None = None) -> RunResult:
         """Execute one bounded agent run.
+
+        Every run starts with the constructor's ``active_bot_id`` and tool scope. A
+        handoff lasts only for the run that made it, so a reused runner never starts a
+        run with the scope an earlier ``run`` or ``resume`` left behind.
 
         Args:
             goal: User goal.
@@ -146,6 +152,7 @@ class AgentRunner:
         """
 
         self.safety_policy.validate_goal(goal)
+        self._restore_initial_scope()
         selected_run_id = run_id or str(uuid4())
         state_machine = RunStateMachine()
         observations: tuple[Observation, ...] = (Observation(source="user", content=goal),)
@@ -166,7 +173,9 @@ class AgentRunner:
         ``already_finished=True`` and no events are appended, so ``resume`` is idempotent.
 
         The bot that was active when the checkpoint was written is restored, so a
-        resumed run keeps that bot's tool scope instead of the constructor's.
+        resumed run keeps that bot's tool scope instead of the constructor's. A
+        checkpoint without a bot resumes with the constructor's scope, never with one
+        left behind by an earlier run on this runner.
 
         Args:
             run_id: Existing run identifier.
@@ -191,6 +200,7 @@ class AgentRunner:
             raise ValueError(f"checkpoint for run_id={run_id} has no observations")
 
         self.safety_policy.validate_goal(snapshot.goal)
+        self._restore_initial_scope()
         if snapshot.active_bot_id is not None:
             bot = self.bots.get(snapshot.active_bot_id)
             if bot is None:
@@ -287,6 +297,17 @@ class AgentRunner:
             return self._fail(run_id, state_machine, self.safety_policy.max_steps, str(error))
 
         return self._fail(run_id, state_machine, self.safety_policy.max_steps, "step budget exhausted")
+
+    def _restore_initial_scope(self) -> None:
+        """Return to the constructor's active bot and tool allowlist before a run starts or resumes.
+
+        Handoffs and ``resume`` change ``active_bot_id`` and the live allowlist for the
+        current run only. Only ``allowed_tools`` is reset, so other policy fields keep
+        their current values.
+        """
+
+        self.active_bot_id = self._initial_bot_id
+        self.safety_policy = replace(self.safety_policy, allowed_tools=self._initial_allowed_tools)
 
     def _handoff(self, run_id: str, state: RunState, decision: Decision) -> Observation:
         """Switch the active bot and scoped tool allowlist.
