@@ -55,7 +55,7 @@ def test_modern_server_is_detected_with_server_discover() -> None:
 
     names = [tool.name for tool in tools]
     assert names[:4] == ["echo", "add", "fail", "sleep"]
-    assert len(names) == 12
+    assert len(names) == 13
     assert tools[0].input_schema["required"] == ["text"]
 
 
@@ -290,3 +290,34 @@ def test_server_that_closes_stdin_is_restarted() -> None:
             client.call_tool("echo", {"text": "lost"}, timeout_seconds=2)
         assert client.call_tool("echo", {"text": "fresh"}, timeout_seconds=5).content[0]["text"] == "fresh"
         assert client.pid != first_pid
+
+
+def test_request_is_never_sent_to_a_replacement_process(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A restart between registering and sending a request rejects it instead of running it on the new server."""
+
+    client = StdioMcpClient(MODERN, name="race")
+    client.start()
+    original_write = client._write
+
+    def restart_then_write(*args: Any) -> None:
+        monkeypatch.setattr(client, "_write", original_write)
+        client._launch()
+        original_write(*args)
+
+    monkeypatch.setattr(client, "_write", restart_then_write)
+    try:
+        with pytest.raises(McpTransportError, match="restarted"):
+            client._issue("tools/call", {"name": "echo", "arguments": {"text": "once"}}, time.monotonic() + 5)
+    finally:
+        client.close()
+
+
+def test_deeply_nested_response_breaks_the_channel_instead_of_hanging() -> None:
+    """A response that overflows the JSON decoder fails fast and the next call restarts the server."""
+
+    with StdioMcpClient(MODERN, name="deep", max_restarts=1) as client:
+        started = time.monotonic()
+        with pytest.raises(McpTransportError, match="recursion"):
+            client.call_tool("deep", {}, timeout_seconds=5)
+        assert time.monotonic() - started < 2.0
+        assert client.call_tool("echo", {"text": "recovered"}).content[0]["text"] == "recovered"

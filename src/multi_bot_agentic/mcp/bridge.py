@@ -36,6 +36,8 @@ TOOL_NAME_PREFIX = "mcp__"
 _REMOTE_TOOL_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,128}$")
 _MAX_DESCRIPTION_CHARS = 400
 _CONTENT_TYPES = ("text", "image", "audio", "resource_link", "resource")
+# Extra bytes redacted beyond maxResultBytes so secrets straddling the cut are still recognized.
+_REDACTION_MARGIN_BYTES = 4096
 
 
 class McpArgumentError(ValueError):
@@ -95,6 +97,8 @@ def coerce_arguments(arguments: Mapping[str, Any], input_schema: Mapping[str, An
             except json.JSONDecodeError as error:
                 message = f"arguments look like JSON but are invalid ({error.msg}); expected {signature}"
                 raise McpArgumentError(message) from error
+            except RecursionError as error:
+                raise McpArgumentError(f"arguments are nested too deeply; expected {signature}") from error
             if not isinstance(decoded, dict):
                 raise McpArgumentError(f"arguments must be a JSON object; expected {signature}")
             result = decoded
@@ -125,7 +129,9 @@ def _coerce_scalar(name: str, text: str, schema: Any) -> Any:
     try:
         return json.loads(text)
     except json.JSONDecodeError as error:
-        raise McpArgumentError(f"argument '{name}' expects {declared}; got {text!r}") from error
+        raise McpArgumentError(f"argument '{name}' expects {declared}; got {text[:80]!r}") from error
+    except RecursionError as error:
+        raise McpArgumentError(f"argument '{name}' is nested too deeply") from error
 
 
 def render_content(result: McpCallResult) -> str:
@@ -177,11 +183,32 @@ def truncate_utf8(text: str, max_bytes: int) -> tuple[str, int]:
     """
 
     encoded = text.encode("utf-8", errors="replace")  # lone surrogates from JSON become "?"
-    if len(encoded) <= max_bytes:
-        return encoded.decode("utf-8"), len(encoded)
+    content, _ = _cap_utf8(encoded, max_bytes, total=len(encoded), dropped=False)
+    return content, len(encoded)
+
+
+def _cap_utf8(encoded: bytes, max_bytes: int, *, total: int, dropped: bool) -> tuple[str, bool]:
+    """Decode ``encoded`` capped at ``max_bytes``; mark it when anything was cut or dropped earlier.
+
+    Returns:
+        The text and whether it was truncated.
+    """
+
+    if not dropped and len(encoded) <= max_bytes:
+        return encoded.decode("utf-8"), False
     kept = encoded[:max_bytes].decode("utf-8", errors="ignore")
-    marker = f"\n…[truncated: kept {len(kept.encode('utf-8'))} of {len(encoded)} bytes; raise maxResultBytes]"
-    return kept + marker, len(encoded)
+    marker = f"kept {len(kept.encode('utf-8'))} of {total} bytes; raise maxResultBytes"
+    return f"{kept}\n…[truncated: {marker}]", True
+
+
+def _is_valid_unicode(text: str) -> bool:
+    """Return whether ``text`` encodes as UTF-8 (JSON can smuggle lone surrogates)."""
+
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        return False
+    return True
 
 
 def _content_type(block: Mapping[str, Any]) -> str:
@@ -283,8 +310,13 @@ class McpToolAdapter:
             return self._result(False, str(error), self._timed(metadata, started), error_kind="transport_error")
         metadata = self._timed(metadata, started)
         metadata["content_types"] = [_content_type(block) for block in result.content]
-        error_kind = "tool_error" if result.is_error else None
-        return self._result(not result.is_error, render_content(result), metadata, error_kind=error_kind)
+        text = render_content(result)
+        if result.is_error:
+            return self._result(False, text, metadata, error_kind="tool_error")
+        if not _is_valid_unicode(text):
+            message = f"MCP server returned invalid Unicode (lone surrogates); sanitized result:\n{text}"
+            return self._result(False, message, metadata, error_kind="protocol_error")
+        return self._result(True, text, metadata, error_kind=None)
 
     def _timed(self, metadata: dict[str, Any], started: float) -> dict[str, Any]:
         """Add era, protocol version, and latency to result metadata."""
@@ -303,14 +335,22 @@ class McpToolAdapter:
         final = dict(metadata)
         if error_kind is not None:
             final["error_kind"] = error_kind
+        limit = self._server.max_result_bytes
+        encoded = text.encode("utf-8", errors="replace")
+        total = len(encoded)
+        dropped = False
         if self._redactor is not None:
-            redaction = self._redactor.redact(text)
-            text = redaction.redacted_text
+            # The redaction regexes are superlinear on long tokens, so only scan what can
+            # survive the cut, plus a margin so secrets straddling it are still recognized.
+            scanned = encoded[: limit + _REDACTION_MARGIN_BYTES]
+            dropped = len(scanned) < total
+            redaction = self._redactor.redact(scanned.decode("utf-8", errors="ignore"))
+            encoded = redaction.redacted_text.encode("utf-8")
             final["redactions"] = redaction.redaction_count
-        text, original_bytes = truncate_utf8(text, self._server.max_result_bytes)
-        final["result_bytes"] = original_bytes
-        final["truncated"] = original_bytes > self._server.max_result_bytes
-        return ToolResult(tool_name=self.name, ok=ok, content=text, metadata=final)
+        content, truncated = _cap_utf8(encoded, limit, total=total, dropped=dropped)
+        final["result_bytes"] = total
+        final["truncated"] = truncated
+        return ToolResult(tool_name=self.name, ok=ok, content=content, metadata=final)
 
 
 @dataclass(frozen=True)

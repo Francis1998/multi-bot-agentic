@@ -441,7 +441,7 @@ class StdioMcpClient:
                     reason = f"server sent a message larger than {_MAX_MESSAGE_BYTES} bytes"
                     break
                 self._handle_line(raw)
-        except (OSError, ValueError) as error:
+        except (OSError, ValueError, RecursionError) as error:
             reason = f"reading server stdout failed: {error}"
         with self._cond:
             if generation == self._generation and self._closed_reason is None:
@@ -497,26 +497,32 @@ class StdioMcpClient:
         else:
             reply["error"] = {"code": -32601, "message": "Method not found"}
         try:
-            self._write(reply, time.monotonic() + _REPLY_TIMEOUT_SECONDS)
+            self._write(reply, time.monotonic() + _REPLY_TIMEOUT_SECONDS, self._generation)
         except McpError:
             return
 
-    def _write(self, message: dict[str, Any], deadline: float) -> None:
+    def _write(self, message: dict[str, Any], deadline: float, generation: int) -> None:
         """Serialize one message as a single line on the server's stdin, giving up at ``deadline``.
+
+        ``generation`` is the server process the message belongs to; if that process
+        was replaced in the meantime the message is rejected instead of being sent
+        to the replacement (which could run a tool the caller believes failed).
 
         Raises:
             McpTimeoutError: If the server does not drain its stdin in time; the
                 channel is then marked broken because a partial line may have been sent.
-            McpTransportError: If the server is gone.
+            McpTransportError: If the server is gone or was restarted.
         """
 
         try:
             # ASCII-only JSON (non-ASCII as \\u escapes) can always be encoded, even with lone surrogates.
             data = (json.dumps(message, allow_nan=False, separators=(",", ":")) + "\n").encode("ascii")
-        except (TypeError, ValueError) as error:
+        except (TypeError, ValueError, RecursionError) as error:
             raise McpProtocolError(f"cannot encode MCP message: {error}") from error
-        generation = self._generation
-        process = self._process
+        with self._cond:
+            current_generation, process = self._generation, self._process
+        if current_generation != generation:
+            raise McpTransportError(f"MCP server '{self.name}' restarted before the message was sent")
         stdin = process.stdin if process is not None else None
         if stdin is None:
             raise McpTransportError(f"MCP server '{self.name}' is not running")
@@ -552,7 +558,8 @@ class StdioMcpClient:
         if params:
             message["params"] = params
         try:
-            self._write(message, time.monotonic() + _NOTIFY_TIMEOUT_SECONDS if deadline is None else deadline)
+            write_deadline = time.monotonic() + _NOTIFY_TIMEOUT_SECONDS if deadline is None else deadline
+            self._write(message, write_deadline, self._generation)
         except McpError:
             return
 
@@ -561,9 +568,10 @@ class StdioMcpClient:
 
         request_id = next(self._ids)
         with self._cond:
-            self._pending[request_id] = self._generation
+            generation = self._generation
+            self._pending[request_id] = generation
         try:
-            self._write({"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}, deadline)
+            self._write({"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}, deadline, generation)
         except BaseException:
             self._forget(request_id)
             raise

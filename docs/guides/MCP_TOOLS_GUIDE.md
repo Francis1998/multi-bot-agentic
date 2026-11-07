@@ -148,8 +148,8 @@ all of them.
 | Timeouts | Writing a request and waiting for its response share one deadline. On POSIX, stdin is non-blocking, so a server that stops reading its input can't block a call, a cancellation, or shutdown. Calls that expire are cancelled with `notifications/cancelled`. Startup and era detection have their own budgets. A hung server can't hang a run |
 | Process cleanup | Each server runs in its own process group. Shutdown closes stdin, then sends SIGTERM, then SIGKILL to the whole group, waiting for every group member at each step. This also catches children that outlive or ignore the launcher (e.g. `npx`→`node`). A finalizer also cleans up at interpreter exit |
 | Crash handling | A server that dies is restarted once, and the era is re-detected for the new process. After that, calls fail fast |
-| Bounded results | Results are capped by `maxResultBytes` without splitting UTF-8 characters, and invalid Unicode is replaced. Image, audio, and binary resources are summarized instead of inlined. `content_types` metadata is limited to the MCP content types. Messages larger than 16 MiB are rejected |
-| Redaction | Optional per server (`redactResults`) |
+| Bounded results | Results are capped by `maxResultBytes` without splitting UTF-8 characters. A result containing invalid Unicode is reported as a failure, with the sanitized text included. Image, audio, and binary resources are summarized instead of inlined. `content_types` metadata is limited to the MCP content types. Messages larger than 16 MiB are rejected |
+| Redaction | Optional per server (`redactResults`). The redactor scans at most `maxResultBytes` + 4 KiB, so a huge response can't stall the run, and a secret that straddles the cut is still redacted |
 | Minimal capabilities | The client declares no sampling, roots, or elicitation capabilities. `input_required` results are reported as tool failures |
 
 **Failure semantics.** MCP tools follow the repository's tool-failure contract: they return `ok=false` and the
@@ -159,6 +159,7 @@ run continues, so the model can recover.
 | --- | --- | --- |
 | `isError: true` tool result | `false` | `tool_error` |
 | JSON-RPC error (unknown tool, invalid params, etc.) | `false` | `protocol_error` (+ `error_code`) |
+| Result text contains invalid Unicode (lone surrogates) | `false` | `protocol_error` (sanitized text included) |
 | No answer within `callTimeoutSeconds` | `false` | `timeout` |
 | Server exited or broke framing (restart budget exhausted) | `false` | `transport_error` |
 | Payload can't be mapped to the input schema | `false` | `invalid_arguments` (the server is not called) |

@@ -63,6 +63,8 @@ def test_coerce_arguments_maps_payloads(arguments: dict[str, Any], schema: dict[
         ('{"query": ', SEARCH_SCHEMA, "look like JSON but are invalid"),
         ('{"limit": 1}', SEARCH_SCHEMA, "missing required argument"),
         ("many", {"type": "object", "properties": {"n": {"type": "integer"}}}, "expects integer"),
+        ('{"a": ' + "[" * 100_000 + "]" * 100_000 + "}", SEARCH_SCHEMA, "nested too deeply"),
+        ("[" * 100_000 + "]" * 100_000, {"type": "object", "properties": {"n": {"type": "array"}}}, "too deeply"),
     ],
 )
 def test_coerce_arguments_explains_the_expected_schema(text: str, schema: dict[str, Any], message: str) -> None:
@@ -270,8 +272,9 @@ def test_adapter_survives_invalid_unicode_and_hostile_content_types() -> None:
         surrogate = _invoke(toolset.tools["mcp__modern__surrogate"], "{}")
         weird = _invoke(toolset.tools["mcp__modern__weird_type"], "{}")
 
-    assert surrogate.ok
-    assert surrogate.content == "bad ? text"
+    assert not surrogate.ok
+    assert surrogate.metadata["error_kind"] == "protocol_error"
+    assert surrogate.content == "MCP server returned invalid Unicode (lone surrogates); sanitized result:\nbad ? text"
     assert weird.ok
     assert weird.metadata["content_types"] == ["unknown", "unknown"]
     assert "sk-abcdefghijklmnopqrstuv" not in str(weird.metadata)
@@ -292,3 +295,32 @@ def test_example_notes_server_rejects_bad_arguments_without_crashing() -> None:
     assert bad.metadata["error_code"] == -32602
     assert good.ok
     assert good.content.startswith("release-checklist:")
+
+
+def test_redaction_work_is_bounded_by_the_result_cap() -> None:
+    """Redaction scans only what can survive truncation, so a huge result cannot stall the run."""
+
+    server = _server("modern", "modern_server.py", max_result_bytes=64, redact_results=True)
+    with McpToolset(McpConfig(servers=(server,))) as toolset:
+        toolset.start()
+        started = time.monotonic()
+        result = _invoke(toolset.tools["mcp__modern__echo"], "a" * 150_000)
+        elapsed = time.monotonic() - started
+
+    assert elapsed < 2.0
+    assert result.ok
+    assert result.content.startswith("a" * 64 + "\n…[truncated: kept 64 of 150000 bytes")
+    assert result.metadata["truncated"] is True
+    assert result.metadata["result_bytes"] == 150_000
+
+
+def test_redaction_still_catches_secrets_that_cross_the_cut() -> None:
+    """A secret straddling ``maxResultBytes`` is redacted before the text is cut."""
+
+    server = _server("modern", "modern_server.py", max_result_bytes=20, redact_results=True)
+    with McpToolset(McpConfig(servers=(server,))) as toolset:
+        toolset.start()
+        result = _invoke(toolset.tools["mcp__modern__echo"], "x" * 10 + " alice@example.com " + "y" * 5000)
+
+    assert "alice" not in result.content
+    assert result.content.startswith("x" * 10 + " [EMAIL]")

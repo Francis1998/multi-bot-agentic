@@ -49,6 +49,7 @@ TOOLS: list[dict[str, Any]] = [
     {"name": "surrogate", "description": "Return text with a lone surrogate.", "inputSchema": _schema({}, [])},
     {"name": "weird_type", "description": "Return blocks with hostile types.", "inputSchema": _schema({}, [])},
     {"name": "close_stdin", "description": "Close stdin but keep running.", "inputSchema": _schema({}, [])},
+    {"name": "deep", "description": "Answer with absurdly nested JSON.", "inputSchema": _schema({}, [])},
     {"name": "bad name:x", "description": "Invalid name that clients must skip.", "inputSchema": _schema({}, [])},
 ]
 
@@ -74,7 +75,7 @@ def _text(request_id: Any, text: str, *, is_error: bool = False) -> dict[str, An
     return _result(request_id, {"content": [{"type": "text", "text": text}], "isError": is_error})
 
 
-def _call_tool(request_id: Any, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+def _call_tool(request_id: Any, name: str, arguments: dict[str, Any]) -> dict[str, Any] | None:
     if name == "echo":
         return _text(request_id, str(arguments["text"]))
     if name == "add":
@@ -97,6 +98,11 @@ def _call_tool(request_id: Any, name: str, arguments: dict[str, Any]) -> dict[st
         return _text(request_id, "bad \ud800 text")
     if name == "weird_type":
         return _result(request_id, {"content": [{"type": "sk-abcdefghijklmnopqrstuv"}, {"type": "x" * 5000}]})
+    if name == "deep":
+        nested = "[" * 100_000 + "]" * 100_000
+        sys.stdout.write(f'{{"jsonrpc": "2.0", "id": {json.dumps(request_id)}, "result": {{"content": {nested}}}}}\n')
+        sys.stdout.flush()
+        return None
     if name == "close_stdin":
         os.close(0)
         _write(_text(request_id, "stdin closed"))
