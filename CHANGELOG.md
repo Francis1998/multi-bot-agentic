@@ -5,6 +5,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- `AgentRunner.resume()` now restores the bot that was active when the checkpoint was written (checkpoints record `active_bot_id`) and executes `HANDOFF:` decisions. Previously a resumed multi-bot run silently reverted to the constructor's bot scope (so a `writer`-scoped run could call planner-only tools) and failed with `unsupported action for _act: handoff`. Resuming a bot-scoped checkpoint on a runner without that bot registered now fails closed with a `ValueError`.
+
+### Added
+
 - `HitlApprovalStarvationBandAdvisor` (`hitl_approval_starvation_band.py`): HITL `starvation_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen HITL approval-starvation monitors. Distinct from `HitlTimeoutCascadeBandAdvisor` / `HitlApprovalGate`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_APPROVAL_STARVATION_BAND_ADVISOR_GUIDE.md`.
 - `ToolSideEffectOrphanBandAdvisor` (`tool_side_effect_orphan_band.py`): HITL `orphan_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen tool side-effect orphan monitors. Distinct from `ToolSideEffectLedgerAdvisor` / `ToolSideEffectReplayBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SIDE_EFFECT_ORPHAN_BAND_ADVISOR_GUIDE.md`.
 - `BlackboardWriteContentionBandAdvisor` (`blackboard_write_contention_band.py`): HITL `contention_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen blackboard write-contention monitors. Distinct from `SharedBlackboardWriteLease` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_WRITE_CONTENTION_BAND_ADVISOR_GUIDE.md`.

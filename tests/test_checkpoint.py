@@ -114,3 +114,39 @@ def test_run_emits_checkpoint_events(tmp_path: Path) -> None:
 
     assert result.state == RunState.SUCCEEDED
     assert any(event.event_type == EventType.CHECKPOINT.value for event in events)
+
+
+def test_checkpoint_round_trips_active_bot_id(tmp_path: Path) -> None:
+    """Checkpoints persist the active bot; legacy payloads without one load as ``None``."""
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        observations = (Observation(source="user", content="ship the agent"),)
+        save_checkpoint(
+            log,
+            run_id="run-bot",
+            goal="ship the agent",
+            step=1,
+            state=RunState.ACTING,
+            observations=observations,
+            active_bot_id="writer",
+        )
+        save_checkpoint(
+            log,
+            run_id="run-no-bot",
+            goal="ship the agent",
+            step=1,
+            state=RunState.ACTING,
+            observations=observations,
+        )
+        with_bot = load_latest_checkpoint(log, "run-bot")
+        without_bot = load_latest_checkpoint(log, "run-no-bot")
+        legacy_payload = log.list_events("run-no-bot")[-1].payload
+    finally:
+        log.close()
+
+    assert with_bot is not None
+    assert with_bot.active_bot_id == "writer"
+    assert without_bot is not None
+    assert without_bot.active_bot_id is None
+    assert "active_bot_id" not in legacy_payload

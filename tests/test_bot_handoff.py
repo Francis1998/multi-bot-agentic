@@ -125,3 +125,124 @@ def test_botspec_rejects_empty_allowlist() -> None:
 
     with pytest.raises(ValueError, match="allowed_tools"):
         BotSpec(bot_id="x", name="X", allowed_tools=frozenset())
+
+
+class _ScriptedProvider:
+    """Provider that replays scripted outputs and raises scripted errors."""
+
+    provider_name = "fake"
+
+    def __init__(self, *script: str | Exception) -> None:
+        self.script = list(script)
+
+    def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
+        del request, timeout_seconds
+        item = self.script.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return ModelOutput(provider=self.provider_name, text=item, raw={})
+
+
+def _interrupted_handoff_run(log: SQLiteEventLog, tmp_path: Path, run_id: str) -> None:
+    """Hand off planner -> writer, then fail on a provider outage before finishing."""
+
+    runner = AgentRunner(
+        provider=_ScriptedProvider("HANDOFF:writer:draft now", RuntimeError("provider outage")),
+        event_log=log,
+        tools=build_default_tools(root=tmp_path),
+        safety_policy=SafetyPolicy(max_steps=6, allowed_tools=frozenset({"checklist", "echo"})),
+        bots=_bots(),
+        active_bot_id="planner",
+    )
+    result = runner.run("Coordinate planner then writer", run_id=run_id)
+    assert result.state == RunState.FAILED
+    assert runner.active_bot_id == "writer"
+
+
+def _resume_runner(log: SQLiteEventLog, tmp_path: Path, provider: _ScriptedProvider) -> AgentRunner:
+    """Build a fresh runner exactly like the one that started the run."""
+
+    return AgentRunner(
+        provider=provider,
+        event_log=log,
+        tools=build_default_tools(root=tmp_path),
+        safety_policy=SafetyPolicy(max_steps=6, allowed_tools=frozenset({"checklist", "echo"})),
+        bots=_bots(),
+        active_bot_id="planner",
+    )
+
+
+def test_resume_restores_active_bot_scope_from_checkpoint(tmp_path: Path) -> None:
+    """A resumed run keeps the tool scope of the bot that was active at checkpoint time.
+
+    Previously ``resume`` restarted with the constructor's ``active_bot_id``, so a run
+    that had handed off to ``writer`` (``echo`` only) could execute the planner-only
+    ``checklist`` tool after a crash/resume.
+    """
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        _interrupted_handoff_run(log, tmp_path, "resume-scope")
+        runner = _resume_runner(log, tmp_path, _ScriptedProvider("TOOL:checklist:escalate", "DONE: stayed scoped"))
+        result = runner.resume("resume-scope")
+        events = log.list_events("resume-scope")
+    finally:
+        log.close()
+
+    executed_tools = [
+        event.payload.get("tool")
+        for event in events
+        if event.event_type == "action_result" and event.payload.get("kind") == "tool"
+    ]
+    assert executed_tools == []
+    assert result.state == RunState.SUCCEEDED
+    assert result.answer == "stayed scoped"
+    assert runner.active_bot_id == "writer"
+    assert runner.safety_policy.allowed_tools == frozenset({"echo"})
+    rejected = [
+        event.payload["payload"]["reason"]
+        for event in events
+        if event.event_type == "decision" and event.payload["rationale"]["rule_id"] == "model.disallowed-tool-request"
+    ]
+    assert rejected == ["requested tool is not allowlisted: checklist"]
+
+
+def test_resume_executes_handoff_decisions(tmp_path: Path) -> None:
+    """A handoff requested after resume is executed instead of failing the run."""
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        _interrupted_handoff_run(log, tmp_path, "resume-handoff")
+        runner = _resume_runner(log, tmp_path, _ScriptedProvider("HANDOFF:planner:back to you", "DONE: handed back"))
+        result = runner.resume("resume-handoff")
+        events = log.list_events("resume-handoff")
+    finally:
+        log.close()
+
+    assert result.state == RunState.SUCCEEDED
+    assert result.answer == "handed back"
+    assert runner.active_bot_id == "planner"
+    handoffs = [
+        (event.payload["from_bot"], event.payload["to_bot"])
+        for event in events
+        if event.event_type == "action_result" and event.payload.get("kind") == "handoff"
+    ]
+    assert handoffs == [("planner", "writer"), ("writer", "planner")]
+
+
+def test_resume_rejects_checkpoint_bot_missing_from_registry(tmp_path: Path) -> None:
+    """Resuming a bot-scoped checkpoint without that bot registered fails closed."""
+
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        _interrupted_handoff_run(log, tmp_path, "resume-missing-bot")
+        runner = AgentRunner(
+            provider=_ScriptedProvider("DONE: should not run"),
+            event_log=log,
+            tools=build_default_tools(root=tmp_path),
+            safety_policy=SafetyPolicy(max_steps=6, allowed_tools=frozenset({"checklist", "echo"})),
+        )
+        with pytest.raises(ValueError, match="checkpoint active bot is not registered: writer"):
+            runner.resume("resume-missing-bot")
+    finally:
+        log.close()
