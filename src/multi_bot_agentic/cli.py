@@ -220,6 +220,11 @@ def resume_command(args: argparse.Namespace) -> int:
             tool_specs=tool_specs,
         )
         result = runner.resume(run_id=args.run_id)
+        if result.already_finished:
+            print(
+                f"note: run {result.run_id} already finished ({result.state.value}); nothing to resume",
+                file=sys.stderr,
+            )
         print(
             json.dumps(
                 {
@@ -228,7 +233,7 @@ def resume_command(args: argparse.Namespace) -> int:
                     "answer": result.answer,
                     "steps": result.steps,
                     "event_log": str(config.event_log),
-                    "resumed": True,
+                    "resumed": not result.already_finished,
                 },
                 indent=2,
             )

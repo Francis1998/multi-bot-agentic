@@ -104,7 +104,9 @@ calls get rationale traces, replay, and resume like any other tool. See
 
 ## Checkpoint resume
 
-Durable checkpoint resume for ODA runs is available via `resume`.
+Durable checkpoint resume for ODA runs is available via `resume`. Only interrupted runs (no
+`run_completed`/`run_failed`/`run_cancelled` event) continue; a finished run returns its recorded
+outcome without executing anything. See `docs/guides/CHECKPOINT_RESUME_GUIDE.md`.
 
 ## SharedBlackboard
 

@@ -127,35 +127,43 @@ def test_botspec_rejects_empty_allowlist() -> None:
         BotSpec(bot_id="x", name="X", allowed_tools=frozenset())
 
 
+class _SimulatedCrash(BaseException):
+    """Stands in for the process dying mid-step; the runner cannot record a terminal event."""
+
+
 class _ScriptedProvider:
     """Provider that replays scripted outputs and raises scripted errors."""
 
     provider_name = "fake"
 
-    def __init__(self, *script: str | Exception) -> None:
+    def __init__(self, *script: str | BaseException) -> None:
         self.script = list(script)
 
     def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
         del request, timeout_seconds
         item = self.script.pop(0)
-        if isinstance(item, Exception):
+        if isinstance(item, BaseException):
             raise item
         return ModelOutput(provider=self.provider_name, text=item, raw={})
 
 
 def _interrupted_handoff_run(log: SQLiteEventLog, tmp_path: Path, run_id: str) -> None:
-    """Hand off planner -> writer, then fail on a provider outage before finishing."""
+    """Hand off planner -> writer, then crash (as if the process was killed) before finishing.
+
+    A crash leaves no terminal event, so the run stays resumable. A handled failure such
+    as a provider outage records ``run_failed``, which is final.
+    """
 
     runner = AgentRunner(
-        provider=_ScriptedProvider("HANDOFF:writer:draft now", RuntimeError("provider outage")),
+        provider=_ScriptedProvider("HANDOFF:writer:draft now", _SimulatedCrash()),
         event_log=log,
         tools=build_default_tools(root=tmp_path),
         safety_policy=SafetyPolicy(max_steps=6, allowed_tools=frozenset({"checklist", "echo"})),
         bots=_bots(),
         active_bot_id="planner",
     )
-    result = runner.run("Coordinate planner then writer", run_id=run_id)
-    assert result.state == RunState.FAILED
+    with pytest.raises(_SimulatedCrash):
+        runner.run("Coordinate planner then writer", run_id=run_id)
     assert runner.active_bot_id == "writer"
 
 

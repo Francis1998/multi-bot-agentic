@@ -10,7 +10,7 @@ from uuid import uuid4
 from multi_bot_agentic.bots import BotSpec
 from multi_bot_agentic.checkpoint import load_latest_checkpoint, save_checkpoint
 from multi_bot_agentic.decision import DeterministicDecisionEngine
-from multi_bot_agentic.event_log import SQLiteEventLog
+from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
 from multi_bot_agentic.lifecycle import InvalidTransitionError, RunStateMachine
 from multi_bot_agentic.llm.base import LLMAdapter
 from multi_bot_agentic.models import (
@@ -28,12 +28,30 @@ from multi_bot_agentic.tools.base import ToolAdapter
 
 @dataclass(frozen=True)
 class RunResult:
-    """Final run result."""
+    """Final run result.
+
+    Attributes:
+        run_id: Run identifier.
+        state: Terminal lifecycle state.
+        answer: Final answer, or the failure/cancellation reason.
+        steps: Number of loop steps the run took.
+        already_finished: True when ``resume`` found the run already finished and returned
+            its recorded outcome without executing anything.
+    """
 
     run_id: str
     state: RunState
     answer: str
     steps: int
+    already_finished: bool = False
+
+
+# Event types that end a run, mapped to the terminal state they record.
+_TERMINAL_EVENT_STATES: dict[str, RunState] = {
+    EventType.RUN_COMPLETED.value: RunState.SUCCEEDED,
+    EventType.RUN_FAILED.value: RunState.FAILED,
+    EventType.RUN_CANCELLED.value: RunState.CANCELLED,
+}
 
 
 class AgentRunner:
@@ -106,7 +124,12 @@ class AgentRunner:
         return self._run_loop(selected_run_id, goal, observations, state_machine, start_step=0)
 
     def resume(self, run_id: str) -> RunResult:
-        """Resume a run from its latest checkpoint.
+        """Resume an interrupted run from its latest checkpoint.
+
+        Only a run without a terminal event (``run_completed``, ``run_failed`` or
+        ``run_cancelled``) is continued, for example after its process was killed. A
+        finished run is never re-executed: its recorded outcome is returned with
+        ``already_finished=True`` and no events are appended, so ``resume`` is idempotent.
 
         The bot that was active when the checkpoint was written is restored, so a
         resumed run keeps that bot's tool scope instead of the constructor's.
@@ -115,13 +138,16 @@ class AgentRunner:
             run_id: Existing run identifier.
 
         Returns:
-            Final run result after continuation.
+            Final run result after continuation, or the recorded outcome of a finished run.
 
         Raises:
-            ValueError: If no usable checkpoint exists for ``run_id`` or the
+            ValueError: If an unfinished run has no usable checkpoint or the
                 checkpoint's active bot is not registered on this runner.
         """
 
+        recorded = self._recorded_outcome(run_id)
+        if recorded is not None:
+            return recorded
         snapshot = load_latest_checkpoint(self.event_log, run_id)
         if snapshot is None:
             raise ValueError(f"no checkpoint found for run_id={run_id}")
@@ -143,6 +169,37 @@ class AgentRunner:
             snapshot.observations,
             RunStateMachine(),
             start_step=max(0, snapshot.step),
+        )
+
+    def _recorded_outcome(self, run_id: str) -> RunResult | None:
+        """Return the recorded outcome of a run that already reached a terminal state.
+
+        Terminal lifecycle states have no outgoing transitions; reading them from the
+        durable log enforces that across processes, where a fresh state machine cannot.
+
+        Args:
+            run_id: Run identifier.
+
+        Returns:
+            The outcome stored by the run's latest terminal event, or ``None`` when the
+            run has not finished.
+        """
+
+        terminal: EventRecord | None = None
+        for event in self.event_log.list_events(run_id):
+            if event.event_type in _TERMINAL_EVENT_STATES:
+                terminal = event
+        if terminal is None:
+            return None
+        state = _TERMINAL_EVENT_STATES[terminal.event_type]
+        answer = terminal.payload.get("answer" if state is RunState.SUCCEEDED else "reason", "")
+        steps = terminal.payload.get("steps")
+        return RunResult(
+            run_id=run_id,
+            state=state,
+            answer=str(answer),
+            steps=steps if isinstance(steps, int) else 0,
+            already_finished=True,
         )
 
     def _run_loop(

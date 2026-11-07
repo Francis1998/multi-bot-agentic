@@ -183,4 +183,6 @@ This repo does not expose a network service or remote terminal control. If adapt
 
 ## Checkpoint resume
 
-Durable checkpoint resume for ODA runs is available via `resume`.
+Durable checkpoint resume for ODA runs is available via `resume`. A finished run (succeeded, failed, or
+cancelled) is never re-executed: `resume` returns its recorded outcome and appends no events, so tools
+with side effects are not repeated and removing the cancellation file does not reopen a cancelled run.
