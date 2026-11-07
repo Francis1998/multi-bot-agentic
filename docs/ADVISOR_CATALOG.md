@@ -554,6 +554,13 @@ HITL `contention_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen blackboard w
 
 HITL `orphan_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool side-effect orphan monitors. Distinct from `ToolSideEffectLedgerAdvisor` / `ToolSideEffectReplayBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SIDE_EFFECT_ORPHAN_BAND_ADVISOR_GUIDE.md`.
 
+
+### SupervisorFanoutSkewBandAdvisor
+
+![SupervisorFanoutSkewBandAdvisor](../assets/demo/supervisor-fanout-skew.gif)
+
+HITL supervisor fanout skew_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen supervisor fanout-skew monitors. Distinct from `OrchestratorFanoutBudgetBandAdvisor` / `CriticFanoutSkewAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. Guide: [`SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md`](guides/SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md).
+
 ### HitlApprovalStarvationBandAdvisor
 
 ![HitlApprovalStarvationBandAdvisor](../assets/demo/hitl-approval-starvation.gif)
