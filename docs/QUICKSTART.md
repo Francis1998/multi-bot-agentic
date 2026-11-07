@@ -48,6 +48,18 @@ python scripts/render_demo_gif.py
 
 The renderer uses stdlib Python for pixel frames and `ffmpeg` to stitch them into `docs/demo.gif`.
 
+## Regenerate Tool-Guide Demo GIFs
+
+```bash
+python scripts/render_guide_demos.py --list   # embedded GIFs that are missing or placeholders
+python scripts/render_guide_demos.py          # render them
+python scripts/render_guide_demos.py docs/guides/BASE58_TOOL_GUIDE.md  # redraw one guide's GIF
+```
+
+Each GIF is a terminal transcript of the guide's first python example, run for real with `PYTHONPATH=src`,
+a timeout, and sockets disabled. The script uses only the standard library (no `ffmpeg`). An example that fails
+or prints nothing is reported as a docs bug instead of being drawn.
+
 ## Try A Live Provider
 
 ```bash
