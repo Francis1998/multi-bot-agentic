@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 import time
 from typing import Any
@@ -18,6 +19,13 @@ SUPPORTED = ["2026-07-28"]
 SERVER_INFO = {"name": "modern-fixture", "version": "1.0.0"}
 META = "io.modelcontextprotocol/"
 PAGE_SIZE = 3
+# Grandchild that ignores SIGTERM and inherits the stdio pipes, like a stubborn npx -> node child.
+STUBBORN_CHILD = (
+    "import os, signal, sys, time\n"
+    "signal.signal(signal.SIGTERM, signal.SIG_IGN)\n"
+    "open(sys.argv[1], 'w').write(str(os.getpid()))\n"
+    "time.sleep(60)\n"
+)
 
 
 def _schema(properties: dict[str, str], required: list[str]) -> dict[str, Any]:
@@ -124,7 +132,10 @@ def _handle(request: dict[str, Any]) -> dict[str, Any] | None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--slow-start", type=float, default=0.0, help="seconds to wait before reading stdin")
+    parser.add_argument("--spawn-child", default=None, help="spawn a SIGTERM-ignoring child that writes its pid here")
     args = parser.parse_args()
+    if args.spawn_child:
+        subprocess.Popen([sys.executable, "-c", STUBBORN_CHILD, args.spawn_child])
     time.sleep(args.slow_start)
     print("modern fixture ready", file=sys.stderr, flush=True)
     while True:

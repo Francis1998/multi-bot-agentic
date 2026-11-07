@@ -124,9 +124,9 @@ def test_era_is_cached_for_the_server_process(monkeypatch: pytest.MonkeyPatch) -
     methods: list[str] = []
     original = client._issue
 
-    def spy(method: str, params: dict[str, Any]) -> int:
+    def spy(method: str, params: dict[str, Any], deadline: float) -> int:
         methods.append(method)
-        return original(method, params)
+        return original(method, params, deadline)
 
     monkeypatch.setattr(client, "_issue", spy)
     with client:
@@ -232,3 +232,37 @@ def test_legacy_server_ping_is_answered() -> None:
         result = client.call_tool("ping_client", {})
 
     assert result.content[0]["text"] == "client answered ping"
+
+
+def test_writes_to_a_server_that_stops_reading_stdin_time_out() -> None:
+    """A full stdin pipe cannot hang a call, and close() still returns promptly."""
+
+    client = StdioMcpClient(MODERN, name="backpressure", max_restarts=0)
+    client.start()
+    with pytest.raises(McpTimeoutError):
+        client.call_tool("sleep", {"seconds": 6}, timeout_seconds=0.2)
+    started = time.monotonic()
+    with pytest.raises(McpTimeoutError):
+        client.call_tool("echo", {"text": "x" * 1_000_000}, timeout_seconds=0.5)
+    assert time.monotonic() - started < 2.0
+    started = time.monotonic()
+    client.close()
+    assert time.monotonic() - started < 4.0
+
+
+def test_close_kills_children_that_outlive_the_launcher(tmp_path: Path) -> None:
+    """Process-group cleanup also reaches children that ignore SIGTERM after the launcher exits."""
+
+    pid_file = tmp_path / "child.pid"
+    client = StdioMcpClient((*MODERN, "--spawn-child", str(pid_file)), name="spawner")
+    client.start()
+    deadline = time.monotonic() + 5.0
+    while not pid_file.exists() or not pid_file.read_text():
+        assert time.monotonic() < deadline, "child never started"
+        time.sleep(0.02)
+    child_pid = int(pid_file.read_text())
+    assert _alive(child_pid)
+
+    client.close()
+
+    assert _wait_dead(child_pid, timeout=5.0)

@@ -99,6 +99,14 @@ def test_render_content_summarizes_binary_and_resource_blocks() -> None:
     )
 
 
+def test_render_content_tolerates_malformed_block_types() -> None:
+    """Unhashable ``type`` values from a buggy server are omitted instead of raising ``TypeError``."""
+
+    result = McpCallResult(content=({"type": []}, {"type": {}}, {"type": "text", "text": "ok"}), is_error=False)
+
+    assert render_content(result).splitlines() == ["[[] content omitted]", "[{} content omitted]", "ok"]
+
+
 def test_truncate_utf8_never_splits_a_character() -> None:
     """Byte truncation keeps whole UTF-8 characters and reports the original size."""
 

@@ -146,7 +146,7 @@ def render_content(result: McpCallResult) -> str:
         kind = block.get("type")
         if kind == "text":
             parts.append(str(block.get("text", "")))
-        elif kind in {"image", "audio"}:
+        elif kind in ("image", "audio"):  # tuple: a malformed unhashable "type" must not raise
             data = block.get("data")
             size = len(data) if isinstance(data, str) else 0
             parts.append(f"[{kind} {block.get('mimeType', 'unknown')}: {size} base64 chars omitted]")

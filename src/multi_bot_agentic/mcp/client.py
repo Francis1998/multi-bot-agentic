@@ -51,6 +51,8 @@ DEFAULT_PROBE_TIMEOUT_SECONDS = 5.0
 _MAX_MESSAGE_BYTES = 16 * 1024 * 1024
 _MAX_LIST_PAGES = 64
 _SHUTDOWN_GRACE_SECONDS = 2.0
+_NOTIFY_TIMEOUT_SECONDS = 1.0
+_REPLY_TIMEOUT_SECONDS = 5.0
 _STDERR_TAIL_LINES = 40
 
 
@@ -375,9 +377,13 @@ class StdioMcpClient:
             raise McpTransportError(f"cannot start MCP server '{self.name}' ({self._command[0]}): {error}") from error
         self._process = process
         self._finalizer = weakref.finalize(self, _shutdown_process, process, 0.5)
-        stdout, stderr = process.stdout, process.stderr
-        if stdout is None or stderr is None:
+        stdin, stdout, stderr = process.stdin, process.stdout, process.stderr
+        if stdin is None or stdout is None or stderr is None:
             raise McpTransportError(f"MCP server '{self.name}' has no stdio pipes")
+        if sys.platform != "win32":
+            # Writes go through os.write with a deadline, so a server that stops reading stdin
+            # can never block a request, a cancellation, or shutdown.
+            os.set_blocking(stdin.fileno(), False)
         readers = (
             threading.Thread(
                 target=self._read_stdout, args=(stdout, generation), name=f"mcp-{self.name}-out", daemon=True
@@ -397,7 +403,12 @@ class StdioMcpClient:
             self._finalizer = None
         if process is None:
             return
-        _shutdown_process(process, _SHUTDOWN_GRACE_SECONDS)
+        if self._write_lock.acquire(timeout=_SHUTDOWN_GRACE_SECONDS):
+            try:
+                _close_quietly(process.stdin)
+            finally:
+                self._write_lock.release()
+        _shutdown_process(process, _SHUTDOWN_GRACE_SECONDS, close_stdin=False)
         for reader in self._readers:
             reader.join(timeout=1.0)
         if not any(reader.is_alive() for reader in self._readers):
@@ -481,12 +492,18 @@ class StdioMcpClient:
         else:
             reply["error"] = {"code": -32601, "message": "Method not found"}
         try:
-            self._write(reply)
+            self._write(reply, time.monotonic() + _REPLY_TIMEOUT_SECONDS)
         except McpError:
             return
 
-    def _write(self, message: dict[str, Any]) -> None:
-        """Serialize one message as a single line on the server's stdin."""
+    def _write(self, message: dict[str, Any], deadline: float) -> None:
+        """Serialize one message as a single line on the server's stdin, giving up at ``deadline``.
+
+        Raises:
+            McpTimeoutError: If the server does not drain its stdin in time; the
+                channel is then marked broken because a partial line may have been sent.
+            McpTransportError: If the server is gone.
+        """
 
         try:
             line = json.dumps(message, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n"
@@ -496,32 +513,45 @@ class StdioMcpClient:
         stdin = process.stdin if process is not None else None
         if stdin is None:
             raise McpTransportError(f"MCP server '{self.name}' is not running")
-        with self._write_lock:
-            try:
-                stdin.write(line.encode("utf-8"))
-                stdin.flush()
-            except (OSError, ValueError) as error:
-                raise McpTransportError(self._describe(f"cannot write to MCP server '{self.name}': {error}")) from error
+        if not self._write_lock.acquire(timeout=_remaining(deadline)):
+            raise McpTimeoutError(f"MCP server '{self.name}' is not accepting input (another write is stalled)")
+        try:
+            completed = _write_all(stdin, line.encode("utf-8"), deadline)
+        except (OSError, ValueError) as error:
+            raise McpTransportError(self._describe(f"cannot write to MCP server '{self.name}': {error}")) from error
+        finally:
+            self._write_lock.release()
+        if not completed:
+            self._mark_broken("server stopped reading its stdin")
+            raise McpTimeoutError(f"MCP server '{self.name}' stopped reading its stdin")
 
-    def _notify(self, method: str, params: dict[str, Any] | None = None) -> None:
-        """Send a best-effort notification."""
+    def _mark_broken(self, reason: str) -> None:
+        """Fail waiters and force a restart before the channel is used again."""
+
+        with self._cond:
+            if self._closed_reason is None:
+                self._closed_reason = reason
+            self._cond.notify_all()
+
+    def _notify(self, method: str, params: dict[str, Any] | None = None, *, deadline: float | None = None) -> None:
+        """Send a best-effort notification (bounded so it can never block)."""
 
         message: dict[str, Any] = {"jsonrpc": "2.0", "method": method}
         if params:
             message["params"] = params
         try:
-            self._write(message)
+            self._write(message, time.monotonic() + _NOTIFY_TIMEOUT_SECONDS if deadline is None else deadline)
         except McpError:
             return
 
-    def _issue(self, method: str, params: dict[str, Any]) -> int:
-        """Register and send a request, returning its id."""
+    def _issue(self, method: str, params: dict[str, Any], deadline: float) -> int:
+        """Register and send a request (write bounded by ``deadline``), returning its id."""
 
         request_id = next(self._ids)
         with self._cond:
             self._pending.add(request_id)
         try:
-            self._write({"jsonrpc": "2.0", "id": request_id, "method": method, "params": params})
+            self._write({"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}, deadline)
         except BaseException:
             self._forget(request_id)
             raise
@@ -588,9 +618,10 @@ class StdioMcpClient:
             if self.era is McpEra.MODERN:
                 tried.add(str(self.protocol_version))
                 payload["_meta"] = self._request_meta(self.protocol_version)
-            request_id = self._issue(method, payload)
+            deadline = time.monotonic() + timeout
+            request_id = self._issue(method, payload, deadline)
             try:
-                message = self._await(request_id, timeout)
+                message = self._await(request_id, _remaining(deadline))
             finally:
                 self._forget(request_id)
             if message is None:
@@ -625,7 +656,7 @@ class StdioMcpClient:
         tried: set[str] = set()
         while True:
             tried.add(version)
-            probe_id = self._issue("server/discover", {"_meta": self._request_meta(version)})
+            probe_id = self._issue("server/discover", {"_meta": self._request_meta(version)}, deadline)
             try:
                 response = self._await(probe_id, min(self._probe_timeout, _remaining(deadline)))
             except McpError:
@@ -695,6 +726,7 @@ class StdioMcpClient:
         request_id = self._issue(
             "initialize",
             {"protocolVersion": self._legacy_versions[0], "capabilities": {}, "clientInfo": dict(CLIENT_INFO)},
+            deadline,
         )
         try:
             response = self._await(request_id, _remaining(deadline))
@@ -735,7 +767,7 @@ class StdioMcpClient:
         self.server_info = server_info if isinstance(server_info, dict) else {}
         self.capabilities = capabilities if isinstance(capabilities, dict) else {}
         self.instructions = instructions if isinstance(instructions, str) else None
-        self._notify("notifications/initialized")
+        self._notify("notifications/initialized", deadline=max(deadline, time.monotonic() + _NOTIFY_TIMEOUT_SECONDS))
 
 
 def _remaining(deadline: float) -> float:
@@ -816,35 +848,105 @@ def _parse_tool(item: Any) -> McpToolInfo | None:
     )
 
 
-def _signal_tree(process: subprocess.Popen[bytes], *, kill: bool) -> None:
-    """Signal the server's whole process group (its own session on POSIX)."""
+def _write_all(stream: IO[bytes], data: bytes, deadline: float) -> bool:
+    """Write ``data`` to the server's non-blocking stdin pipe, giving up at ``deadline``.
 
-    if process.poll() is not None:
+    Args:
+        stream: Server stdin (non-blocking on POSIX).
+        data: Encoded message line.
+        deadline: ``time.monotonic()`` value after which a full pipe is abandoned.
+
+    Returns:
+        False when the pipe stayed full until the deadline (the line may be partial).
+    """
+
+    if sys.platform == "win32":  # anonymous pipes cannot be made non-blocking here; best effort
+        stream.write(data)
+        stream.flush()
+        return True
+    fd = stream.fileno()
+    view = memoryview(data)
+    while view:
+        try:
+            written = os.write(fd, view)
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                return False
+            time.sleep(0.005)
+            continue
+        view = view[written:]
+    return True
+
+
+def _close_quietly(stream: IO[bytes] | None) -> None:
+    """Close a pipe, ignoring errors from an already-dead peer."""
+
+    if stream is None:
         return
     try:
-        if sys.platform != "win32":
-            os.killpg(process.pid, signal.SIGKILL if kill else signal.SIGTERM)
-        elif kill:
-            process.kill()
-        else:
-            process.terminate()
+        stream.close()
+    except (OSError, ValueError):
+        return
+
+
+def _group_alive(group: int) -> bool:
+    """Return whether any process remains in a POSIX process group."""
+
+    try:
+        os.killpg(group, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def _signal_tree(process: subprocess.Popen[bytes], group: int | None, *, kill: bool) -> None:
+    """Signal the server's whole process group (POSIX) or the process itself (Windows).
+
+    The group is signalled even after the launcher exited, so children that
+    outlive it (for example ``npx`` -> ``node``) are still reached.
+    """
+
+    try:
+        if group is not None and sys.platform != "win32":
+            os.killpg(group, signal.SIGKILL if kill else signal.SIGTERM)
+        elif process.poll() is None:
+            if kill:
+                process.kill()
+            else:
+                process.terminate()
     except OSError:
         return
 
 
-def _shutdown_process(process: subprocess.Popen[bytes], grace_seconds: float) -> None:
-    """Stop a server per the stdio spec: close stdin, wait, then SIGTERM, then SIGKILL."""
+def _wait_for_tree(process: subprocess.Popen[bytes], group: int | None, timeout: float) -> bool:
+    """Wait for the launcher and (on POSIX) every other member of its process group to exit."""
 
+    deadline = time.monotonic() + timeout
     try:
-        if process.stdin is not None:
-            process.stdin.close()
-    except OSError:
-        pass
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        return False
+    while group is not None and _group_alive(group):
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.02)
+    return True
+
+
+def _shutdown_process(process: subprocess.Popen[bytes], grace_seconds: float, *, close_stdin: bool = True) -> None:
+    """Stop a server per the stdio spec: close stdin, wait, then SIGTERM, then SIGKILL.
+
+    Each step waits for the launcher *and* its whole process group, so a child
+    that ignores SIGTERM or survives the launcher is escalated to SIGKILL.
+    """
+
+    if close_stdin:
+        _close_quietly(process.stdin)
+    group = process.pid if sys.platform != "win32" else None
     for kill in (None, False, True):
         if kill is not None:
-            _signal_tree(process, kill=kill)
-        try:
-            process.wait(timeout=grace_seconds)
+            _signal_tree(process, group, kill=kill)
+        if _wait_for_tree(process, group, grace_seconds):
             return
-        except subprocess.TimeoutExpired:
-            continue

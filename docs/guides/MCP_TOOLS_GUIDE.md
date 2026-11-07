@@ -141,8 +141,8 @@ all of them.
 | Allow/deny lists | Hidden tools are never wrapped, so the model can't call them. `mcp-tools` reports how many tools are hidden |
 | Namespacing | `mcp__<server>__<tool>` can't collide across servers or with built-in tools. Tool names outside `[A-Za-z0-9_.-]{1,128}` are skipped and reported |
 | Policy + bot scope | MCP tools are added to `SafetyPolicy.allowed_tools`. `BotSpec.allowed_tools` can narrow them per bot. The prompt catalog follows the live allowlist |
-| Timeouts | Each call has a timeout and is cancelled with `notifications/cancelled` when it expires. Startup and era detection have their own budgets. A hung server can't hang a run |
-| Process cleanup | Each server runs in its own process group. Shutdown closes stdin, then sends SIGTERM, then SIGKILL to the whole group (covers `npx`→`node` children). A finalizer also cleans up at interpreter exit |
+| Timeouts | Writing a request and waiting for its response share one deadline. On POSIX, stdin is non-blocking, so a server that stops reading its input can't block a call, a cancellation, or shutdown. Calls that expire are cancelled with `notifications/cancelled`. Startup and era detection have their own budgets. A hung server can't hang a run |
+| Process cleanup | Each server runs in its own process group. Shutdown closes stdin, then sends SIGTERM, then SIGKILL to the whole group, waiting for every group member at each step. This also catches children that outlive or ignore the launcher (e.g. `npx`→`node`). A finalizer also cleans up at interpreter exit |
 | Crash handling | A server that dies is restarted once, and the era is re-detected for the new process. After that, calls fail fast |
 | Bounded results | Results are capped by `maxResultBytes` without splitting UTF-8 characters. Image, audio, and binary resources are summarized instead of inlined. Messages larger than 16 MiB are rejected |
 | Redaction | Optional per server (`redactResults`) |
