@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from multi_bot_agentic.llm.base import render_tool_catalog
 from multi_bot_agentic.llm.http import post_json
 from multi_bot_agentic.models import ModelOutput, ModelRequest
 
@@ -74,7 +75,7 @@ def _render_prompt(request: ModelRequest) -> str:
     """
 
     observations = "\n".join(f"- {observation.source}: {observation.content}" for observation in request.observations)
-    return f"Goal: {request.goal}\n\nObservations:\n{observations}"
+    return f"Goal: {request.goal}\n\nObservations:\n{observations}{render_tool_catalog(request.tools)}"
 
 
 def _extract_openai_text(decoded: dict[str, Any]) -> str:

@@ -10,6 +10,10 @@
 - **Cancellation**: a cancellation file can stop a run before the next action.
 - **Tool allowlist**: tools must be registered and allowed by policy.
 - **Rationale traces**: every decision records matched rule IDs, inputs used, and rejected actions.
+- **MCP servers (opt-in)**: tools from `--mcp-config` servers are namespaced `mcp__<server>__<tool>`, filtered by
+  per-server `allowedTools`/`deniedTools`, bounded by call/startup timeouts and `maxResultBytes`, optionally
+  redacted, and launched with a least-privilege environment (provider API keys are not inherited). See
+  [MCP Tool Bridge Guide](guides/MCP_TOOLS_GUIDE.md#safety-controls).
 - **BlackboardEntryTtlEvictor**: TTL eviction is local memory hygiene only; never executes tools or contacts providers.
 - **PlanStepDependencyResolver**: plan ordering is advisory structure only; never executes steps or contacts providers.
 - **BotRoleConflictDetector**: exclusive role claims are advisory/hard gates only; never executes tools or contacts providers.
@@ -22,6 +26,16 @@ The LLM can return text. The decision engine interprets two prefixes:
 - `DONE:<answer>` requests completion.
 
 Anything else becomes another observation and is handled deterministically. The LLM cannot directly call Python functions, shell commands, or filesystem APIs.
+
+## MCP Tool Boundary
+
+MCP tools are external code. The bridge never lets a model reach a server directly: the decision engine must
+select an allowlisted `mcp__...` tool, the adapter maps the payload to the tool's input schema, and failures
+(`isError`, JSON-RPC errors, timeouts, crashed servers, bad arguments) become `ok=false` tool results instead of
+crashing the run. Each server runs in its own process group and is shut down with stdin close, then SIGTERM,
+then SIGKILL. A crashed server is restarted at most once. Tool descriptions and annotations from servers are
+untrusted, so prefer read-only servers with narrow allowlists, and gate sensitive MCP tools with
+`HitlApprovalGate`.
 
 ## Tool Boundary
 

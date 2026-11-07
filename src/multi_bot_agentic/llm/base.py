@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from multi_bot_agentic.models import ModelOutput, ModelRequest
+from multi_bot_agentic.models import ModelOutput, ModelRequest, ToolSpec
 
 
 class LLMAdapter(Protocol):
@@ -22,3 +22,31 @@ class LLMAdapter(Protocol):
         Returns:
             Normalized model output.
         """
+
+
+def render_tool_catalog(tools: tuple[ToolSpec, ...]) -> str:
+    """Render advertised tools as a prompt section.
+
+    Args:
+        tools: Tool catalog from ``ModelRequest.tools``.
+
+    Returns:
+        A section starting with a blank line, or an empty string when no tools
+        are advertised so existing prompts stay byte-for-byte unchanged.
+    """
+
+    if not tools:
+        return ""
+    lines = [
+        "",
+        "",
+        "Available tools (request one with TOOL:<name>:<JSON object of arguments, or plain text "
+        "for a single-argument tool>):",
+    ]
+    for spec in tools:
+        line = f"- {spec.name}: {spec.description}"
+        signature = spec.signature()
+        if signature:
+            line += f" Arguments: {signature}."
+        lines.append(line)
+    return "\n".join(lines)

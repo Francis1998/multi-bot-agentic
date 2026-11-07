@@ -72,7 +72,7 @@ def build_llm_adapter(provider: str) -> LLMAdapter:
     """
 
     if provider == "fake":
-        return FakeLLMAdapter()
+        return FakeLLMAdapter(tool_name=os.getenv("MULTIBOT_FAKE_TOOL", "").strip() or "checklist")
     if provider == "openai":
         api_key = _required_env("OPENAI_API_KEY")
         return OpenAIAdapter(

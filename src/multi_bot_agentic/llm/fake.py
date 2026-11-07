@@ -10,6 +10,16 @@ class FakeLLMAdapter:
 
     provider_name = "fake"
 
+    def __init__(self, tool_name: str = "checklist") -> None:
+        """Initialize the adapter.
+
+        Args:
+            tool_name: Tool requested on the first turn (``TOOL:<tool_name>:<goal>``).
+                Set ``MULTIBOT_FAKE_TOOL`` to demo another tool, such as an MCP tool.
+        """
+
+        self.tool_name = tool_name
+
     def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
         """Return deterministic model output.
 
@@ -23,10 +33,11 @@ class FakeLLMAdapter:
 
         tool_results = [observation for observation in request.observations if observation.source.startswith("tool:")]
         if not tool_results:
+            mode = "deterministic-checklist-request" if self.tool_name == "checklist" else "deterministic-tool-request"
             return ModelOutput(
                 provider=self.provider_name,
-                text=f"TOOL:checklist:{request.goal[:120]}",
-                raw={"timeout_seconds": timeout_seconds, "mode": "deterministic-checklist-request"},
+                text=f"TOOL:{self.tool_name}:{request.goal[:120]}",
+                raw={"timeout_seconds": timeout_seconds, "mode": mode},
             )
         return ModelOutput(
             provider=self.provider_name,

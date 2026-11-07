@@ -132,6 +132,48 @@ class Decision:
 
 
 @dataclass(frozen=True)
+class ToolSpec:
+    """Model-facing description of a callable tool.
+
+    Attributes:
+        name: Registered tool name used in ``TOOL:<name>:<payload>`` directives.
+        description: Human-readable purpose of the tool.
+        input_schema: JSON Schema object describing the tool arguments.
+    """
+
+    name: str
+    description: str
+    input_schema: dict[str, Any] = field(default_factory=dict)
+
+    def signature(self, max_chars: int = 400) -> str:
+        """Summarize the top-level arguments declared by ``input_schema``.
+
+        Schemas may come from untrusted MCP servers, so malformed entries are
+        tolerated and the summary is bounded to keep prompts small.
+
+        Args:
+            max_chars: Maximum length of the returned summary.
+
+        Returns:
+            Text such as ``query: string (required), limit: integer``, or an
+            empty string when the schema declares no properties.
+        """
+
+        properties = self.input_schema.get("properties")
+        if not isinstance(properties, dict) or not properties:
+            return ""
+        raw_required = self.input_schema.get("required")
+        required = {item for item in raw_required if isinstance(item, str)} if isinstance(raw_required, list) else set()
+        parts: list[str] = []
+        for key, schema in properties.items():
+            declared = schema.get("type", "any") if isinstance(schema, dict) else "any"
+            type_name = "|".join(str(item) for item in declared) if isinstance(declared, list) else str(declared)
+            parts.append(f"{key}: {type_name}{' (required)' if key in required else ''}")
+        summary = ", ".join(parts)
+        return summary if len(summary) <= max_chars else summary[: max_chars - 1] + "…"
+
+
+@dataclass(frozen=True)
 class ModelRequest:
     """Normalized provider request.
 
@@ -139,11 +181,13 @@ class ModelRequest:
         goal: User goal.
         observations: Observed facts to include as context.
         max_output_chars: Provider output bound.
+        tools: Optional tool catalog advertised to the model (empty keeps prompts unchanged).
     """
 
     goal: str
     observations: tuple[Observation, ...]
     max_output_chars: int = 2000
+    tools: tuple[ToolSpec, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "notes": {
+      "command": "python3",
+      "args": ["notes_server.py"],
+      "cwd": ".",
+      "allowedTools": ["search_notes", "word_count"],
+      "callTimeoutSeconds": 10,
+      "startupTimeoutSeconds": 15,
+      "maxResultBytes": 4096
+    }
+  }
+}
