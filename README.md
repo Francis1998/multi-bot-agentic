@@ -9,7 +9,7 @@
 **Observe → Decide → Act** engine decides. Every decision, tool call, and MCP call is written to a
 replayable SQLite event log. It runs fully offline with a deterministic fake provider, and it works with GPT-6,
 Claude 5.5, Gemini, Kimi K3, and any [Model Context Protocol](https://modelcontextprotocol.io) server. It is
-a portfolio-quality recreation of the `multi-bot` product idea, built without private infrastructure.
+a portfolio-quality, local-first reference implementation.
 
 ![MCP tool bridge demo: official MCP servers in both protocol eras, an MCP-calling run, and its replay](assets/demo/mcp-tools.gif)
 
