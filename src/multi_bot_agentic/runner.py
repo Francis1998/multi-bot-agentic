@@ -54,6 +54,40 @@ _TERMINAL_EVENT_STATES: dict[str, RunState] = {
 }
 
 
+def recorded_outcome(event_log: SQLiteEventLog, run_id: str) -> RunResult | None:
+    """Return the recorded outcome of a run that already reached a terminal state.
+
+    Terminal lifecycle states have no outgoing transitions; reading them from the durable
+    log enforces that across processes, where a fresh state machine cannot. Needs only the
+    event log, so callers can check before starting providers or MCP servers.
+
+    Args:
+        event_log: Durable event log.
+        run_id: Run identifier.
+
+    Returns:
+        The outcome stored by the run's latest terminal event (``already_finished=True``),
+        or ``None`` when the run has not finished.
+    """
+
+    terminal: EventRecord | None = None
+    for event in event_log.list_events(run_id):
+        if event.event_type in _TERMINAL_EVENT_STATES:
+            terminal = event
+    if terminal is None:
+        return None
+    state = _TERMINAL_EVENT_STATES[terminal.event_type]
+    answer = terminal.payload.get("answer" if state is RunState.SUCCEEDED else "reason", "")
+    steps = terminal.payload.get("steps")
+    return RunResult(
+        run_id=run_id,
+        state=state,
+        answer=str(answer),
+        steps=steps if isinstance(steps, int) else 0,
+        already_finished=True,
+    )
+
+
 class AgentRunner:
     """Runs an auditable Observe -> Decide -> Act loop."""
 
@@ -145,7 +179,7 @@ class AgentRunner:
                 checkpoint's active bot is not registered on this runner.
         """
 
-        recorded = self._recorded_outcome(run_id)
+        recorded = recorded_outcome(self.event_log, run_id)
         if recorded is not None:
             return recorded
         snapshot = load_latest_checkpoint(self.event_log, run_id)
@@ -169,37 +203,6 @@ class AgentRunner:
             snapshot.observations,
             RunStateMachine(),
             start_step=max(0, snapshot.step),
-        )
-
-    def _recorded_outcome(self, run_id: str) -> RunResult | None:
-        """Return the recorded outcome of a run that already reached a terminal state.
-
-        Terminal lifecycle states have no outgoing transitions; reading them from the
-        durable log enforces that across processes, where a fresh state machine cannot.
-
-        Args:
-            run_id: Run identifier.
-
-        Returns:
-            The outcome stored by the run's latest terminal event, or ``None`` when the
-            run has not finished.
-        """
-
-        terminal: EventRecord | None = None
-        for event in self.event_log.list_events(run_id):
-            if event.event_type in _TERMINAL_EVENT_STATES:
-                terminal = event
-        if terminal is None:
-            return None
-        state = _TERMINAL_EVENT_STATES[terminal.event_type]
-        answer = terminal.payload.get("answer" if state is RunState.SUCCEEDED else "reason", "")
-        steps = terminal.payload.get("steps")
-        return RunResult(
-            run_id=run_id,
-            state=state,
-            answer=str(answer),
-            steps=steps if isinstance(steps, int) else 0,
-            already_finished=True,
         )
 
     def _run_loop(

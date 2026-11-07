@@ -14,7 +14,7 @@ from multi_bot_agentic.config import AppConfig, build_llm_adapter
 from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
 from multi_bot_agentic.mcp import McpConfigError, McpServerStatus, McpToolset, load_mcp_config
 from multi_bot_agentic.models import ToolSpec
-from multi_bot_agentic.runner import AgentRunner, build_default_tools
+from multi_bot_agentic.runner import AgentRunner, RunResult, build_default_tools, recorded_outcome
 from multi_bot_agentic.safety import SafetyPolicy
 from multi_bot_agentic.tools.base import ToolAdapter
 
@@ -189,6 +189,9 @@ def report_command(args: argparse.Namespace) -> int:
 def resume_command(args: argparse.Namespace) -> int:
     """Execute the resume subcommand.
 
+    A finished run's recorded outcome is read first, so it is reported without starting
+    MCP servers or building the provider.
+
     Args:
         args: Parsed arguments.
 
@@ -201,6 +204,9 @@ def resume_command(args: argparse.Namespace) -> int:
         event_log=args.event_log,
         max_steps=args.max_steps,
     )
+    finished = _finished_run_outcome(config.event_log, args.run_id)
+    if finished is not None:
+        return _print_resume_result(finished, config.event_log)
     try:
         toolset = start_mcp_toolset(args.mcp_config)
     except (McpConfigError, McpStartupError) as error:
@@ -219,26 +225,59 @@ def resume_command(args: argparse.Namespace) -> int:
             safety_policy=safety_policy,
             tool_specs=tool_specs,
         )
-        result = runner.resume(run_id=args.run_id)
-        if result.already_finished:
-            print(
-                f"note: run {result.run_id} already finished ({result.state.value}); nothing to resume",
-                file=sys.stderr,
-            )
+        return _print_resume_result(runner.resume(run_id=args.run_id), config.event_log)
+
+
+def _finished_run_outcome(path: Path, run_id: str) -> RunResult | None:
+    """Return a finished run's recorded outcome without creating a missing event log.
+
+    Args:
+        path: Event log path.
+        run_id: Run identifier.
+
+    Returns:
+        The recorded outcome, or ``None`` when the run has not finished.
+    """
+
+    if not path.exists():
+        return None
+    event_log = SQLiteEventLog(path)
+    try:
+        return recorded_outcome(event_log, run_id)
+    finally:
+        event_log.close()
+
+
+def _print_resume_result(result: RunResult, event_log_path: Path) -> int:
+    """Print a resume result as JSON and return the process exit code.
+
+    Args:
+        result: Result of ``AgentRunner.resume`` or a finished run's recorded outcome.
+        event_log_path: Event log path echoed in the output.
+
+    Returns:
+        0 when the run succeeded, otherwise 2.
+    """
+
+    if result.already_finished:
         print(
-            json.dumps(
-                {
-                    "run_id": result.run_id,
-                    "state": result.state.value,
-                    "answer": result.answer,
-                    "steps": result.steps,
-                    "event_log": str(config.event_log),
-                    "resumed": not result.already_finished,
-                },
-                indent=2,
-            )
+            f"note: run {result.run_id} already finished ({result.state.value}); nothing to resume",
+            file=sys.stderr,
         )
-        return 0 if result.state.value == "succeeded" else 2
+    print(
+        json.dumps(
+            {
+                "run_id": result.run_id,
+                "state": result.state.value,
+                "answer": result.answer,
+                "steps": result.steps,
+                "event_log": str(event_log_path),
+                "resumed": not result.already_finished,
+            },
+            indent=2,
+        )
+    )
+    return 0 if result.state.value == "succeeded" else 2
 
 
 def format_event(event: EventRecord, output_format: str) -> str:

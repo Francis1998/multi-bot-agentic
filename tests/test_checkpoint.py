@@ -325,3 +325,49 @@ def test_cli_resume_of_a_finished_run_reports_the_recorded_outcome(
         original.steps,
     )
     assert f"run {outcome} already finished ({outcome}); nothing to resume" in captured.err
+
+
+@pytest.mark.parametrize("unavailable", ["mcp-server", "provider-credentials"])
+def test_cli_resume_of_a_finished_run_needs_no_runtime_dependencies(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    unavailable: str,
+) -> None:
+    """A finished run's outcome is read before any MCP server or provider is started.
+
+    Resuming stays idempotent even when the run's runtime dependencies are gone: an MCP
+    server that can no longer start, or provider credentials that were removed.
+    """
+
+    event_log = tmp_path / "runs.sqlite"
+    log = SQLiteEventLog(event_log)
+    try:
+        original = _finish_run(log, tmp_path, "succeeded")
+        before = log.list_events("succeeded")
+    finally:
+        log.close()
+    argv = ["resume", "--run-id", "succeeded", "--event-log", str(event_log)]
+    if unavailable == "mcp-server":
+        config = tmp_path / "mcp.json"
+        config.write_text(
+            json.dumps({"mcpServers": {"gone": {"command": str(tmp_path / "missing-server")}}}),
+            encoding="utf-8",
+        )
+        argv += ["--provider", "fake", "--mcp-config", str(config)]
+    else:
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        argv += ["--provider", "openai"]
+
+    code = resume_command(build_parser().parse_args(argv))
+    captured = capsys.readouterr()
+    log = SQLiteEventLog(event_log)
+    try:
+        appended = log.list_events("succeeded")[len(before) :]
+    finally:
+        log.close()
+
+    assert code == 0, captured.err
+    assert [event.event_type for event in appended] == []
+    payload = json.loads(captured.out)
+    assert (payload["state"], payload["answer"], payload["resumed"]) == ("succeeded", original.answer, False)

@@ -37,9 +37,10 @@ Library API:
 
 ```python
 from multi_bot_agentic.checkpoint import load_latest_checkpoint, save_checkpoint
-from multi_bot_agentic.runner import AgentRunner
+from multi_bot_agentic.runner import AgentRunner, recorded_outcome
 
 snapshot = load_latest_checkpoint(event_log, "run-1")
+finished = recorded_outcome(event_log, "run-1")  # None while the run is unfinished
 result = runner.resume("run-1")
 ```
 
@@ -59,8 +60,10 @@ there are no repeated tool side effects, no extra provider spend, and no duplica
 | Cancelled (`run_cancelled`) | Returns the recorded reason; executes nothing | `True` | `false` | 2 |
 
 For a finished run the CLI also prints `note: run <id> already finished (<state>); nothing to resume`
-on stderr, and stdout stays JSON. To retry a failed or cancelled run, start a new `run` with a new run
-id. Removing the cancellation file does not reopen a cancelled run.
+on stderr, and stdout stays JSON. The CLI reads the recorded outcome before it starts MCP servers or
+builds the provider, so a finished run is reported even if those are no longer available (e.g. a
+removed API key). To retry a failed or cancelled run, start a new `run` with a new run id. Removing
+the cancellation file does not reopen a cancelled run.
 
 Real transcript (fake provider). The event count is unchanged after `resume`:
 
