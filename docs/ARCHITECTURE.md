@@ -70,6 +70,29 @@ Invalid transitions raise `InvalidTransitionError` and are covered by tests.
 
 Replay reads sqlite events and prints them in sequence. Replay never calls providers or tools, so it is safe to run in CI and postmortems.
 
+## Trace Export
+
+`multi_bot_agentic.tracing` turns one run's events into an OpenTelemetry trace without calling providers or
+tools:
+
+```text
+EventRecord[] -> parse_run() -> RunTimeline -> build_trace() -> Trace -> render_otlp_json() / push_otlp_json()
+                                            \-> render_mermaid() -> Mermaid sequenceDiagram
+```
+
+- `timeline.py` pairs each decision with its `action_requested`/`action_result` events and tracks the active bot,
+  handoffs, approvals, checkpoints, resumes, and the outcome.
+- `spans.py` builds the GenAI span tree: a root `invoke_agent` span, `invoke_agent {bot}` spans per bot,
+  `chat`/`generate_content` spans for provider calls, and `execute_tool` spans for built-in and MCP tools. Each
+  carries its decision's rule id, explanation, and rejected actions. Ids are SHA-256 digests of the run id and
+  event sequence numbers, so exports are deterministic.
+- `otlp.py` encodes OTLP/JSON and POSTs it with stdlib `urllib` (no redirects, header values never printed).
+- `mermaid.py` draws the orchestrator, bots, tools, MCP servers, and human approver as a sequence diagram.
+- `privacy.py` keeps content (goal, model inputs and outputs, tool arguments and results) opt-in and redacts
+  everything exported with `ObservationRedactor` and `ToolArgumentSanitizer`.
+
+The CLI entry point is `trace`. See [OpenTelemetry Trace Export Guide](guides/OTEL_TRACE_EXPORT_GUIDE.md).
+
 ## Bot Handoff
 
 Optional `BotSpec` registries let the decision engine accept `HANDOFF:bot_id:summary`. The runner swaps `active_bot_id` and `SafetyPolicy.allowed_tools` for the rest of that run without changing the ODA loop shape. Every `run()` starts again from the constructor's `active_bot_id`, and `resume()` restores the bot recorded in the checkpoint.
@@ -96,7 +119,7 @@ calls get rationale traces, replay, and resume like any other tool. See
 
 ## HITL Approval Gate
 
-`HitlApprovalGate` optionally pauses sensitive tool calls behind file-backed JSON approvals (`pending`/`approved`/`rejected`). v1 is caller-driven and does not require runner rewiring.
+`HitlApprovalGate` optionally pauses sensitive tool calls behind file-backed JSON approvals (`pending`/`approved`/`rejected`). v1 is caller-driven and does not require runner rewiring. `record_approval` appends a request or decision to the run's event log as an `action_result` with `kind: approval`, so `replay` and `trace` show it.
 
 ## Parallel Fan-Out
 

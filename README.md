@@ -19,7 +19,10 @@ a portfolio-quality recreation of the `multi-bot` product idea, built without pr
   engine picks the next action and records a `RationaleTrace`: the rule, the observations it used, and the
   actions it rejected.
 - **Every run is auditable.** Lifecycle transitions, observations, decisions, and tool and MCP calls are
-  persisted per run. `replay` and `report` never call a provider, so postmortems are safe and deterministic.
+  persisted per run. `replay`, `report`, and `trace` never call a provider, so postmortems are safe and
+  deterministic.
+- **Observable where you already look.** `trace` exports any recorded run as an OpenTelemetry GenAI trace for
+  Jaeger, Grafana Tempo, or Langfuse, or as a Mermaid sequence diagram of who handed off to whom.
 - **Tools are explicit and bounded.** Built-in and MCP tools pass the same allowlist and per-bot scopes. MCP
   calls also get per-call timeouts and result byte caps. Built-in tools run offline and in-process with
   size-limited inputs. A model can only request a tool; the engine decides whether it runs.
@@ -41,7 +44,7 @@ flowchart LR
     llm --> observe
     tool --> observe
     bot --> observe
-    observe -.-> log[("SQLite event log<br/>replay · report · resume")]
+    observe -.-> log[("SQLite event log<br/>replay · report · resume · trace")]
     decide -.-> log
     tool -.-> log
 ```
@@ -62,6 +65,10 @@ multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event
 multi-bot-agentic replay --event-log data/runs.sqlite --run-id demo --event-type decision --format text
 multi-bot-agentic report --event-log data/runs.sqlite --run-id demo
 
+# Export the run as an OpenTelemetry GenAI trace (OTLP/JSON) or a Mermaid sequence diagram
+multi-bot-agentic trace --event-log data/runs.sqlite --run-id demo --format mermaid
+multi-bot-agentic trace --event-log data/runs.sqlite --run-id demo --otlp-endpoint http://localhost:4318/v1/traces
+
 # Tools from an MCP server (bundled demo server, works offline)
 multi-bot-agentic mcp-tools --mcp-config examples/mcp/mcp.json
 MULTIBOT_FAKE_TOOL=mcp__notes__search_notes multi-bot-agentic run --provider fake \
@@ -78,6 +85,7 @@ To use a real model, export its key and pick the provider, for example
 | --- | --- | --- | --- |
 | Deterministic ODA loop | Rule-based decisions with rationale traces and an explicit run state machine | `runner.py`, `decision.py`, `lifecycle.py` | [Architecture](docs/ARCHITECTURE.md) |
 | Durable event log | Append-only SQLite log per run. `replay` and `report` never call providers | `event_log.py`, `cli.py` | [Replay diff](docs/guides/RUN_REPLAY_DIFF_GUIDE.md) |
+| **OpenTelemetry trace export** | `trace` turns any recorded run into OTLP/JSON with GenAI semantic conventions (`invoke_agent`, `chat`, `execute_tool` spans with rationale attributes), pushes it to Jaeger, Tempo, or Langfuse, or draws a Mermaid sequence diagram. Deterministic ids, content off by default | `tracing/` | [Trace export](docs/guides/OTEL_TRACE_EXPORT_GUIDE.md) |
 | Checkpoint & resume | Resume an interrupted run; the active bot's tool scope is restored | `checkpoint.py` | [Checkpoint resume](docs/guides/CHECKPOINT_RESUME_GUIDE.md) |
 | Multi-bot handoffs | `HANDOFF:<bot>:<summary>` with per-bot tool allowlists | `bots.py` | [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md) |
 | **MCP tool bridge** | Tools from any MCP server, with a dual-era (2026-07-28 + legacy) stdio client and no dependencies | `mcp/` | [MCP tools](docs/guides/MCP_TOOLS_GUIDE.md) |
@@ -111,6 +119,7 @@ ignore them ([parameter rules](docs/CONFIGURATION.md#provider-parameter-rules)).
   settings), and the [release-readiness walkthrough](docs/use-cases/USE-CASE-mcp-release-readiness.md)
 - **Concepts:** [Architecture](docs/ARCHITECTURE.md), [Safety](docs/SAFETY.md)
 - **Core guides:** [MCP tools](docs/guides/MCP_TOOLS_GUIDE.md),
+  [OpenTelemetry trace export](docs/guides/OTEL_TRACE_EXPORT_GUIDE.md),
   [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md),
   [Checkpoint resume](docs/guides/CHECKPOINT_RESUME_GUIDE.md),
   [HITL approval gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md),
@@ -139,11 +148,13 @@ These are the problems the project was built for. Each one is explained in
 8. "Agents should produce artifacts, not just chat." Allowlisted tools with recorded results do the work.
 9. "I need a clean example of agent architecture." Each module has one clear job.
 10. "CI must prove the agent works without credentials." `scripts/check.sh` runs on Python 3.10–3.12.
+11. "I want to see agent runs in our tracing backend, not a terminal." `trace` exports OpenTelemetry GenAI spans.
 
 ## Repository Layout
 
 ```text
-src/multi_bot_agentic/   runtime, decision engine, event log, adapters (llm/), tools (tools/), MCP bridge (mcp/)
+src/multi_bot_agentic/   runtime, decision engine, event log, adapters (llm/), tools (tools/), MCP bridge (mcp/),
+                         trace export (tracing/)
 tests/                   deterministic unit and integration tests (MCP server fixtures in tests/fixtures/mcp/)
 examples/mcp/            demo MCP server and mcpServers configs (bundled + official servers)
 scripts/                 check, demo, and GIF rendering scripts
@@ -159,8 +170,8 @@ scripts/check.sh
 ```
 
 `scripts/check.sh` runs `ruff check`, `ruff format --check`, `mypy src tests`, `pytest`, and a fake-provider
-smoke run with replay and report. CI runs the same script on Python 3.10, 3.11, and 3.12. For a richer local
-demo, run `scripts/run_demo.sh`.
+smoke run with replay, report, and trace (OTLP/JSON and Mermaid). CI runs the same script on Python 3.10, 3.11,
+and 3.12. For a richer local demo, run `scripts/run_demo.sh`.
 
 ## Contributing
 

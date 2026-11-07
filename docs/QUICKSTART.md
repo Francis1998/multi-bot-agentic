@@ -32,6 +32,24 @@ multi-bot-agentic replay --event-log data/runs.sqlite --event-type decision --fo
 multi-bot-agentic report --event-log data/runs.sqlite
 ```
 
+## Export A Run As A Trace
+
+```bash
+# Mermaid sequence diagram (GitHub renders it inside a mermaid code block)
+multi-bot-agentic trace --event-log data/runs.sqlite --format mermaid
+
+# OpenTelemetry GenAI trace as OTLP/JSON, printed or written to a file
+multi-bot-agentic trace --event-log data/runs.sqlite --output demo-output/trace.json
+
+# Push it to an OTLP/HTTP endpoint, for example Jaeger
+docker run --rm -p 16686:16686 -p 4318:4318 cr.jaegertracing.io/jaegertracing/jaeger:2.23.0
+multi-bot-agentic trace --event-log data/runs.sqlite --otlp-endpoint http://localhost:4318/v1/traces
+```
+
+Without `--run-id`, `trace` exports the most recently active run. Prompts, outputs, and tool payloads are only
+included with `--include-content`, and are redacted. See
+[OpenTelemetry Trace Export Guide](guides/OTEL_TRACE_EXPORT_GUIDE.md).
+
 ## Run The Scripted Demo
 
 ```bash

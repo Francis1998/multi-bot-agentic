@@ -10,6 +10,10 @@
 - **Cancellation**: a cancellation file can stop a run before the next action.
 - **Tool allowlist**: tools must be registered and allowed by policy.
 - **Rationale traces**: every decision records matched rule IDs, inputs used, and rejected actions.
+- **Trace export (opt-in egress)**: `trace` reads the event log only and sends nothing unless `--otlp-endpoint`
+  is given. Prompts, outputs, and tool payloads are excluded unless `--include-content` is passed, and everything
+  exported is redacted with `ObservationRedactor` and `ToolArgumentSanitizer`. The push refuses redirects and
+  never prints header values. See [OpenTelemetry Trace Export Guide](guides/OTEL_TRACE_EXPORT_GUIDE.md#privacy).
 - **MCP servers (opt-in)**: tools from `--mcp-config` servers are namespaced `mcp__<server>__<tool>`, filtered by
   per-server `allowedTools`/`deniedTools`, bounded by call/startup timeouts and `maxResultBytes`, optionally
   redacted, and launched with a least-privilege environment (provider API keys are not inherited). See

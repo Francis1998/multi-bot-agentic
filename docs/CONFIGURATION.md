@@ -100,6 +100,26 @@ through `env`. Full reference: [MCP Tool Bridge Guide](guides/MCP_TOOLS_GUIDE.md
 - `MULTIBOT_FAKE_TOOL`: tool the fake provider requests on its first turn (default `checklist`). Set it to an
   MCP tool such as `mcp__notes__search_notes` for offline MCP demos.
 
+## Trace Export
+
+`multi-bot-agentic trace` reads one run from `--event-log` and exports it. It has no environment variables of
+its own. Every setting is a flag:
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--run-id` | most recently active run | Run to export |
+| `--format` | `otlp-json` | `otlp-json` (OpenTelemetry `ExportTraceServiceRequest`) or `mermaid` (`sequenceDiagram`) |
+| `--output` | stdout | Write the output to a file |
+| `--include-content` | off | Add the goal, model inputs and outputs, tool arguments and results, and handoff summaries, all redacted |
+| `--agent-name` | none | `gen_ai.agent.name` of the root `invoke_agent` span |
+| `--otlp-endpoint` | none | Also POST the OTLP/JSON to this `http(s)` URL, for example `http://localhost:4318/v1/traces` (Jaeger, Tempo) or `https://cloud.langfuse.com/api/public/otel/v1/traces` |
+| `--otlp-header` | none | Repeatable `KEY=VALUE` request header. `${VAR}` and `${VAR:-default}` are expanded from the environment, so `--otlp-header 'Authorization=Bearer ${OTLP_TOKEN}'` keeps the token out of shell history. Values are never printed |
+| `--otlp-timeout` | `10` | OTLP request timeout in seconds |
+
+The standard `OTEL_EXPORTER_OTLP_*` variables are not read: `trace` only pushes when `--otlp-endpoint` is given,
+so credentials meant for another collector are never sent by accident. See the
+[OpenTelemetry Trace Export Guide](guides/OTEL_TRACE_EXPORT_GUIDE.md) for backends, the span model, and privacy.
+
 ## Safety Settings
 
 - `MULTIBOT_MAX_STEPS`: maximum Observe -> Decide -> Act iterations.

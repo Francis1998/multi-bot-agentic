@@ -1,0 +1,36 @@
+$ multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log demo-output/trace-demo.sqlite --run-id trace-demo
+{
+  "run_id": "trace-demo",
+  "state": "succeeded",
+  "answer": "synthesized plan from 3 observations",
+  "steps": 4,
+  "event_log": "demo-output/trace-demo.sqlite"
+}
+$ multi-bot-agentic trace --event-log demo-output/trace-demo.sqlite --format mermaid
+note: --run-id not given; tracing the most recent run trace-demo
+sequenceDiagram
+    autonumber
+    participant O as Orchestrator
+    participant A1 as LLM fake
+    participant T1 as checklist
+    Note over O: run trace-demo (provider fake)
+    O->>A1: call_llm (observe.no-model-output)
+    A1-->>O: TOOL checklist
+    O->>T1: call_tool (model.requested-tool)
+    T1-->>O: ok
+    O->>A1: call_llm (tool.result-needs-synthesis)
+    A1-->>O: DONE
+    Note over O: finish (model.done-or-budget)
+    Note over O: succeeded after 4 steps
+$ multi-bot-agentic trace --event-log demo-output/trace-demo.sqlite --run-id trace-demo | jq -c '.resourceSpans[0].scopeSpans[0].spans[] | {name, kind, parent: (.parentSpanId // "-")}'
+{"name":"invoke_agent","kind":1,"parent":"-"}
+{"name":"chat","kind":1,"parent":"84bdb9dc9c2c7bc2"}
+{"name":"execute_tool checklist","kind":1,"parent":"84bdb9dc9c2c7bc2"}
+{"name":"chat","kind":1,"parent":"84bdb9dc9c2c7bc2"}
+$ multi-bot-agentic trace --event-log demo-output/trace-demo.sqlite --run-id trace-demo --otlp-endpoint http://localhost:4318/v1/traces
+exported 4 spans of run trace-demo (trace 7c101eacd14518dfc8a2675d49345ff2) to http://localhost:4318/v1/traces: HTTP 200
+$ curl -s localhost:16686/api/traces/7c101eacd14518dfc8a2675d49345ff2 | jq -c '.data[0].spans[] | (.tags | from_entries) as $t | [.operationName, $t["gen_ai.operation.name"], $t["span.kind"]]'
+["invoke_agent","invoke_agent","internal"]
+["chat","chat","internal"]
+["execute_tool checklist","execute_tool","internal"]
+["chat","chat","internal"]
