@@ -15,12 +15,16 @@ tooling, implemented with stdlib only).
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.levenshtein import LevenshteinTool
+
+result = LevenshteinTool().execute(
     ToolInvocation(
         tool_name="levenshtein",
         arguments={"a": "kitten", "b": "sitting"},
     )
 )
+print(result.content)
 ```
 
 ## Bounds & Safety

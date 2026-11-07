@@ -11,7 +11,11 @@ Denser-than-Base64 opaque handoffs. Complements existing base32/base58/base64 to
 ## Usage
 
 ```python
-tool.execute(ToolInvocation(tool_name="base85", arguments={"text": "hello", "mode": "encode"}))
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.base85 import Base85Tool
+
+result = Base85Tool().execute(ToolInvocation(tool_name="base85", arguments={"text": "hello", "mode": "encode"}))
+print(result.content)
 ```
 
 ## Bounds & Safety

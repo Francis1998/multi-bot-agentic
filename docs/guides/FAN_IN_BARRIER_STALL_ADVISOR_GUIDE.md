@@ -1,6 +1,6 @@
 # FanInBarrierStallAdvisor Guide
 
-![FanInBarrierStallAdvisor](../assets/demo/fan-in-barrier-stall.gif)
+![FanInBarrierStallAdvisor](../../assets/demo/fan-in-barrier-stall.gif)
 
 Offline HITL `stall_ratio` bands.
 Gap vs LangGraph/CrewAI/AutoGen fan-in barrier stall monitors. Distinct from `SupervisorIdleSkewAdvisor` / `WorkerStarvationBandAdvisor`.

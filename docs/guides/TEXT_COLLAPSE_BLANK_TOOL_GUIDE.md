@@ -13,12 +13,16 @@ unreliable; this tool is deterministic and bounded.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.text_collapse_blank import TextCollapseBlankTool
+
+result = TextCollapseBlankTool().execute(
     ToolInvocation(
         tool_name="text_collapse_blank",
         arguments={"text": "line\n\n\n\nnext", "max_blank": 1},
     )
 )
+print(result.content)
 ```
 
 Sentinel form: `text<<<TEXT_COLLAPSE_BLANK>>>2`

@@ -14,12 +14,16 @@ Base58 alphabet only, with no network access.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.base58 import Base58Tool
+
+result = Base58Tool().execute(
     ToolInvocation(
         tool_name="base58",
         arguments={"text": "hello", "mode": "encode"},
     )
 )
+print(result.content)
 ```
 
 Decode with `mode=decode`. The `data` argument is accepted as an alias for

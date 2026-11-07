@@ -14,12 +14,16 @@ repo had no ICS parser. Models routinely mis-read folded lines or invent
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.ics_parse import IcsParseTool
+
+result = IcsParseTool().execute(
     ToolInvocation(
         tool_name="ics_parse",
         arguments={"text": "BEGIN:VEVENT\nSUMMARY:Sync\nDTSTART:20260826T160000Z\nEND:VEVENT\n"},
     )
 )
+print(result.content)
 ```
 
 Output is JSON Lines (one event object per line) with

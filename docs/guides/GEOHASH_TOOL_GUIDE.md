@@ -19,6 +19,7 @@ encoded = tool.execute(
     ToolInvocation(tool_name="geohash", arguments={"lat": 37.7749, "lon": -122.4194, "precision": 7})
 )
 assert encoded.content == "9q8yyk8"
+print(encoded.content)
 ```
 
 ## Bounds

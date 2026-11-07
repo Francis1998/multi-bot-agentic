@@ -17,6 +17,7 @@ from multi_bot_agentic.models import ToolInvocation
 tool = MorseTool()
 encoded = tool.execute(ToolInvocation(tool_name="morse", arguments={"text": "SOS", "mode": "encode"}))
 assert encoded.content == "... --- ..."
+print(encoded.content)
 ```
 
 ## Bounds

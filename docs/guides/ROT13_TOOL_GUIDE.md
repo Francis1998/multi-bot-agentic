@@ -16,6 +16,7 @@ from multi_bot_agentic.models import ToolInvocation
 
 result = Rot13Tool().execute(ToolInvocation(tool_name="rot13", arguments={"text": "Hello"}))
 assert result.content == "Uryyb"
+print(result.content)
 ```
 
 ## Bounds

@@ -17,6 +17,7 @@ from multi_bot_agentic.models import ToolInvocation
 tool = RomanNumeralTool()
 result = tool.execute(ToolInvocation(tool_name="roman_numeral", arguments={"text": "1994"}))
 assert result.content == "MCMXCIV"
+print(result.content)
 ```
 
 ## Bounds

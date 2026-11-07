@@ -14,12 +14,16 @@ before a real primary key exists. Models mis-count zeros or invent variants.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.uuid_nil import UuidNilTool
+
+result = UuidNilTool().execute(
     ToolInvocation(
         tool_name="uuid_nil",
         arguments={"mode": "nil"},
     )
 )
+print(result.content)
 ```
 
 `mode=max` returns `ffffffff-ffff-ffff-ffff-ffffffffffff`.

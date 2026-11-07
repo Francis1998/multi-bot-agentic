@@ -17,6 +17,7 @@ from multi_bot_agentic.models import ToolInvocation
 tool = CaesarCipherTool()
 result = tool.execute(ToolInvocation(tool_name="caesar_cipher", arguments={"text": "Hello", "shift": 3}))
 assert result.content == "Khoor"
+print(result.content)
 ```
 
 ## Bounds

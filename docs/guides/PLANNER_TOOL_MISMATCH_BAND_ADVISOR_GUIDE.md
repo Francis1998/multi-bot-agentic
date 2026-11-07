@@ -1,6 +1,6 @@
 # PlannerToolMismatchBandAdvisor Guide
 
-![PlannerToolMismatchBandAdvisor](../assets/demo/planner-tool-mismatch-band.gif)
+![PlannerToolMismatchBandAdvisor](../../assets/demo/planner-tool-mismatch-band.gif)
 
 Offline HITL `mismatch_ratio` bands.
 Gap vs LangGraph/CrewAI/AutoGen planner-tool mismatch monitors. Distinct from `PlanGoalContradictionBandAdvisor` / `ToolPermissionDriftAdvisor`.

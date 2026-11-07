@@ -11,7 +11,13 @@ Internationalized domain names need xn-- Punycode. Models invent encodings. Gap 
 ## Usage
 
 ```python
-tool.execute(ToolInvocation(tool_name="punycode", arguments={"text": "münchen.de", "mode": "encode"}))
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.punycode import PunycodeTool
+
+result = PunycodeTool().execute(
+    ToolInvocation(tool_name="punycode", arguments={"text": "münchen.de", "mode": "encode"})
+)
+print(result.content)
 ```
 
 ## Bounds & Safety

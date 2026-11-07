@@ -15,12 +15,16 @@ access.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.csv_to_json import CsvToJsonTool
+
+result = CsvToJsonTool().execute(
     ToolInvocation(
         tool_name="csv_to_json",
         arguments={"csv": "name,role\nAda,engineer\n"},
     )
 )
+print(result.content)
 ```
 
 Optional `delimiter` overrides `,`. The `text` argument is accepted as an

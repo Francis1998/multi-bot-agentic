@@ -14,12 +14,16 @@ vs `1.0.0`. `semver_compare` applies SemVer 2.0.0 precedence deterministically.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.semver_compare import SemverCompareTool
+
+result = SemverCompareTool().execute(
     ToolInvocation(
         tool_name="semver_compare",
         arguments={"version_a": "1.0.0-alpha", "version_b": "1.0.0"},
     )
 )
+print(result.content)
 ```
 
 Sentinel form: `1.2.3<<<SEMVER_COMPARE>>>1.2.4`

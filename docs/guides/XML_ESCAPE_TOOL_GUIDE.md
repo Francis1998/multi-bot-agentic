@@ -14,12 +14,16 @@ uses stdlib `xml.sax.saxutils.escape` / `unescape`.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.xml_escape import XmlEscapeTool
+
+result = XmlEscapeTool().execute(
     ToolInvocation(
         tool_name="xml_escape",
         arguments={"text": "A <B> & C", "mode": "escape"},
     )
 )
+print(result.content)
 ```
 
 Unescape with `mode=unescape`.

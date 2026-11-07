@@ -9,7 +9,31 @@ pipelines in popular frameworks.
 ## Usage
 
 ```python
-tool.execute(ToolInvocation(tool_name="mime_multipart_flatten", arguments={"raw": mime_text}))
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.mime_multipart_flatten import MimeMultipartFlattenTool
+
+mime_text = """MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="OUTER"
+
+--OUTER
+Content-Type: multipart/alternative; boundary="INNER"
+
+--INNER
+Content-Type: text/plain; charset=utf-8
+
+Release notes
+--INNER--
+--OUTER
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="report.pdf"
+
+Private payload
+--OUTER--
+"""
+result = MimeMultipartFlattenTool().execute(
+    ToolInvocation(tool_name="mime_multipart_flatten", arguments={"raw": mime_text})
+)
+print(result.content)
 ```
 
 ## Bounds & Safety

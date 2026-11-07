@@ -13,12 +13,16 @@ fetching pages or running JS. This tool is stdlib-only and bounded.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.html_links_extract import HtmlLinksExtractTool
+
+result = HtmlLinksExtractTool().execute(
     ToolInvocation(
         tool_name="html_links_extract",
         arguments={"html": '<a href="/docs">Docs</a>', "max_links": 100},
     )
 )
+print(result.content)
 ```
 
 ## Bounds & Safety

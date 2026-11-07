@@ -14,7 +14,10 @@ stdlib `hmac` + `hashlib` only and never logs the secret key.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.hmac_sign import HmacSignTool
+
+result = HmacSignTool().execute(
     ToolInvocation(
         tool_name="hmac_sign",
         arguments={
@@ -25,6 +28,7 @@ tool.execute(
         },
     )
 )
+print(result.content)
 ```
 
 ## Bounds & Safety

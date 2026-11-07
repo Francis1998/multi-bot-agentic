@@ -18,6 +18,7 @@ tool = IbanCheckTool()
 result = tool.execute(ToolInvocation(tool_name="iban_check", arguments={"iban": "GB29 NWBK 6016 1331 9268 19"}))
 assert result.content == "valid"
 assert result.metadata["country"] == "GB"
+print(result.content, result.metadata["country"])
 ```
 
 ## Bounds

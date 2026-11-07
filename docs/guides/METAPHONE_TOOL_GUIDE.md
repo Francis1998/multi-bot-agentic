@@ -16,12 +16,16 @@ with stdlib only).
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.metaphone import MetaphoneTool
+
+result = MetaphoneTool().execute(
     ToolInvocation(
         tool_name="metaphone",
         arguments={"text": "Joseph"},
     )
 )
+print(result.content)
 ```
 
 ## Bounds & Safety
