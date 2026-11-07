@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -45,6 +46,9 @@ TOOLS: list[dict[str, Any]] = [
     {"name": "image", "description": "Return an image with a caption.", "inputSchema": _schema({}, [])},
     {"name": "contact", "description": "Return contact details.", "inputSchema": _schema({}, [])},
     {"name": "crash", "description": "Exit without answering.", "inputSchema": _schema({}, [])},
+    {"name": "surrogate", "description": "Return text with a lone surrogate.", "inputSchema": _schema({}, [])},
+    {"name": "weird_type", "description": "Return blocks with hostile types.", "inputSchema": _schema({}, [])},
+    {"name": "close_stdin", "description": "Close stdin but keep running.", "inputSchema": _schema({}, [])},
     {"name": "bad name:x", "description": "Invalid name that clients must skip.", "inputSchema": _schema({}, [])},
 ]
 
@@ -89,6 +93,15 @@ def _call_tool(request_id: Any, name: str, arguments: dict[str, Any]) -> dict[st
         return _result(request_id, {"content": blocks})
     if name == "contact":
         return _text(request_id, "mail alice@example.com, key sk-abcdefghijklmnop1234")
+    if name == "surrogate":
+        return _text(request_id, "bad \ud800 text")
+    if name == "weird_type":
+        return _result(request_id, {"content": [{"type": "sk-abcdefghijklmnopqrstuv"}, {"type": "x" * 5000}]})
+    if name == "close_stdin":
+        os.close(0)
+        _write(_text(request_id, "stdin closed"))
+        time.sleep(30)
+        sys.exit(0)
     if name == "crash":
         print("crashing on purpose", file=sys.stderr, flush=True)
         sys.exit(3)

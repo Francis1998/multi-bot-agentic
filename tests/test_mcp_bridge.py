@@ -23,6 +23,7 @@ from multi_bot_agentic.mcp.config import McpConfig, McpServerConfig
 from multi_bot_agentic.models import ToolInvocation
 
 FIXTURES = Path(__file__).parent / "fixtures" / "mcp"
+EXAMPLES = Path(__file__).resolve().parents[1] / "examples" / "mcp"
 SEARCH_SCHEMA = {
     "type": "object",
     "properties": {"query": {"type": "string"}, "limit": {"type": "integer"}},
@@ -247,3 +248,47 @@ def test_adapter_caps_bytes_and_redacts_results() -> None:
     assert contact.metadata["redactions"] == 2
     assert image.content == "[image image/png: 12 base64 chars omitted]\na dot"
     assert image.metadata["content_types"] == ["image", "text"]
+
+
+def test_adapter_call_passes_structured_arguments_verbatim() -> None:
+    """Library callers can send literal text that looks like JSON without double-encoding it."""
+
+    with McpToolset(McpConfig(servers=(_server("modern", "modern_server.py"),))) as toolset:
+        toolset.start()
+        result = toolset.tools["mcp__modern__echo"].call({"text": '{"a": 1}'})
+
+    assert result.ok
+    assert result.content == '{"a": 1}'
+    assert result.metadata["mcp_arguments"] == {"text": '{"a": 1}'}
+
+
+def test_adapter_survives_invalid_unicode_and_hostile_content_types() -> None:
+    """Lone surrogates and hostile block types become safe text and normalized metadata."""
+
+    with McpToolset(McpConfig(servers=(_server("modern", "modern_server.py", redact_results=True),))) as toolset:
+        toolset.start()
+        surrogate = _invoke(toolset.tools["mcp__modern__surrogate"], "{}")
+        weird = _invoke(toolset.tools["mcp__modern__weird_type"], "{}")
+
+    assert surrogate.ok
+    assert surrogate.content == "bad ? text"
+    assert weird.ok
+    assert weird.metadata["content_types"] == ["unknown", "unknown"]
+    assert "sk-abcdefghijklmnopqrstuv" not in str(weird.metadata)
+
+
+def test_example_notes_server_rejects_bad_arguments_without_crashing() -> None:
+    """The shipped demo server answers invalid arguments with -32602 and keeps serving."""
+
+    server = McpServerConfig(name="notes", command=sys.executable, args=(str(EXAMPLES / "notes_server.py"),))
+    with McpToolset(McpConfig(servers=(server,))) as toolset:
+        toolset.start()
+        search = toolset.tools["mcp__notes__search_notes"]
+        bad = _invoke(search, '{"query": "release", "limit": "many"}')
+        good = _invoke(search, "release")
+
+    assert not bad.ok
+    assert bad.metadata["error_kind"] == "protocol_error"
+    assert bad.metadata["error_code"] == -32602
+    assert good.ok
+    assert good.content.startswith("release-checklist:")

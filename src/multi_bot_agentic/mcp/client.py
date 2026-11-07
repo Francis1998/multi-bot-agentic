@@ -203,7 +203,7 @@ class StdioMcpClient:
         self._process: subprocess.Popen[bytes] | None = None
         self._readers: tuple[threading.Thread, ...] = ()
         self._finalizer: weakref.finalize[Any, Any] | None = None
-        self._pending: set[int] = set()
+        self._pending: dict[int, int] = {}
         self._responses: dict[int, dict[str, Any]] = {}
         self._closed_reason: str | None = None
         self._generation = 0
@@ -211,6 +211,7 @@ class StdioMcpClient:
         self._launched = False
         self._user_closed = False
         self._stderr_tail: deque[str] = deque(maxlen=_STDERR_TAIL_LINES)
+        self._stderr_lock = threading.Lock()
         self.era: McpEra | None = None
         self.protocol_version: str | None = None
         self.server_info: dict[str, Any] = {}
@@ -235,7 +236,8 @@ class StdioMcpClient:
     def stderr_tail(self) -> tuple[str, ...]:
         """Return the most recent server stderr lines (diagnostics only)."""
 
-        return tuple(self._stderr_tail)
+        with self._stderr_lock:
+            return tuple(self._stderr_tail)
 
     def start(self) -> None:
         """Launch the server if needed and detect its protocol era.
@@ -357,6 +359,7 @@ class StdioMcpClient:
             self._closed_reason = None
             self._generation += 1
             generation = self._generation
+            self._cond.notify_all()  # waiters of the replaced process fail fast in _await
         self._legacy_mode = False
         self.era = None
         self.protocol_version = None
@@ -452,7 +455,8 @@ class StdioMcpClient:
             for raw in iter(lambda: stream.readline(4096), b""):
                 line = raw.decode("utf-8", errors="replace").rstrip()
                 if line:
-                    self._stderr_tail.append(line[:500])
+                    with self._stderr_lock:
+                        self._stderr_tail.append(line[:500])
         except (OSError, ValueError):
             return
 
@@ -465,7 +469,8 @@ class StdioMcpClient:
         try:
             message = json.loads(text)
         except json.JSONDecodeError:
-            self._stderr_tail.append(f"[ignored non-JSON stdout line] {text[:200]}")
+            with self._stderr_lock:
+                self._stderr_tail.append(f"[ignored non-JSON stdout line] {text[:200]}")
             return
         if not isinstance(message, dict):
             return
@@ -506,9 +511,11 @@ class StdioMcpClient:
         """
 
         try:
-            line = json.dumps(message, ensure_ascii=False, allow_nan=False, separators=(",", ":")) + "\n"
+            # ASCII-only JSON (non-ASCII as \\u escapes) can always be encoded, even with lone surrogates.
+            data = (json.dumps(message, allow_nan=False, separators=(",", ":")) + "\n").encode("ascii")
         except (TypeError, ValueError) as error:
             raise McpProtocolError(f"cannot encode MCP message: {error}") from error
+        generation = self._generation
         process = self._process
         stdin = process.stdin if process is not None else None
         if stdin is None:
@@ -516,20 +523,25 @@ class StdioMcpClient:
         if not self._write_lock.acquire(timeout=_remaining(deadline)):
             raise McpTimeoutError(f"MCP server '{self.name}' is not accepting input (another write is stalled)")
         try:
-            completed = _write_all(stdin, line.encode("utf-8"), deadline)
+            completed = _write_all(stdin, data, deadline)
         except (OSError, ValueError) as error:
+            self._mark_broken(f"cannot write to the server's stdin: {error}", generation)
             raise McpTransportError(self._describe(f"cannot write to MCP server '{self.name}': {error}")) from error
         finally:
             self._write_lock.release()
         if not completed:
-            self._mark_broken("server stopped reading its stdin")
+            self._mark_broken("server stopped reading its stdin", generation)
             raise McpTimeoutError(f"MCP server '{self.name}' stopped reading its stdin")
 
-    def _mark_broken(self, reason: str) -> None:
-        """Fail waiters and force a restart before the channel is used again."""
+    def _mark_broken(self, reason: str, generation: int) -> None:
+        """Fail waiters and force a restart before the channel of ``generation`` is reused.
+
+        A failure observed on an already-replaced process is ignored, so an old
+        write can never invalidate its replacement.
+        """
 
         with self._cond:
-            if self._closed_reason is None:
+            if generation == self._generation and self._closed_reason is None:
                 self._closed_reason = reason
             self._cond.notify_all()
 
@@ -549,7 +561,7 @@ class StdioMcpClient:
 
         request_id = next(self._ids)
         with self._cond:
-            self._pending.add(request_id)
+            self._pending[request_id] = self._generation
         try:
             self._write({"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}, deadline)
         except BaseException:
@@ -570,6 +582,8 @@ class StdioMcpClient:
                 message = self._responses.pop(request_id, None)
                 if message is not None:
                     return message
+                if self._pending.get(request_id) != self._generation:
+                    raise McpTransportError(f"MCP server '{self.name}' restarted while a request was pending")
                 if self._closed_reason is not None:
                     raise McpTransportError(self._describe(f"MCP server '{self.name}': {self._closed_reason}"))
                 remaining = deadline - time.monotonic()
@@ -581,7 +595,7 @@ class StdioMcpClient:
         """Stop tracking a request and drop any response that arrives later."""
 
         with self._cond:
-            self._pending.discard(request_id)
+            self._pending.pop(request_id, None)
             self._responses.pop(request_id, None)
 
     def _describe(self, message: str) -> str:
@@ -591,7 +605,9 @@ class StdioMcpClient:
         code = process.poll() if process is not None else None
         if code is not None:
             message += f" (exit code {code})"
-        tail = [line for line in self._stderr_tail if not line.startswith("[ignored")][-3:]
+        with self._stderr_lock:
+            snapshot = tuple(self._stderr_tail)
+        tail = [line for line in snapshot if not line.startswith("[ignored")][-3:]
         if tail:
             message += "; stderr: " + " | ".join(tail)
         return message

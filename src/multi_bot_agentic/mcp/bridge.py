@@ -35,6 +35,7 @@ TOOL_NAME_PREFIX = "mcp__"
 # break the ``TOOL:<name>:<payload>`` directive, so such tools are skipped.
 _REMOTE_TOOL_NAME = re.compile(r"^[A-Za-z0-9_.-]{1,128}$")
 _MAX_DESCRIPTION_CHARS = 400
+_CONTENT_TYPES = ("text", "image", "audio", "resource_link", "resource")
 
 
 class McpArgumentError(ValueError):
@@ -158,7 +159,7 @@ def render_content(result: McpCallResult) -> str:
             text = resource.get("text")
             parts.append(text if isinstance(text, str) else f"[resource {resource.get('uri')}: binary omitted]")
         else:
-            parts.append(f"[{kind} content omitted]")
+            parts.append(f"[{str(kind)[:32]} content omitted]")
     if not parts and result.structured_content is not None:
         return json.dumps(result.structured_content, sort_keys=True, ensure_ascii=False)
     return "\n".join(parts)
@@ -175,12 +176,19 @@ def truncate_utf8(text: str, max_bytes: int) -> tuple[str, int]:
         The possibly truncated text and the original byte length.
     """
 
-    encoded = text.encode("utf-8")
+    encoded = text.encode("utf-8", errors="replace")  # lone surrogates from JSON become "?"
     if len(encoded) <= max_bytes:
-        return text, len(encoded)
+        return encoded.decode("utf-8"), len(encoded)
     kept = encoded[:max_bytes].decode("utf-8", errors="ignore")
     marker = f"\n…[truncated: kept {len(kept.encode('utf-8'))} of {len(encoded)} bytes; raise maxResultBytes]"
     return kept + marker, len(encoded)
+
+
+def _content_type(block: Mapping[str, Any]) -> str:
+    """Return a recognized MCP content type, so server-controlled strings never reach metadata."""
+
+    kind = block.get("type")
+    return kind if isinstance(kind, str) and kind in _CONTENT_TYPES else "unknown"
 
 
 def _summarize(description: str, fallback: str) -> str:
@@ -235,12 +243,32 @@ class McpToolAdapter:
             and ``isError`` failures.
         """
 
-        metadata: dict[str, Any] = {"mcp_server": self.server_name, "mcp_tool": self.remote_name}
         try:
             arguments = coerce_arguments(invocation.arguments, self.input_schema)
         except McpArgumentError as error:
+            metadata = {"mcp_server": self.server_name, "mcp_tool": self.remote_name}
             return self._result(False, str(error), metadata, error_kind="invalid_arguments")
-        metadata["mcp_arguments"] = arguments
+        return self.call(arguments)
+
+    def call(self, arguments: Mapping[str, Any]) -> ToolResult:
+        """Call the tool with structured arguments as-is, skipping ``TOOL:`` payload parsing.
+
+        Library callers use this to send literal values (for example text that
+        looks like JSON) without double-encoding them.
+
+        Args:
+            arguments: JSON-serializable tool arguments.
+
+        Returns:
+            Tool result with the same failure semantics as :meth:`execute`.
+        """
+
+        arguments = dict(arguments)
+        metadata: dict[str, Any] = {
+            "mcp_server": self.server_name,
+            "mcp_tool": self.remote_name,
+            "mcp_arguments": arguments,
+        }
         started = time.monotonic()
         try:
             result = self._client.call_tool(
@@ -254,7 +282,7 @@ class McpToolAdapter:
         except McpError as error:
             return self._result(False, str(error), self._timed(metadata, started), error_kind="transport_error")
         metadata = self._timed(metadata, started)
-        metadata["content_types"] = [str(block.get("type")) for block in result.content]
+        metadata["content_types"] = [_content_type(block) for block in result.content]
         error_kind = "tool_error" if result.is_error else None
         return self._result(not result.is_error, render_content(result), metadata, error_kind=error_kind)
 

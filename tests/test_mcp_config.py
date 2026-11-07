@@ -179,3 +179,13 @@ def test_load_resolves_cwd_against_config_dir_and_accepts_servers_alias(tmp_path
     assert config.source == path
     assert config.servers[0].cwd == tmp_path.resolve() / "."
     assert config.enabled_servers == config.servers
+
+
+def test_load_rejects_non_utf8_files(tmp_path: Path) -> None:
+    """A UTF-16 config is reported as an invalid config instead of a traceback."""
+
+    path = tmp_path / "utf16.json"
+    path.write_text(json.dumps({"mcpServers": {}}), encoding="utf-16")
+
+    with pytest.raises(McpConfigError, match="not UTF-8"):
+        load_mcp_config(path)

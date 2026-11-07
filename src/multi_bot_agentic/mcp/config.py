@@ -174,6 +174,8 @@ def load_mcp_config(path: Path, environ: Mapping[str, str] | None = None) -> Mcp
         data = json.loads(path.read_text(encoding="utf-8"))
     except OSError as error:
         raise McpConfigError(f"cannot read MCP config {path}: {error.strerror or error}") from error
+    except UnicodeDecodeError as error:
+        raise McpConfigError(f"MCP config {path} is not UTF-8 text: {error.reason}") from error
     except json.JSONDecodeError as error:
         raise McpConfigError(f"MCP config {path} is not valid JSON: {error.msg} (line {error.lineno})") from error
     return parse_mcp_config(data, base_dir=path.resolve().parent, environ=environ, source=path)

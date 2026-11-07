@@ -55,7 +55,7 @@ def test_modern_server_is_detected_with_server_discover() -> None:
 
     names = [tool.name for tool in tools]
     assert names[:4] == ["echo", "add", "fail", "sleep"]
-    assert len(names) == 9
+    assert len(names) == 12
     assert tools[0].input_schema["required"] == ["text"]
 
 
@@ -266,3 +266,27 @@ def test_close_kills_children_that_outlive_the_launcher(tmp_path: Path) -> None:
     client.close()
 
     assert _wait_dead(child_pid, timeout=5.0)
+
+
+def test_request_pending_across_a_restart_fails_fast() -> None:
+    """A waiter from a replaced process gets a transport error instead of waiting out its timeout."""
+
+    with StdioMcpClient(MODERN, name="restarting") as client:
+        request_id = client._issue("tools/call", {"name": "sleep", "arguments": {"seconds": 5}}, time.monotonic() + 5)
+        client._launch()
+        started = time.monotonic()
+        with pytest.raises(McpTransportError, match="restarted"):
+            client._await(request_id, 3.0)
+        assert time.monotonic() - started < 1.0
+
+
+def test_server_that_closes_stdin_is_restarted() -> None:
+    """A broken stdin pipe marks the channel broken so the next call restarts the server."""
+
+    with StdioMcpClient(MODERN, name="half-closed", max_restarts=1) as client:
+        assert client.call_tool("close_stdin", {}).content[0]["text"] == "stdin closed"
+        first_pid = client.pid
+        with pytest.raises(McpTransportError):
+            client.call_tool("echo", {"text": "lost"}, timeout_seconds=2)
+        assert client.call_tool("echo", {"text": "fresh"}, timeout_seconds=5).content[0]["text"] == "fresh"
+        assert client.pid != first_pid

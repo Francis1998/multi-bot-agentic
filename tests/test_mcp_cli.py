@@ -37,7 +37,7 @@ def test_mcp_tools_lists_servers_eras_and_tools(tmp_path: Path, capsys: pytest.C
 
     assert mcp_tools_command(args) == 0
     out = capsys.readouterr().out
-    assert "server modern: modern 2026-07-28 (modern-fixture/1.0.0), 7 tools, 1 hidden" in out
+    assert "server modern: modern 2026-07-28 (modern-fixture/1.0.0), 10 tools, 1 hidden" in out
     assert "skipped: bad name:x" in out
     assert "server legacy: legacy 2025-11-25 (legacy-fixture/0.9.0), 4 tools" in out
     assert "  - mcp__legacy__shout(text: string (required))" in out
@@ -102,7 +102,7 @@ def test_run_with_mcp_config_calls_tool_and_replay_shows_it(
     assert run_command(run_args) == 0
     captured = capsys.readouterr()
     assert json.loads(captured.out)["state"] == "succeeded"
-    assert "mcp: modern modern 2026-07-28 (7 tools)" in captured.err
+    assert "mcp: modern modern 2026-07-28 (10 tools)" in captured.err
     assert "mcp: legacy legacy 2025-11-25 (4 tools)" in captured.err
 
     replay_args = parser.parse_args(

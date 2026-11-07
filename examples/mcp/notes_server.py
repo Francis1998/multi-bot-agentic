@@ -113,6 +113,8 @@ def handle(request: dict[str, Any]) -> None:
             respond(request_id, call_tool(str(params.get("name")), dict(params.get("arguments") or {})))
         except KeyError:
             respond(request_id, error={"code": -32602, "message": f"Unknown tool: {params.get('name')}"})
+        except (TypeError, ValueError) as error:
+            respond(request_id, error={"code": -32602, "message": f"Invalid arguments: {error}"})
     else:
         respond(request_id, error={"code": -32601, "message": f"Method not found: {method}"})
 
