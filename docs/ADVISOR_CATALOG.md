@@ -568,6 +568,13 @@ HITL supervisor fanout skew_ratio band guard (never auto-acts). Gap vs LangGraph
 
 HITL agent capability drift_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent capability-drift monitors. Distinct from `BotCapabilityDriftAdvisor` / `ToolSchemaCompatBandAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. Guide: [`AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md`](guides/AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md).
 
+
+### ToolPermissionBounceBandAdvisor
+
+![ToolPermissionBounceBandAdvisor](../assets/demo/tool-permission-bounce.gif)
+
+HITL tool permission bounce_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen tool-permission bounce monitors. Distinct from `ToolPermissionEscalationBandAdvisor` / `ToolSandboxEscapeAttemptBandAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. Guide: [`TOOL_PERMISSION_BOUNCE_BAND_ADVISOR_GUIDE.md`](guides/TOOL_PERMISSION_BOUNCE_BAND_ADVISOR_GUIDE.md).
+
 ### HitlApprovalStarvationBandAdvisor
 
 ![HitlApprovalStarvationBandAdvisor](../assets/demo/hitl-approval-starvation.gif)
