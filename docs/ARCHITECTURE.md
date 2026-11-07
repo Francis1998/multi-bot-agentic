@@ -72,7 +72,7 @@ Replay reads sqlite events and prints them in sequence. Replay never calls provi
 
 ## Bot Handoff
 
-Optional `BotSpec` registries let the decision engine accept `HANDOFF:bot_id:summary`. The runner swaps `active_bot_id` and `SafetyPolicy.allowed_tools` without changing the ODA loop shape.
+Optional `BotSpec` registries let the decision engine accept `HANDOFF:bot_id:summary`. The runner swaps `active_bot_id` and `SafetyPolicy.allowed_tools` for the rest of that run without changing the ODA loop shape. Every `run()` starts again from the constructor's `active_bot_id`, and `resume()` restores the bot recorded in the checkpoint.
 
 ## MCP Tool Bridge
 
