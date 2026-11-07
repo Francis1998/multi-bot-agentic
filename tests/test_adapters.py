@@ -159,7 +159,16 @@ def test_kimi_adapter_default_uses_latest_k3_stack(monkeypatch: MonkeyPatch) -> 
 
 # Sampling parameters that reasoning models reject: GPT-6 (reasoning effort above "none") does not accept
 # temperature/top_p/logprobs, and Kimi K3 fixes temperature/top_p/n/penalties ("omit them from requests").
-_FIXED_OR_UNSUPPORTED = {"temperature", "top_p", "n", "presence_penalty", "frequency_penalty", "logprobs"}
+_FIXED_OR_UNSUPPORTED = {
+    "temperature",
+    "top_p",
+    "top_k",
+    "n",
+    "presence_penalty",
+    "frequency_penalty",
+    "logprobs",
+    "top_logprobs",
+}
 
 
 def _captured_payload(monkeypatch: MonkeyPatch, adapter: OpenAIAdapter) -> dict[str, object]:
@@ -231,3 +240,41 @@ def test_completion_budget_rejects_invalid_values(monkeypatch: MonkeyPatch, valu
 
     with pytest.raises(ValueError, match="OPENAI_MAX_COMPLETION_TOKENS must be a positive integer"):
         build_llm_adapter("openai")
+
+
+def test_gemini_payload_sends_no_sampling_parameters(monkeypatch: MonkeyPatch) -> None:
+    """Gemini 3.x ignores temperature/topP/topK, so the adapter sends no ``generationConfig`` at all."""
+
+    captured: dict[str, object] = {}
+
+    def fake_post_json(
+        url: str, payload: dict[str, object], headers: dict[str, str], timeout_seconds: float
+    ) -> dict[str, object]:
+        del headers, timeout_seconds
+        captured.update(payload, url=url)
+        return {"candidates": [{"content": {"parts": [{"text": "DONE: ok"}]}}]}
+
+    monkeypatch.setattr("multi_bot_agentic.llm.gemini.post_json", fake_post_json)
+    adapter = GeminiAdapter(api_key="k", model="gemini-3.8-flash")
+    request = ModelRequest(goal="demo", observations=(Observation(source="user", content="demo"),))
+
+    assert adapter.complete(request, timeout_seconds=1.0).text == "DONE: ok"
+    assert "gemini-3.8-flash:generateContent" in str(captured.pop("url"))
+    assert set(captured) == {"contents"}
+
+
+def test_claude_code_adapter_adds_no_sampling_flags(monkeypatch: MonkeyPatch) -> None:
+    """Claude 5.5 rejects temperature/top_p/top_k, so the CLI adapter only runs the configured command."""
+
+    seen: list[list[str]] = []
+
+    def fake_run(command: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
+        seen.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="DONE: ok", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    adapter = ClaudeCodeCLIAdapter(command="claude --model claude-opus-5-5")
+    request = ModelRequest(goal="demo", observations=(Observation(source="user", content="demo"),))
+
+    assert adapter.complete(request, timeout_seconds=1.0).text == "DONE: ok"
+    assert seen == [["claude", "--model", "claude-opus-5-5"]]
