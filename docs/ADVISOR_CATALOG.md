@@ -561,6 +561,13 @@ HITL `orphan_ratio` band guard. Gap vs LangGraph/CrewAI/AutoGen tool side-effect
 
 HITL supervisor fanout skew_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen supervisor fanout-skew monitors. Distinct from `OrchestratorFanoutBudgetBandAdvisor` / `CriticFanoutSkewAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. Guide: [`SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md`](guides/SUPERVISOR_FANOUT_SKEW_BAND_ADVISOR_GUIDE.md).
 
+
+### AgentCapabilityDriftBandAdvisor
+
+![AgentCapabilityDriftBandAdvisor](../assets/demo/agent-capability-drift.gif)
+
+HITL agent capability drift_ratio band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen agent capability-drift monitors. Distinct from `BotCapabilityDriftAdvisor` / `ToolSchemaCompatBandAdvisor`. Stack: GPT-6.1 / Claude Sonnet 5.5 / Gemini 3.x / Kimi K3. Guide: [`AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md`](guides/AGENT_CAPABILITY_DRIFT_BAND_ADVISOR_GUIDE.md).
+
 ### HitlApprovalStarvationBandAdvisor
 
 ![HitlApprovalStarvationBandAdvisor](../assets/demo/hitl-approval-starvation.gif)
