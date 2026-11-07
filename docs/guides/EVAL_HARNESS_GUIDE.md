@@ -43,6 +43,19 @@ report = EvaluationHarness(load_scenarios(default_fixture_dir())).run(
 assert report.pass_rate == 1.0
 ```
 
+## Event Logs
+
+Each scenario is logged to `<event-log-dir>/<scenario_id>.sqlite` (default `data/eval-logs`). Every execution
+is a new run with a fresh run id, `<scenario_id>-<12 hex chars>`, and the report returns it as
+`details.run_id`. Scores come only from that run's events. Earlier evaluations stay in the file as separate
+runs, so re-running `eval` into the same directory, for example after you edit a fixture or the code, can't
+reuse their tool calls. Replay the run that was scored:
+
+```bash
+multi-bot-agentic replay --event-log data/eval-logs/echo_then_done.sqlite \
+  --run-id "<details.run_id from the eval output>" --format text
+```
+
 ## Fixture Schema
 
 ```json

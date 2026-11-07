@@ -11,6 +11,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from multi_bot_agentic.event_log import SQLiteEventLog
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
@@ -44,7 +45,11 @@ class EvalScenario:
 
 @dataclass(frozen=True)
 class ScenarioScore:
-    """Scores for one scenario."""
+    """Scores for one scenario.
+
+    ``details`` holds the run's final ``state``, its ``steps``, and the ``run_id`` that
+    was scored in ``<event_log_dir>/<scenario_id>.sqlite``.
+    """
 
     scenario_id: str
     tool_sequence_score: float
@@ -222,7 +227,8 @@ class EvaluationHarness:
 
         Args:
             root: Workspace root for readonly tools.
-            event_log_dir: Directory for per-scenario sqlite logs.
+            event_log_dir: Directory for per-scenario sqlite logs. Every execution is logged
+                as a new run, so earlier evaluations in the same directory never affect scores.
 
         Returns:
             Aggregate harness report.
@@ -243,7 +249,7 @@ class EvaluationHarness:
         )
 
     def _run_one(self, scenario: EvalScenario, *, root: Path, event_log_dir: Path) -> ScenarioScore:
-        """Run a single scenario."""
+        """Run a single scenario under a fresh run id and score only that run's events."""
 
         provider: FakeLLMAdapter | ScriptedLLMAdapter
         if not scenario.scripted_responses:
@@ -251,6 +257,9 @@ class EvaluationHarness:
         else:
             provider = ScriptedLLMAdapter(scenario.scripted_responses)
         log_path = event_log_dir / f"{scenario.scenario_id}.sqlite"
+        # The log may already hold earlier evaluations of this scenario. Reusing their run id
+        # would append to them, and scoring would read their tool calls first.
+        run_id = f"{scenario.scenario_id}-{uuid4().hex[:12]}"
         event_log = SQLiteEventLog(log_path)
         try:
             tools = build_default_tools(root=root)
@@ -261,8 +270,8 @@ class EvaluationHarness:
                 tools=tools,
                 safety_policy=SafetyPolicy(max_steps=scenario.max_steps, allowed_tools=allowed),
             )
-            result = runner.run(scenario.goal, run_id=scenario.scenario_id)
-            events = event_log.list_events(scenario.scenario_id)
+            result = runner.run(scenario.goal, run_id=run_id)
+            events = event_log.list_events(result.run_id)
         finally:
             event_log.close()
 
@@ -287,7 +296,7 @@ class EvaluationHarness:
             passed=passed,
             actual_tools=actual_tools,
             actual_answer=result.answer,
-            details={"state": result.state.value, "steps": result.steps},
+            details={"state": result.state.value, "steps": result.steps, "run_id": result.run_id},
         )
 
 
