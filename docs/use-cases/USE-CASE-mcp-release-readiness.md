@@ -135,7 +135,8 @@ as the answer. A real model would pick an allowed tool or answer directly.
 The golden-path evaluation replays scripted scenarios through the real runtime and scores tool sequences and
 answers. It needs no network or API keys, so it can block a release in CI. `eval` exits with `2` when any
 scenario fails, so gate on the command's own exit status. Don't pipe it straight into `head`, because a plain
-pipeline reports `head`'s status instead:
+pipeline reports `head`'s status instead. Each invocation logs every scenario as a new run, so re-running into
+the same `--event-log-dir` scores only the current code and fixtures:
 
 ```text
 $ multi-bot-agentic eval --event-log-dir demo-output/eval-logs > demo-output/eval.json; echo "exit=$?"
