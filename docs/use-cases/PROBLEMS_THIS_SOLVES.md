@@ -1,0 +1,100 @@
+# Problems This Solves
+
+Ten everyday agent-engineering problems and how multi-bot-agentic addresses each one. This text was moved
+verbatim from the former README. For an end-to-end walkthrough with real commands, see
+[USE-CASE-mcp-release-readiness.md](USE-CASE-mcp-release-readiness.md).
+
+### 1. "My agent did something, but I cannot explain why."
+
+LLM-first agents often skip straight from prompt to action. When something goes wrong, the transcript may show what the model said, but not which control rule allowed the action.
+
+`multi-bot-agentic` writes every decision as a durable event with a `RationaleTrace`: rule id, observations used, rejected actions, and explanation. You can replay the run later and inspect exactly why the engine chose `call_llm`, `call_tool`, `finish`, or `cancel`.
+
+```bash
+multi-bot-agentic replay --event-log data/runs.sqlite --event-type decision --format text
+```
+
+### 2. "I want to use AI agents, but I do not want the model directly executing tools."
+
+Many agent frameworks let the model choose and invoke tools directly. That is convenient, but risky for production workflows where tool access should be explicit, bounded, and auditable.
+
+This repo treats model output as an observation. The deterministic decision engine interprets constrained text like `TOOL:checklist:<payload>`, checks the safety policy, and only then executes an allowlisted tool adapter.
+
+### 3. "I need the same agent flow to work with GPT-6, Claude 5.5, Gemini, and Kimi K3."
+
+Provider-specific SDKs and response shapes make agent code hard to port. A prototype built around one model often leaks provider details into the orchestration layer.
+
+`multi-bot-agentic` normalizes providers behind one adapter interface:
+
+- `OpenAIAdapter` for GPT-6 (`gpt-6.1-sol` by default) and OpenAI-compatible chat completions.
+- `ClaudeCodeCLIAdapter` for local Claude Code CLI workflows with `claude-opus-5-5` or `claude-sonnet-5-5`.
+- `GeminiAdapter` for Gemini `generateContent` (`gemini-3.8-flash` by default, `gemini-4-argon` for flagship reasoning).
+- `KimiAdapter` for Moonshot/Kimi K3 chat completions (`kimi-k3.1-pro` by default).
+- `FakeLLMAdapter` for deterministic CI and demos.
+
+The runner consumes all provider responses as `ModelOutput`, so orchestration logic stays provider-neutral.
+
+### 4. "I need a safe demo path that does not require API keys."
+
+Portfolio and CI demos should not depend on live model credentials, model availability, or network behavior.
+
+The fake provider produces deterministic model-like outputs that the real runtime consumes. It still exercises Observe -> Decide -> Act, tool routing, safety checks, event logging, replay, and reports.
+
+```bash
+multi-bot-agentic run --goal "Create a launch checklist for an AI agent platform" --provider fake
+```
+
+### 5. "Agent runs fail silently or leave no durable audit trail."
+
+Long-running agent tasks need post-run inspection. Without durable state, crashes and restarts turn into guesswork.
+
+The sqlite event log records lifecycle transitions, observations, decisions, action requests, action results, failures, cancellations, and completion. Replay does not call any provider or tool, so postmortems are safe and deterministic.
+
+```bash
+multi-bot-agentic report --event-log data/runs.sqlite
+```
+
+### 6. "The agent keeps looping or spending tokens without finishing."
+
+Unbounded agent loops are a common failure mode. They waste time, cost money, and make incident response harder.
+
+`SafetyPolicy` bounds run scope with `max_steps`, provider/tool timeouts, prompt size limits, cancellation files, and tool allowlists. If the run reaches its budget, the decision engine finishes or fails through explicit lifecycle events.
+
+### 7. "I need to compare AI provider behavior without rewriting my orchestration."
+
+Teams often want to compare GPT-6.1 Sol, Gemini 3.8 Flash, Kimi K3.1 Pro, and Claude Opus 5.5, but provider-specific code makes comparisons noisy.
+
+With provider adapters, you can keep the same runner, same decision engine, same event log, and same replay/report UX while swapping the provider:
+
+```bash
+multi-bot-agentic run --goal "Draft a migration plan" --provider openai
+multi-bot-agentic run --goal "Draft a migration plan" --provider gemini
+multi-bot-agentic run --goal "Draft a migration plan" --provider kimi
+multi-bot-agentic run --goal "Draft a migration plan" --provider claude_code
+```
+
+### 8. "I want agents to produce useful artifacts, not just chat text."
+
+Agent demos often end with prose. Real workflows need structured, repeatable artifacts.
+
+The built-in `checklist` tool turns a goal into a deterministic launch checklist and records the tool result in the event log. It is intentionally simple, but it demonstrates the production pattern: model suggests, policy validates, adapter executes, event log records.
+
+### 9. "I need a clean teaching or interview example for agent architecture."
+
+Agent systems can become hard to explain when planning, tool use, model calls, retries, and state are mixed together.
+
+This repo keeps the boundaries visible:
+
+- `runner.py`: owns Observe -> Decide -> Act.
+- `decision.py`: deterministic rules and rationale traces.
+- `lifecycle.py`: state-machine transitions.
+- `event_log.py`: durable sqlite events.
+- `llm/`: provider adapters.
+- `tools/`: allowlisted tool adapters.
+- `safety.py`: bounds and cancellation.
+
+### 10. "I need CI to prove the agent works without real provider credentials."
+
+Live provider tests are useful, but they should not be required for every pull request.
+
+CI runs lint, format, typecheck, tests, and a fake-provider smoke demo across Python 3.10, 3.11, and 3.12. Live provider calls remain operator-triggered because they require credentials and external systems.

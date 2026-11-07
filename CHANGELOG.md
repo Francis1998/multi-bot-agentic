@@ -7,6 +7,12 @@
 
 ### Changed
 
+- README restructured into a short showcase: pitch with badges, hero GIF, why, an ODA mermaid diagram,
+  60-second quickstart (including MCP tools), feature map, current model stack, documentation map, condensed
+  use cases, and a contributing note. Templated advisor/guard sections moved verbatim to
+  `docs/ADVISOR_CATALOG.md`, the built-in tool list to `docs/TOOLS.md`, and the long-form use cases to
+  `docs/use-cases/PROBLEMS_THIS_SOLVES.md`. Only relative image and link paths were re-anchored; nothing was
+  deleted. New end-to-end walkthrough: `docs/use-cases/USE-CASE-mcp-release-readiness.md`.
 - Refreshed provider defaults to the current model stack (verified 2026-11-06): `OPENAI_MODEL=gpt-6.1-sol`,
   `GEMINI_MODEL=gemini-3.8-flash`, and `KIMI_MODEL=kimi-k3.1-pro` (Kimi K2 is being retired). Docs name
   `claude-opus-5-5` and `claude-sonnet-5-5` for the Claude Code CLI. The OpenAI/Kimi adapter now sends

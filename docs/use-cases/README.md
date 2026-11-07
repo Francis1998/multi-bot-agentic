@@ -1,6 +1,12 @@
 # Use Cases
 
-Real problems **multi-bot-agentic** solves — starting from issues.
+Real problems **multi-bot-agentic** solves.
+
+- **End-to-end walkthrough:** [An auditable release-readiness bot that uses MCP tools](USE-CASE-mcp-release-readiness.md).
+  Every command was actually run.
+- **Problems this solves:** [ten everyday agent-engineering problems](PROBLEMS_THIS_SOLVES.md) and how the
+  design addresses each.
+- **Issue stories:** regression write-ups from real fixes, listed below.
 
 | Issue | Title | Doc |
 |-------|-------|-----|
@@ -23,6 +29,6 @@ Real problems **multi-bot-agentic** solves — starting from issues.
 
 - Deterministic decision engine with rationale traces
 - State-machine run lifecycle + durable event log
-- Tool/adapter abstraction (GPT-5.5, Claude Sonnet 4.6, Gemini 3.x, Kimi K2)
+- Tool/adapter abstraction (GPT-6, Claude 5.5 via Claude Code, Gemini 3.8 Flash / 4 Argon, Kimi K3, and any MCP server)
 - Safety: timeouts, bounded scope, cancellation
 - Built-in compare tool (`diff`) for trustworthy before/after observations
