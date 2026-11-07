@@ -21,10 +21,13 @@ environment variables below. For prices, see each provider's pricing page.
 
 | Provider | Default here | Other current models | Notes |
 | --- | --- | --- | --- |
-| OpenAI ([models](https://developers.openai.com/api/docs/guides/latest-model)) | `gpt-6.1-sol` | `gpt-6-astra` (highest intelligence), `gpt-6.1-terra` (fast), `gpt-6-luna` (fastest, lowest cost) | Reasoning models: the adapter sends `max_completion_tokens` (32768, which covers reasoning and visible output) and no `temperature`/`top_p` |
+| OpenAI ([models](https://developers.openai.com/api/docs/guides/latest-model)) | `gpt-6.1-sol` | `gpt-6-astra` (highest intelligence), `gpt-6.1-terra` (fast), `gpt-6-luna` (fastest, lowest cost) | Reasoning models: the adapter sends `max_completion_tokens` (default 32768, which covers reasoning and visible output; set it with `OPENAI_MAX_COMPLETION_TOKENS`) and no `temperature`/`top_p` |
 | Anthropic via Claude Code CLI ([models](https://platform.claude.com/docs/en/models/overview)) | the CLI's own setting | `claude-opus-5-5` (recommended default), `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-1` | Choose one with `CLAUDE_CODE_COMMAND="claude --model claude-opus-5-5"` |
 | Google Gemini ([models](https://aistudio.google.com/docs/models)) | `gemini-3.8-flash` | `gemini-4-argon` (flagship reasoning), `gemini-3.6-flash`, `gemini-3.5-flash-lite` | `generateContent` API |
-| Kimi / Moonshot ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed`, `kimi-k3` | K3 fixes `temperature`/`top_p`/`n`/penalties and always reasons, so none of those are sent. K2 is being retired |
+| Kimi / Moonshot ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed`, `kimi-k3` | K3 fixes `temperature`/`top_p`/`n`/penalties and always reasons, so none of those are sent. `KIMI_MAX_COMPLETION_TOKENS` sets the budget (default 32768). K2 is being retired |
+
+If you override `OPENAI_MODEL` with an older model whose output limit is below 32768 tokens, lower
+`OPENAI_MAX_COMPLETION_TOKENS` to match. For example, `gpt-4o` documents a 16384-token output limit.
 
 ## Provider Commands
 

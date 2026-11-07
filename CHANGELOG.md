@@ -12,7 +12,9 @@
   `claude-opus-5-5` and `claude-sonnet-5-5` for the Claude Code CLI. The OpenAI/Kimi adapter now sends
   `max_completion_tokens` (32768, which covers reasoning plus visible output) instead of the deprecated
   `max_tokens: 500`. That cap could be spent entirely on reasoning by GPT-6 and Kimi K3. The adapter never
-  sends `temperature`/`top_p`/`n`/penalties, which GPT-6 rejects while reasoning and which K3 fixes.
+  sends `temperature`/`top_p`/`n`/penalties, which GPT-6 rejects while reasoning and which K3 fixes. Set the
+  budget with `OPENAI_MAX_COMPLETION_TOKENS` / `KIMI_MAX_COMPLETION_TOKENS` for model overrides with smaller
+  output limits.
 
 ### Fixed
 

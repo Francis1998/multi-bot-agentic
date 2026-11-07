@@ -201,3 +201,33 @@ def test_reasoning_model_payload_uses_max_completion_tokens(
     assert isinstance(max_completion_tokens, int)
     assert max_completion_tokens >= 25_000
     assert _FIXED_OR_UNSUPPORTED.isdisjoint(payload)
+
+
+@pytest.mark.parametrize(
+    ("provider", "prefix", "model"),
+    [("openai", "OPENAI", "gpt-4o"), ("kimi", "KIMI", "kimi-k3.1-pro-highspeed")],
+)
+def test_completion_budget_is_configurable_per_provider(
+    monkeypatch: MonkeyPatch, provider: str, prefix: str, model: str
+) -> None:
+    """``*_MAX_COMPLETION_TOKENS`` lowers the budget for overrides with smaller output limits."""
+
+    monkeypatch.setenv(f"{prefix}_API_KEY", "dummy-key")
+    monkeypatch.setenv(f"{prefix}_MODEL", model)
+    monkeypatch.setenv(f"{prefix}_MAX_COMPLETION_TOKENS", "16384")
+
+    adapter = build_llm_adapter(provider)
+
+    assert isinstance(adapter, OpenAIAdapter)
+    assert _captured_payload(monkeypatch, adapter)["max_completion_tokens"] == 16384
+
+
+@pytest.mark.parametrize("value", ["0", "-5", "lots", "1.5"])
+def test_completion_budget_rejects_invalid_values(monkeypatch: MonkeyPatch, value: str) -> None:
+    """Invalid budgets fail fast with the variable name instead of reaching the provider."""
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy-key")
+    monkeypatch.setenv("OPENAI_MAX_COMPLETION_TOKENS", value)
+
+    with pytest.raises(ValueError, match="OPENAI_MAX_COMPLETION_TOKENS must be a positive integer"):
+        build_llm_adapter("openai")
