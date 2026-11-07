@@ -6,6 +6,24 @@ It is built as a portfolio-quality recreation of the `multi-bot` product idea wi
 
 ![multi-bot-agentic animated demo](docs/demo.gif)
 
+## MCP Tool Bridge: Use Tools From Any MCP Server
+
+![MCP tool bridge demo](assets/demo/mcp-tools.gif)
+
+Bots can call tools from any [Model Context Protocol](https://modelcontextprotocol.io) server through a
+dependency-free stdio client. It speaks MCP 2026-07-28 and falls back to the legacy `initialize` handshake for
+older servers. Tools appear as `mcp__<server>__<tool>`, pass the same allowlist and deterministic decision
+engine as built-in tools, and are recorded in the durable event log. The config file uses the Claude Desktop
+`mcpServers` format.
+
+```bash
+multi-bot-agentic mcp-tools --mcp-config examples/mcp/mcp.json
+MULTIBOT_FAKE_TOOL=mcp__notes__search_notes multi-bot-agentic run --provider fake \
+  --mcp-config examples/mcp/mcp.json --goal "release checklist"
+```
+
+See the [MCP Tool Bridge Guide](docs/guides/MCP_TOOLS_GUIDE.md).
+
 ![DeadLetterToolQueue](assets/demo/dead-letter-tool-queue.gif)
 
 ![BotHandoffReceiptStore](assets/demo/bot-handoff-receipt.gif)
@@ -562,6 +580,8 @@ multi-bot-agentic report --event-log data/runs.sqlite
 - Deterministic decision engine with rationale traces.
 - State-machine lifecycle: created, observing, deciding, acting, succeeded, failed, cancelled.
 - Durable sqlite event log with replay.
+- MCP tool bridge: dual-era (2026-07-28 + legacy) stdio client that exposes any MCP server's tools as
+  allowlisted, namespaced, event-logged tools (`run --mcp-config`, `mcp-tools`).
 - Typed multi-bot handoffs with per-bot tool allowlists.
 - HITL approval gate for sensitive tools via durable JSON request files.
 - Parallel fan-out helpers for capped, order-preserving multi-bot task batches.
@@ -931,6 +951,7 @@ PLACEHOLDER
 src/multi_bot_agentic/   runtime, lifecycle, decision engine, event log, adapters
 tests/                   deterministic unit and integration tests
 scripts/                 demo and verification scripts
+examples/mcp/            demo MCP server and mcpServers configs (bundled + official servers)
 migrations/              sqlite schema scaffold
 docs/                    architecture, safety, config, quickstart, demo
 .github/workflows/       CI for lint, format, typecheck, tests, demo smoke
@@ -938,6 +959,7 @@ docs/                    architecture, safety, config, quickstart, demo
 
 ## Documentation
 
+- [MCP Tool Bridge Guide](docs/guides/MCP_TOOLS_GUIDE.md)
 - [Typed Bot Handoff Guide](docs/guides/BOT_HANDOFF_GUIDE.md)
 - [HITL Approval Gate Guide](docs/guides/HITL_APPROVAL_GATE_GUIDE.md)
 - [Parallel Fan-Out Guide](docs/guides/PARALLEL_FANOUT_GUIDE.md)

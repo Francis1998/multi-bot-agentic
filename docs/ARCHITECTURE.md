@@ -74,6 +74,26 @@ Replay reads sqlite events and prints them in sequence. Replay never calls provi
 
 Optional `BotSpec` registries let the decision engine accept `HANDOFF:bot_id:summary`. The runner swaps `active_bot_id` and `SafetyPolicy.allowed_tools` without changing the ODA loop shape.
 
+## MCP Tool Bridge
+
+`multi_bot_agentic.mcp` lets bots use tools from any Model Context Protocol server without new dependencies:
+
+- `StdioMcpClient` launches a server in its own process group and speaks newline-delimited JSON-RPC over stdio.
+  It is dual-era: a `server/discover` probe selects the stateless MCP 2026-07-28 protocol (per-request `_meta`,
+  `-32022` version retry), and any other answer or a probe timeout falls back to the legacy
+  `initialize` + `notifications/initialized` handshake. The era is cached per server process.
+- `McpToolset` starts every server in a Claude-Desktop-style `mcpServers` config, follows `tools/list`
+  pagination, applies `allowedTools`/`deniedTools`, and wraps each tool as `McpToolAdapter` named
+  `mcp__<server>__<tool>`.
+- The CLI (`run`/`resume --mcp-config`) merges these adapters into the tool registry, adds them to
+  `SafetyPolicy.allowed_tools`, and passes their `ToolSpec` catalog to the runner. The runner advertises only
+  the currently allowed specs in `ModelRequest.tools`, and provider prompts render them as an
+  `Available tools` section.
+
+Execution still flows through the unchanged decision engine (`TOOL:<name>:<payload>`) and event log, so MCP
+calls get rationale traces, replay, and resume like any other tool. See
+[MCP Tool Bridge Guide](guides/MCP_TOOLS_GUIDE.md).
+
 ## HITL Approval Gate
 
 `HitlApprovalGate` optionally pauses sensitive tool calls behind file-backed JSON approvals (`pending`/`approved`/`rejected`). v1 is caller-driven and does not require runner rewiring.

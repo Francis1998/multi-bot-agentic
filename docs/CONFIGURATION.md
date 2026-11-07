@@ -52,6 +52,24 @@ export KIMI_API_KEY=...
 multi-bot-agentic run --goal "Draft a launch checklist" --provider kimi
 ```
 
+## MCP Servers
+
+Pass a Claude-Desktop-style `mcpServers` JSON file to expose MCP tools to a run:
+
+```bash
+multi-bot-agentic mcp-tools --mcp-config examples/mcp/mcp.json
+multi-bot-agentic run --goal "Find the release checklist" --provider openai --mcp-config examples/mcp/mcp.json
+```
+
+Per-server keys: `command`, `args`, `env`, `cwd`, `allowedTools`, `deniedTools`, `callTimeoutSeconds`
+(default 30), `startupTimeoutSeconds` (default 30), `maxResultBytes` (default 16384), `redactResults`
+(default false), and `disabled`. `${VAR}` and `${VAR:-default}` placeholders are expanded from the
+environment. Servers inherit only `HOME`, `LOGNAME`, `PATH`, `SHELL`, `TERM`, and `USER`. Pass anything else
+through `env`. Full reference: [MCP Tool Bridge Guide](guides/MCP_TOOLS_GUIDE.md#configuration).
+
+- `MULTIBOT_FAKE_TOOL`: tool the fake provider requests on its first turn (default `checklist`). Set it to an
+  MCP tool such as `mcp__notes__search_notes` for offline MCP demos.
+
 ## Safety Settings
 
 - `MULTIBOT_MAX_STEPS`: maximum Observe -> Decide -> Act iterations.

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
 from pathlib import Path
 from uuid import uuid4
@@ -19,6 +20,7 @@ from multi_bot_agentic.models import (
     Observation,
     RunState,
     ToolInvocation,
+    ToolSpec,
 )
 from multi_bot_agentic.safety import SafetyError, SafetyPolicy
 from multi_bot_agentic.tools.base import ToolAdapter
@@ -45,6 +47,7 @@ class AgentRunner:
         safety_policy: SafetyPolicy,
         bots: dict[str, BotSpec] | None = None,
         active_bot_id: str | None = None,
+        tool_specs: Sequence[ToolSpec] = (),
     ) -> None:
         """Initialize the runner.
 
@@ -55,6 +58,9 @@ class AgentRunner:
             safety_policy: Runtime safety controls.
             bots: Optional registered bots for typed handoffs.
             active_bot_id: Optional initially active bot id.
+            tool_specs: Optional tool catalog advertised to the provider (for example MCP
+                tools). Only specs for registered tools allowed by the live safety policy
+                are sent, so bot handoffs also narrow what the model sees.
         """
 
         self.provider = provider
@@ -63,6 +69,7 @@ class AgentRunner:
         self.safety_policy = safety_policy
         self.bots = dict(bots or {})
         self.active_bot_id = active_bot_id
+        self.tool_specs = tuple(tool_specs)
         if self.active_bot_id is not None:
             if self.active_bot_id not in self.bots:
                 raise ValueError(f"active_bot_id is not registered: {self.active_bot_id}")
@@ -287,7 +294,7 @@ class AgentRunner:
         self.event_log.append(run_id, state, EventType.ACTION_REQUESTED, decision.to_dict())
         if decision.action == "call_llm":
             output = self.provider.complete(
-                ModelRequest(goal=goal, observations=observations),
+                ModelRequest(goal=goal, observations=observations, tools=self._visible_tool_specs()),
                 timeout_seconds=self.safety_policy.timeout_seconds,
             )
             observation = output.to_observation()
@@ -322,6 +329,16 @@ class AgentRunner:
             return result.to_observation()
 
         raise ValueError(f"unsupported action for _act: {decision.action}")
+
+    def _visible_tool_specs(self) -> tuple[ToolSpec, ...]:
+        """Return advertised tool specs that are registered and currently allowed.
+
+        Returns:
+            Tool specs the provider may see for the next model call.
+        """
+
+        allowed = self.safety_policy.allowed_tools
+        return tuple(spec for spec in self.tool_specs if spec.name in allowed and spec.name in self.tools)
 
     def _transition(
         self,

@@ -1,0 +1,23 @@
+$ multi-bot-agentic mcp-tools --mcp-config examples/mcp/mcp.official.json
+server fs: modern 2026-07-28 (secure-filesystem-server/2.2.0), 2 tools, 14 hidden by allow/deny lists
+  - mcp__fs__read_text_file(path: string (required), tail: integer, head: integer)
+      [MCP fs] Read the complete contents of a file from the file system as text. Handles var…
+  - mcp__fs__list_directory(path: string (required))
+      [MCP fs] Get a detailed listing of all files and directories in a specified path. Resul…
+server fs-legacy: legacy 2025-11-25 (secure-filesystem-server/0.2.0), 1 tool, 13 hidden by allow/deny lists
+  - mcp__fs-legacy__read_text_file(path: string (required), tail: number, head: number)
+      [MCP fs-legacy] Read the complete contents of a file from the file system as text. Hand…
+$ MULTIBOT_FAKE_TOOL=mcp__notes__search_notes multi-bot-agentic run --provider fake --mcp-config examples/mcp/mcp.json --goal "release checklist" --event-log demo-output/mcp-demo.sqlite --run-id mcp-demo
+mcp: notes modern 2026-07-28 (2 tools)
+{
+  "run_id": "mcp-demo",
+  "state": "succeeded",
+  "answer": "synthesized plan from 3 observations",
+  "steps": 4,
+  "event_log": "demo-output/mcp-demo.sqlite"
+}
+$ multi-bot-agentic replay --event-log demo-output/mcp-demo.sqlite --run-id mcp-demo --format text | grep -E "call_tool|kind=tool"
+014 deciding   decision action=call_tool rule=model.requested-tool
+017 acting     action_result kind=tool target=mcp__notes__search_notes ok=true mcp=notes/search_notes era=modern
+$ multi-bot-agentic replay --event-log demo-output/mcp-demo.sqlite --run-id mcp-demo --event-type action_result | jq -c 'select(.payload.kind == "tool") | .payload | {ok, content, era: .metadata.mcp_era}'
+{"ok":true,"content":"release-checklist: Release checklist: freeze main, run the eval suite, tag the build, update the CHANGELOG.","era":"modern"}

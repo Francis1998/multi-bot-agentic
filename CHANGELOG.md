@@ -11,6 +11,16 @@
 
 ### Added
 
+- **MCP tool bridge** (`multi_bot_agentic.mcp`): dependency-free stdio MCP client that is dual-era. A
+  `server/discover` probe selects MCP 2026-07-28 with per-request `_meta` and `-32022` version retry; otherwise
+  it falls back to the legacy `initialize` handshake (2025-11-25/2025-06-18/2025-03-26/2024-11-05). The era is
+  cached per server process. It loads Claude-Desktop-compatible `mcpServers` configs with per-server
+  `allowedTools`/`deniedTools`, call/startup timeouts, `maxResultBytes`, `redactResults`, `${VAR}` expansion, and
+  a least-privilege environment. Tools are exposed as namespaced `mcp__<server>__<tool>` `ToolAdapter`s.
+  New CLI: `mcp-tools`, plus `run`/`resume --mcp-config`. Provider prompts list the allowed tool catalog
+  (`ModelRequest.tools`; unchanged when empty), `MULTIBOT_FAKE_TOOL` drives offline demos, and text replay shows
+  MCP calls. Inspired by OpenAI Agents SDK `MCPServerStdio`, smolagents `ToolCollection.from_mcp`, PydanticAI,
+  CrewAI `MCPServerAdapter`, and LangGraph `langchain-mcp-adapters`. See `docs/guides/MCP_TOOLS_GUIDE.md`.
 - `HitlApprovalStarvationBandAdvisor` (`hitl_approval_starvation_band.py`): HITL `starvation_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen HITL approval-starvation monitors. Distinct from `HitlTimeoutCascadeBandAdvisor` / `HitlApprovalGate`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/HITL_APPROVAL_STARVATION_BAND_ADVISOR_GUIDE.md`.
 - `ToolSideEffectOrphanBandAdvisor` (`tool_side_effect_orphan_band.py`): HITL `orphan_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen tool side-effect orphan monitors. Distinct from `ToolSideEffectLedgerAdvisor` / `ToolSideEffectReplayBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_SIDE_EFFECT_ORPHAN_BAND_ADVISOR_GUIDE.md`.
 - `BlackboardWriteContentionBandAdvisor` (`blackboard_write_contention_band.py`): HITL `contention_ratio` band guard (never auto-acts). Gap vs LangGraph/CrewAI/AutoGen blackboard write-contention monitors. Distinct from `SharedBlackboardWriteLease` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/BLACKBOARD_WRITE_CONTENTION_BAND_ADVISOR_GUIDE.md`.

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import quote
 
+from multi_bot_agentic.llm.base import render_tool_catalog
 from multi_bot_agentic.llm.http import post_json
 from multi_bot_agentic.models import ModelOutput, ModelRequest
 
@@ -69,6 +70,7 @@ def _render_prompt(request: ModelRequest) -> str:
         "You are an agent worker. Return concise text. Use TOOL:echo:<text> for safe tool use "
         "or DONE:<answer> when finished.\n\n"
         f"Goal: {request.goal}\n\nObservations:\n{observations}"
+        f"{render_tool_catalog(request.tools)}"
     )
 
 
