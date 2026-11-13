@@ -17,6 +17,7 @@ from multi_bot_agentic.models import ToolInvocation
 tool = Isbn13Tool()
 result = tool.execute(ToolInvocation(tool_name="isbn13", arguments={"text": "978-0-306-40615-7"}))
 assert result.content == "true"
+print(result.content)
 ```
 
 ## Bounds

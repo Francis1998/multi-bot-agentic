@@ -17,6 +17,7 @@ from multi_bot_agentic.models import ToolInvocation
 tool = BrailleTool()
 encoded = tool.execute(ToolInvocation(tool_name="braille", arguments={"text": "Hi"}))
 assert encoded.content == "⡈⡩"
+print(encoded.content)
 ```
 
 ## Bounds

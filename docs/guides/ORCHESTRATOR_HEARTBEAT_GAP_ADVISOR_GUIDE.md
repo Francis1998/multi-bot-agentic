@@ -1,6 +1,6 @@
 # OrchestratorHeartbeatGapAdvisor Guide
 
-![OrchestratorHeartbeatGapAdvisor](../assets/demo/orchestrator-heartbeat-gap.gif)
+![OrchestratorHeartbeatGapAdvisor](../../assets/demo/orchestrator-heartbeat-gap.gif)
 
 Offline HITL `heartbeat_gap_ratio` bands.
 Gap vs LangGraph/CrewAI/AutoGen orchestrator heartbeat monitors. Distinct from `SupervisorIdleSkewAdvisor` / `AgentHandoffLatencyAdvisor`.

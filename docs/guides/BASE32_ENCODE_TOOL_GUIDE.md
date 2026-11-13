@@ -15,12 +15,16 @@ alphabet only.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.base32_encode import Base32EncodeTool
+
+result = Base32EncodeTool().execute(
     ToolInvocation(
         tool_name="base32_encode",
         arguments={"text": "hello", "mode": "encode"},
     )
 )
+print(result.content)
 ```
 
 Decode with `mode=decode`. Whitespace in Base32 input is ignored.

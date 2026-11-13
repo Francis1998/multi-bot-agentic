@@ -17,6 +17,7 @@ from multi_bot_agentic.models import ToolInvocation
 tool = LuhnTool()
 result = tool.execute(ToolInvocation(tool_name="luhn", arguments={"text": "4111111111111111"}))
 assert result.content == "true"
+print(result.content)
 ```
 
 ## Bounds

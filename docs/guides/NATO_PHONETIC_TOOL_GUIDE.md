@@ -17,6 +17,7 @@ from multi_bot_agentic.models import ToolInvocation
 tool = NatoPhoneticTool()
 result = tool.execute(ToolInvocation(tool_name="nato_phonetic", arguments={"text": "SOS"}))
 assert result.content == "Sierra Oscar Sierra"
+print(result.content)
 ```
 
 ## Bounds

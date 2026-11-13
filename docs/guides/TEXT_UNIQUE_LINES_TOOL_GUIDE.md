@@ -14,12 +14,16 @@ matching the dedupe helpers popular agent frameworks expose for logs.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.text_unique_lines import TextUniqueLinesTool
+
+result = TextUniqueLinesTool().execute(
     ToolInvocation(
         tool_name="text_unique_lines",
         arguments={"text": "a\nb\na\nc", "strip": True},
     )
 )
+print(result.content)
 ```
 
 Sentinel form: `text<<<TEXT_UNIQUE_LINES>>>false`

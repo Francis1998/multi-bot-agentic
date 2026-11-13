@@ -17,6 +17,7 @@ from multi_bot_agentic.models import ToolInvocation
 tool = JaroWinklerTool()
 result = tool.execute(ToolInvocation(tool_name="jaro_winkler", arguments={"a": "martha", "b": "marhta"}))
 assert 0.96 < float(result.metadata["similarity"]) < 0.97
+print(result.content)
 ```
 
 ## Bounds

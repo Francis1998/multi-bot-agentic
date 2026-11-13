@@ -8,7 +8,11 @@ turns. Inspired by spreadsheet transpose helpers in popular agent toolkits.
 ## Usage
 
 ```python
-tool.execute(ToolInvocation(tool_name="csv_transpose", arguments={"text": "a,b\n1,2\n"}))
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.csv_transpose import CsvTransposeTool
+
+result = CsvTransposeTool().execute(ToolInvocation(tool_name="csv_transpose", arguments={"text": "a,b\n1,2\n"}))
+print(result.content)
 ```
 
 ## Bounds & Safety

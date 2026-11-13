@@ -17,6 +17,7 @@ from multi_bot_agentic.models import ToolInvocation
 tool = UlidTool()
 created = tool.execute(ToolInvocation(tool_name="ulid", arguments={}))
 assert len(created.content) == 26
+print(created.content)
 ```
 
 ## Bounds

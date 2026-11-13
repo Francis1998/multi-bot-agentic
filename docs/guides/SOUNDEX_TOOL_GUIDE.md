@@ -15,12 +15,16 @@ agent toolkits, implemented with stdlib only).
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.soundex import SoundexTool
+
+result = SoundexTool().execute(
     ToolInvocation(
         tool_name="soundex",
         arguments={"text": "Robert"},
     )
 )
+print(result.content)
 ```
 
 ## Bounds & Safety

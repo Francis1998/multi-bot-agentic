@@ -11,12 +11,16 @@ Agent pipelines need deterministic English plurals for labels and counts. Models
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.pluralize import PluralizeTool
+
+result = PluralizeTool().execute(
     ToolInvocation(
         tool_name="pluralize",
         arguments={"text": "child", "mode": "pluralize"},
     )
 )
+print(result.content)
 ```
 
 ## Bounds & Safety

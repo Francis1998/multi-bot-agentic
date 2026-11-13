@@ -14,7 +14,10 @@ stdlib `urllib.parse` only (inspired by urllib3 / scrapy URL canonicalizers).
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.url_normalize import UrlNormalizeTool
+
+result = UrlNormalizeTool().execute(
     ToolInvocation(
         tool_name="url_normalize",
         arguments={
@@ -23,6 +26,7 @@ tool.execute(
         },
     )
 )
+print(result.content)
 ```
 
 ## Bounds & Safety

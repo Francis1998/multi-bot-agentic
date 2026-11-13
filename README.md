@@ -130,7 +130,8 @@ ignore them ([parameter rules](docs/CONFIGURATION.md#provider-parameter-rules)).
 - **Catalogs:** [Built-in tools](docs/TOOLS.md), [Advisor & guard catalog](docs/ADVISOR_CATALOG.md),
   [All guides](docs/guides/), [Use cases](docs/use-cases/README.md)
 - **Project:** [CHANGELOG](CHANGELOG.md) and demo assets ([`assets/demo/`](assets/demo/); `docs/demo.gif` is
-  rendered by `scripts/render_demo_gif.py`, and `docs/demo.svg` is a static architecture card)
+  rendered by `scripts/render_demo_gif.py`, tool-guide demos by `scripts/render_guide_demos.py`, and
+  `docs/demo.svg` is a static architecture card)
 
 ## Use Cases
 
@@ -181,6 +182,12 @@ and 3.12. For a richer local demo, run `scripts/run_demo.sh`.
 - New built-in tools need four things: registration in `build_default_tools()`, an entry in the
   `SafetyPolicy.allowed_tools` default, an entry in [`docs/TOOLS.md`](docs/TOOLS.md), and a guide in
   `docs/guides/`.
+- A tool guide's demo GIF shows its own example running. Give the guide a self-contained python code block that
+  prints its result and embed `![<name> demo](../../assets/demo/<name>.gif)`. Then run
+  `python scripts/render_guide_demos.py` (stdlib only, offline). It runs every example whose GIF is missing or a
+  placeholder and draws the code and its real output. To redraw one guide's GIF after you edit its example,
+  pass the guide's path. `tests/test_demo_gifs_real.py` fails on any missing, corrupt, or placeholder GIF that a
+  README or docs page embeds.
 - Keep this README a short showcase. Link new guides from the Documentation Map only if they're core.
 
 ## License

@@ -14,12 +14,16 @@ tooling patterns).
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.ini_parse import IniParseTool
+
+result = IniParseTool().execute(
     ToolInvocation(
         tool_name="ini_parse",
         arguments={"text": "[db]\nhost = localhost\n"},
     )
 )
+print(result.content)
 ```
 
 ## Bounds & Safety

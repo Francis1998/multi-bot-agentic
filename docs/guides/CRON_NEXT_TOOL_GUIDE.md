@@ -15,7 +15,10 @@ evaluates a small stdlib-only cron subset (no `croniter`).
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.cron_next import CronNextTool
+
+result = CronNextTool().execute(
     ToolInvocation(
         tool_name="cron_next",
         arguments={
@@ -25,6 +28,7 @@ tool.execute(
         },
     )
 )
+print(result.content)
 ```
 
 `text` is accepted as an alias for `expression`. Content is one ISO-8601 UTC

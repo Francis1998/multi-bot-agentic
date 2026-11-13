@@ -14,12 +14,16 @@ network access (inspired by content-integrity tooling in agent pipelines).
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.crc32 import Crc32Tool
+
+result = Crc32Tool().execute(
     ToolInvocation(
         tool_name="crc32",
         arguments={"text": "hello"},
     )
 )
+print(result.content)
 ```
 
 ## Bounds & Safety

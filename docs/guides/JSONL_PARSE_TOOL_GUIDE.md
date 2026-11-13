@@ -14,7 +14,10 @@ validates each line with stdlib `json` and returns a sorted-keys indented array.
 ## Usage
 
 ```python
-tool.execute(
+from multi_bot_agentic.models import ToolInvocation
+from multi_bot_agentic.tools.jsonl_parse import JsonlParseTool
+
+result = JsonlParseTool().execute(
     ToolInvocation(
         tool_name="jsonl_parse",
         arguments={
@@ -23,6 +26,7 @@ tool.execute(
         },
     )
 )
+print(result.content)
 ```
 
 `mode=objects` (default) rejects non-object lines. `mode=any` accepts any JSON
