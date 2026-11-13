@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import socket
+import struct
 import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -20,6 +21,9 @@ from multi_bot_agentic.tracing import build_trace, render_otlp_json
 
 GOAL = "Create a launch checklist for an AI agent platform"
 TOKEN = "otlp-test-token-0123456789"
+# The HTTP/2 SETTINGS frame a gRPC server sends first; an HTTP/1.1 client cannot parse it.
+HTTP2_SETTINGS_FRAME = b"\x00\x00\x06\x04\x00\x00\x00\x00\x00\x00\x05\x00\x00\x40\x00"
+NOT_HTTP1_HINT = "use the OTLP/HTTP port instead (4318 by default"
 
 
 @dataclass(frozen=True)
@@ -70,6 +74,48 @@ def _otlp_stub(status: int = 200, body: bytes = b"{}", location: str | None = No
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+
+
+@contextmanager
+def _raw_responder(reply: bytes | None) -> Iterator[str]:
+    """Read one whole request, then answer with raw ``reply`` bytes or, for ``None``, reset the connection.
+
+    Reading the request first means the client fails on the answer itself, the way it does
+    against a gRPC port, and never while still writing its body.
+    """
+
+    listener = socket.create_server(("127.0.0.1", 0))
+    listener.settimeout(10)
+
+    def serve() -> None:
+        connection, _ = listener.accept()
+        with connection:
+            data = b""
+            while b"\r\n\r\n" not in data:
+                chunk = connection.recv(65536)
+                if not chunk:
+                    return
+                data += chunk
+            head, _, body = data.partition(b"\r\n\r\n")
+            lines = head.lower().split(b"\r\n")
+            length = next(int(line.split(b":")[1]) for line in lines if line.startswith(b"content-length:"))
+            while len(body) < length:
+                chunk = connection.recv(65536)
+                if not chunk:
+                    return
+                body += chunk
+            if reply is None:
+                connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+            else:
+                connection.sendall(reply)
+
+    thread = threading.Thread(target=serve, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{listener.getsockname()[1]}/v1/traces"
+    finally:
+        thread.join(timeout=5)
+        listener.close()
 
 
 def _run(event_log: Path, run_id: str, capsys: pytest.CaptureFixture[str]) -> None:
@@ -324,3 +370,79 @@ def test_trace_push_reports_unreachable_endpoints(tmp_path: Path, capsys: pytest
     assert code == 1
     assert f"cannot reach http://127.0.0.1:{port}/v1/traces" in error
     assert "pw@" not in error and "key=abc" not in error
+
+
+@pytest.mark.parametrize(
+    ("reply", "message", "hinted"),
+    [
+        # A gRPC server built on gRPC C-core answers an HTTP/1.1 request with HTTP/2 frames.
+        (HTTP2_SETTINGS_FRAME, "{url} did not answer with HTTP/1.x", True),
+        # grpc-go (Jaeger, OpenTelemetry Collector) reads the HTTP/2 preface, then resets the connection.
+        (None, "{url} closed the connection without an HTTP/1.x answer", True),
+        (b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n", "the HTTP exchange with {url} failed", False),
+        (b"HTTP/1.1 502 Bad Gateway\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n", "{url} answered HTTP 502", False),
+    ],
+    ids=["http2-frames", "connection-reset", "broken-200-body", "broken-502-body"],
+)
+def test_trace_push_reports_answers_that_are_not_http1(
+    reply: bytes | None, message: str, hinted: bool, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A server that does not answer with valid HTTP/1.x is an export failure (exit 1), never a traceback."""
+
+    event_log = tmp_path / "runs.sqlite"
+    _run(event_log, "not-http1", capsys)
+
+    with _raw_responder(reply) as url:
+        code = _trace("--event-log", str(event_log), "--otlp-endpoint", url, "--otlp-header", f"X-Token={TOKEN}")
+    error = capsys.readouterr().err
+
+    assert code == 1
+    assert f"error: OTLP export failed: {message.format(url=url)}" in error
+    assert (NOT_HTTP1_HINT in error) is hinted
+    assert TOKEN not in error
+
+
+@pytest.mark.parametrize(
+    ("endpoint", "message"),
+    [
+        ("https://user:s3cret-pw@otlp.example.com/v1/traces", "--otlp-endpoint must not contain credentials"),
+        ("http://user:s3cret-pw@127.0.0.1:4318/v1/traces", "--otlp-endpoint must not contain credentials"),
+        ("http://localhost:4318x/v1/traces", "--otlp-endpoint has an invalid port '4318x'"),
+        ("http://localhost:99999/v1/traces", "--otlp-endpoint has an invalid port '99999'"),
+        ("http://localhost:4318/v1/tr aces", "--otlp-endpoint must be percent-encoded"),
+        ("http://localhost:4318/v1/trac\u00e9s", "--otlp-endpoint must be percent-encoded"),
+    ],
+    ids=["credentials", "credentials-and-port", "non-numeric-port", "port-out-of-range", "space", "non-ascii"],
+)
+def test_trace_rejects_endpoints_it_cannot_send_to(
+    endpoint: str, message: str, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Endpoints urllib cannot send to are invalid arguments (exit 2); credentials are never printed."""
+
+    event_log = tmp_path / "runs.sqlite"
+    _run(event_log, "bad-endpoint", capsys)
+
+    code = _trace("--event-log", str(event_log), "--otlp-endpoint", endpoint)
+    captured = capsys.readouterr()
+
+    assert code == 2
+    assert f"error: {message}" in captured.err
+    assert captured.out == ""
+    assert "s3cret" not in captured.out + captured.err
+
+
+def test_trace_push_reports_headers_http_cannot_carry(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """A header value HTTP/1.1 cannot encode fails the export cleanly, without sending or printing it."""
+
+    event_log = tmp_path / "runs.sqlite"
+    _run(event_log, "header", capsys)
+    team = "\u30c1\u30fc\u30e0"
+
+    with _otlp_stub() as stub:
+        code = _trace("--event-log", str(event_log), "--otlp-endpoint", stub.url, "--otlp-header", f"X-Team={team}")
+    error = capsys.readouterr().err
+
+    assert code == 1
+    assert f"error: OTLP export failed: cannot send the request to {stub.url}" in error
+    assert team not in error
+    assert stub.received == []
