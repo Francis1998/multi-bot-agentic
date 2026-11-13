@@ -287,7 +287,10 @@ strings.
 `--format mermaid` draws participants in order of appearance: the orchestrator, each bot (or `LLM <provider>`
 when no bot is active), each built-in tool, each MCP server (`MCP <server>`), and a `Human approver` actor when
 approvals were recorded. Messages show the action and the rule that chose it. Failures use a crossed arrow
-(`--x`). The terminal decision and the outcome are notes.
+(`--x`). The terminal decision and the outcome are notes. A model's reply names the target of its `TOOL:` or
+`HANDOFF:` directive only when the run called that tool or ran that bot. Anything else the model wrote there,
+such as the text of a malformed `TOOL: look up ...` directive, is content: it appears only with
+`--include-content`, redacted.
 
 This diagram is the real output of `trace --run-id crew-demo --format mermaid` for the two-bot run recorded by
 the script below:
@@ -395,7 +398,7 @@ output.
 
 | Exported by default | Only with `--include-content` |
 | --- | --- |
-| Span names, operation, provider, model, and tool names; bot ids; rule ids and engine-written explanations; states, step counts, `ok` flags, error types, token counts; MCP server, tool, era, and protocol version | The goal (`gen_ai.input.messages` on the root), the answer (`gen_ai.output.messages` on the root), the observations sent to each model call (`gen_ai.input.messages`), model outputs (`gen_ai.output.messages`), tool arguments (`gen_ai.tool.call.arguments`), successful tool results (`gen_ai.tool.call.result`), handoff summaries, and content snippets in Mermaid |
+| Span names, operation, provider, model, and tool names; bot ids; rule ids and engine-written explanations; states, step counts, `ok` flags, error types, token counts; MCP server, tool, era, and protocol version | The goal (`gen_ai.input.messages` on the root), the answer (`gen_ai.output.messages` on the root), the observations sent to each model call (`gen_ai.input.messages`), model outputs (`gen_ai.output.messages`), tool arguments (`gen_ai.tool.call.arguments`), successful tool results (`gen_ai.tool.call.result`), handoff summaries, `TOOL:`/`HANDOFF:` targets in Mermaid that name no tool the run called or bot it ran, and content snippets in Mermaid |
 | Error descriptions (span status messages and Mermaid error labels): redacted and cut to 256 characters | |
 
 The GenAI conventions treat prompts, outputs, and tool payloads as sensitive and opt-in, so they are off by
