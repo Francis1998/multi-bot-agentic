@@ -362,14 +362,14 @@ def test_trace_push_reports_unreachable_endpoints(tmp_path: Path, capsys: pytest
         probe.bind(("127.0.0.1", 0))
         port = probe.getsockname()[1]
 
-    code = _trace(
-        "--event-log", str(event_log), "--otlp-endpoint", f"http://user:pw@127.0.0.1:{port}/v1/traces?key=abc"
-    )
+    code = _trace("--event-log", str(event_log), "--otlp-endpoint", f"http://127.0.0.1:{port}/v1/traces?key=abc")
     error = capsys.readouterr().err
 
     assert code == 1
-    assert f"cannot reach http://127.0.0.1:{port}/v1/traces" in error
-    assert "pw@" not in error and "key=abc" not in error
+    assert f"cannot reach http://127.0.0.1:{port}/v1/traces: " in error
+    assert "refused" in error.lower()
+    assert "key=abc" not in error
+    assert NOT_HTTP1_HINT not in error
 
 
 @pytest.mark.parametrize(

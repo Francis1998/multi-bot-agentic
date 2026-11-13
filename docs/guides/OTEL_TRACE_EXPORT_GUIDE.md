@@ -78,13 +78,15 @@ multi-bot-agentic trace --event-log PATH [--run-id ID] [--format otlp-json|merma
 | `--output` | stdout | Write the rendered output to a file (parent directories are created) |
 | `--include-content` | off | Also export the goal, model inputs and outputs, tool arguments and results, and handoff summaries, all redacted. See [Privacy](#privacy) |
 | `--agent-name` | none | `gen_ai.agent.name` for the root span, which is then named `invoke_agent {name}` |
-| `--otlp-endpoint` | none | Also POST the OTLP/JSON to this `http://` or `https://` URL, for example `http://localhost:4318/v1/traces` |
+| `--otlp-endpoint` | none | Also POST the OTLP/JSON to this `http://` or `https://` URL, for example `http://localhost:4318/v1/traces`. Credentials in the URL are rejected: send them with `--otlp-header` |
 | `--otlp-header` | none | Extra request header, repeatable. `${VAR}` and `${VAR:-default}` expand from the environment. Values are never printed |
 | `--otlp-timeout` | `10` | Request timeout in seconds |
 
 Exit codes follow the other commands. `0` means success. `2` means invalid arguments, a missing or unreadable
-log, a log with no runs, or an unknown run id, and comes with an `error:` line on stderr. `1` means the OTLP
-push failed: a non-2xx answer, a redirect, a timeout, or a connection error.
+log, a log with no runs, or an unknown run id, and comes with an `error:` line on stderr. An `--otlp-endpoint`
+with credentials, an invalid port, or characters it must percent-encode is an invalid argument. `1` means the
+OTLP push failed: a non-2xx answer, a redirect, a timeout, a connection error, or an answer that is not HTTP/1.x,
+such as from an OTLP/gRPC port. See [Troubleshooting](#troubleshooting).
 
 Keep tokens out of shell history and process listings by single-quoting a placeholder. `trace` expands it
 itself:
@@ -480,6 +482,19 @@ twice sends the same ids again. Depending on the backend, the duplicates are mer
 | Why each step happened | Rule id, explanation, and rejected actions on every span | No rule trace (the model decides) | No rule trace (the model decides) | No rule trace (the model decides) |
 | Handoff picture | Mermaid sequence diagram and per-bot spans | Handoff spans | Run tree | Spans |
 | Dependencies | None (stdlib `urllib`) | Built into the SDK | `langsmith` | `traceloop-sdk` and instrumentations |
+
+## Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| `... did not answer with HTTP/1.x` or `... closed the connection without an HTTP/1.x answer` | `--otlp-endpoint` points at an OTLP/gRPC port (4317 by default), but `trace` sends OTLP/HTTP. Use the HTTP port (4318 by default) and the `/v1/traces` path, for example `http://localhost:4318/v1/traces`. Jaeger and other grpc-go servers, such as the OpenTelemetry Collector, reset the connection; servers built on gRPC C-core answer with HTTP/2 frames |
+| `--otlp-endpoint must not contain credentials` | Send them as a header instead: `export OTLP_AUTH=$(printf '%s' "$OTLP_USER:$OTLP_PASSWORD" \| base64)`, then `--otlp-header 'Authorization=Basic ${OTLP_AUTH}'`. `trace` expands the single-quoted placeholder itself, so the value stays off its command line and out of process listings. The error never repeats the credentials |
+| `--otlp-endpoint has an invalid port '...'` | Use a number from 1 to 65535, for example `:4318` |
+| `--otlp-endpoint must be percent-encoded` | Encode spaces as `%20` and non-ASCII text in the path or query as UTF-8 percent escapes |
+| `cannot reach ...: ... Connection refused` | Nothing listens on that host and port. Start the backend, or check the host and port |
+| `the HTTP exchange with ... failed (IncompleteRead)` | The server or a proxy in between sent a broken HTTP response. Check the proxy, or push to the backend directly |
+| `cannot send the request to ...: the host name or a header has characters HTTP/1.1 cannot carry` | Use ASCII in `--otlp-header` values (for example, a token pasted with a curly quote) and in the host name |
+| `answered HTTP 415` | The backend only accepts protobuf. Push through an OpenTelemetry Collector, as described for [Arize Phoenix](#arize-phoenix-needs-a-collector-not-tested-here) |
 
 ## How This Demo Was Recorded
 

@@ -13,6 +13,7 @@ import os
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
+from http.client import BadStatusLine, HTTPException, UnknownProtocol
 from importlib.metadata import PackageNotFoundError, version
 from typing import IO, Any, Final
 from urllib.error import HTTPError, URLError
@@ -29,6 +30,14 @@ _MAX_ERROR_BODY_CHARS: Final[int] = 300
 # RFC 9110 token characters allowed in a header name.
 _HEADER_NAME = re.compile(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
 _PLACEHOLDER = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}")
+# Spaces and control characters, which http.client refuses anywhere in a request URL.
+_URL_FORBIDDEN = re.compile(r"[\x00-\x20\x7f]")
+# How a server that does not speak HTTP/1.x hangs up; a grpc-go OTLP/gRPC port resets the connection.
+_HANG_UPS: Final = (ConnectionResetError, BrokenPipeError)
+_NOT_HTTP1_HINT: Final[str] = (
+    "; if it is an OTLP/gRPC port (4317 by default), use the OTLP/HTTP port instead "
+    "(4318 by default, for example http://localhost:4318/v1/traces)"
+)
 
 
 class OtlpExportError(RuntimeError):
@@ -193,7 +202,11 @@ def parse_header_options(options: list[str], environ: Mapping[str, str] | None =
 
 
 def validate_endpoint(endpoint: str) -> str:
-    """Check that ``endpoint`` is an absolute ``http``/``https`` URL.
+    """Check that ``endpoint`` is an absolute ``http``/``https`` URL a request can be sent to.
+
+    Credentials in the URL are rejected, not sent: urllib would take ``user:password@`` for part
+    of the host name, and a URL argument shows up in shell history and process listings. Pass
+    them with ``--otlp-header`` instead.
 
     Args:
         endpoint: OTLP/HTTP traces URL, for example ``http://localhost:4318/v1/traces``.
@@ -202,12 +215,32 @@ def validate_endpoint(endpoint: str) -> str:
         The endpoint unchanged.
 
     Raises:
-        ValueError: For other schemes or a missing host.
+        ValueError: For other schemes, a missing host, credentials, an invalid port, a space or
+            control character, or non-ASCII text in the path or query. Messages never include
+            credentials.
     """
 
     parts = urlsplit(endpoint)
     if parts.scheme not in {"http", "https"} or not parts.hostname:
         raise ValueError(f"--otlp-endpoint must be an http:// or https:// URL, got {redact_url(endpoint)!r}")
+    if "@" in parts.netloc:
+        raise ValueError(
+            "--otlp-endpoint must not contain credentials (user:password@host); send them as a header "
+            "instead, for example --otlp-header 'Authorization=Basic ${OTLP_AUTH}'"
+        )
+    try:
+        port = parts.port
+    except ValueError:
+        port = 0
+    if port == 0:
+        raise ValueError(
+            f"--otlp-endpoint has an invalid port {parts.netloc.rpartition(':')[2]!r}; use a number from 1 to 65535"
+        )
+    if _URL_FORBIDDEN.search(endpoint.strip()) or not (parts.path + parts.query).isascii():
+        raise ValueError(
+            "--otlp-endpoint must be percent-encoded: it contains a space or control character, "
+            "or non-ASCII text in its path or query"
+        )
     return endpoint
 
 
@@ -256,7 +289,9 @@ def push_otlp_json(
         Export result.
 
     Raises:
-        OtlpExportError: On a non-2xx status, a redirect, a timeout, or a connection error.
+        OtlpExportError: On a non-2xx status, a redirect, a timeout, a connection error, an answer
+            that is not HTTP/1.x or is malformed, or a host name or header HTTP/1.1 cannot carry.
+        ValueError: If ``endpoint`` fails :func:`validate_endpoint`.
     """
 
     validate_endpoint(endpoint)
@@ -276,14 +311,35 @@ def push_otlp_json(
         reason = error.reason
         if isinstance(reason, TimeoutError):
             raise OtlpExportError(f"{safe_url} did not answer within {timeout_seconds:g}s") from None
+        if isinstance(reason, _HANG_UPS):
+            raise OtlpExportError(_hung_up(safe_url, reason)) from None
         raise OtlpExportError(f"cannot reach {safe_url}: {reason}") from None
     except TimeoutError:
         raise OtlpExportError(f"{safe_url} did not answer within {timeout_seconds:g}s") from None
+    except _HANG_UPS as error:
+        raise OtlpExportError(_hung_up(safe_url, error)) from None
     except OSError as error:
         raise OtlpExportError(f"cannot reach {safe_url}: {error}") from None
+    # urllib does not wrap http.client errors (they are not OSErrors), so they are mapped here.
+    except (BadStatusLine, UnknownProtocol):
+        raise OtlpExportError(f"{safe_url} did not answer with HTTP/1.x{_NOT_HTTP1_HINT}") from None
+    except HTTPException as error:
+        raise OtlpExportError(f"the HTTP exchange with {safe_url} failed ({type(error).__name__})") from None
+    except ValueError:
+        # http.client quotes the offending header value in its message, so only the problem is named.
+        raise OtlpExportError(
+            f"cannot send the request to {safe_url}: the host name or a header has characters "
+            "HTTP/1.1 cannot carry (use ASCII)"
+        ) from None
     if not 200 <= status < 300:
         raise OtlpExportError(f"{safe_url} answered HTTP {status}")
     return _partial_success(status, payload)
+
+
+def _hung_up(safe_url: str, error: BaseException) -> str:
+    """Describe a server that closed or reset the connection instead of answering."""
+
+    return f"{safe_url} closed the connection without an HTTP/1.x answer ({error}){_NOT_HTTP1_HINT}"
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -327,7 +383,7 @@ def _error_body(stream: IO[bytes]) -> str:
 
     try:
         raw = stream.read(_MAX_ERROR_BODY_CHARS * 4)
-    except OSError:
+    except (OSError, HTTPException):
         return ""
     return _one_line(raw.decode("utf-8", errors="replace"))
 
