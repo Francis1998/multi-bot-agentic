@@ -24,7 +24,7 @@ from multi_bot_agentic.tracing.otlp import (
     trace_to_otlp,
     validate_endpoint,
 )
-from multi_bot_agentic.tracing.spans import Span, SpanEvent, SpanKind, StatusCode, Trace, build_trace
+from multi_bot_agentic.tracing.spans import Span, SpanEvent, SpanKind, SpanLink, StatusCode, Trace, build_trace
 from multi_bot_agentic.tracing.timeline import RunTimeline, TraceInputError, parse_run, select_latest_run
 
 __all__ = [
@@ -38,6 +38,7 @@ __all__ = [
     "Span",
     "SpanEvent",
     "SpanKind",
+    "SpanLink",
     "StatusCode",
     "Trace",
     "TraceInputError",

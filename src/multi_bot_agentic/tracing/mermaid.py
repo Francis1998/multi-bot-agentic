@@ -3,11 +3,12 @@
 Participants are the orchestrator, the model-backed agents (each registered bot, or the
 provider when no bot is active), every built-in tool, every MCP server, and a human approver.
 Messages are provider calls, tool calls and results, handoffs, and approvals, each labelled
-with the decision's rule id. Content (model output, tool arguments and results, handoff
-summaries) is shown only with ``include_content`` and is always redacted. The target of a
-model's ``TOOL:``/``HANDOFF:`` directive is model output too, so by default it is shown only
-when it names a tool the run called or a bot it ran. Text is escaped with Mermaid entity
-codes, so ``#``, ``;``, quotes, and line breaks cannot break the diagram.
+with the decision's rule id; a forked run gets a note where its copied steps end. Content
+(model output, tool arguments and results, handoff summaries) is shown only with
+``include_content`` and is always redacted. The target of a model's ``TOOL:``/``HANDOFF:``
+directive is model output too, so by default it is shown only when it names a tool the run
+called or a bot it ran. Text is escaped with Mermaid entity codes, so ``#``, ``;``, quotes,
+and line breaks cannot break the diagram.
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from multi_bot_agentic.tracing.spans import (
 from multi_bot_agentic.tracing.timeline import (
     Approval,
     FinalDecision,
+    Fork,
     Handoff,
     ModelCall,
     Resume,
@@ -159,6 +161,8 @@ class _MermaidRenderer:
                 lines.append(self._note(f"{decision.action} ({decision.rule_id})"))
             elif isinstance(step, Resume):
                 lines.append(self._note("resumed from checkpoint"))
+            elif isinstance(step, Fork):
+                lines.append(self._note(_fork_label(step)))
         lines.append(self._outcome())
         return "\n".join(lines)
 
@@ -318,6 +322,15 @@ class _MermaidRenderer:
         """Return one note line."""
 
         return f"{_INDENT}Note over {over}: {mermaid_text(text, SNIPPET_CHARS * 2)}"
+
+
+def _fork_label(fork: Fork) -> str:
+    """Return the note that separates a fork's copied steps (above) from its own steps (below)."""
+
+    label = f"forked from {fork.parent_run_id} after step {fork.fork_step}"
+    if fork.overrides:
+        label += f" (new {', '.join(fork.overrides)})"
+    return label
 
 
 def _compact(arguments: Mapping[str, Any]) -> str:

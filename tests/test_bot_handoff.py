@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from multi_bot_agentic.bots import BotSpec
+from multi_bot_agentic.bots import BotRegistryError, BotSpec, load_bot_registry
 from multi_bot_agentic.decision import DeterministicDecisionEngine
 from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
 from multi_bot_agentic.models import ModelOutput, ModelRequest, Observation, RunState
@@ -340,3 +340,46 @@ def test_resume_starts_from_the_constructor_scope_not_an_earlier_handoff(tmp_pat
     assert _executed_tools(events) == ["checklist"]
     assert runner.active_bot_id is None
     assert runner.safety_policy.allowed_tools == frozenset({"checklist", "echo"})
+
+
+def test_load_bot_registry_reads_the_example_crew() -> None:
+    """The bundled registry (used by ``fork --bots``) defines each bot's tool scope."""
+
+    registry = load_bot_registry(Path(__file__).resolve().parents[1] / "examples" / "bots" / "release-crew.json")
+
+    assert {bot_id: sorted(spec.allowed_tools) for bot_id, spec in registry.items()} == {
+        "planner": ["checklist"],
+        "writer": ["echo"],
+    }
+    assert (registry["writer"].name, registry["writer"].description) == ("Writer", "Writes release notes")
+
+
+@pytest.mark.parametrize(
+    ("content", "message"),
+    [
+        ("{not json", "is not valid JSON"),
+        ("[]", 'must be an object with a non-empty "bots" object'),
+        ('{"bots": {}}', 'must be an object with a non-empty "bots" object'),
+        ('{"bots": {"writer": ["echo"]}}', "bot 'writer' must be an object"),
+        ('{"bots": {"writer": {"tools": ["echo"]}}}', "bot 'writer' has unknown keys: tools"),
+        ('{"bots": {"writer": {"name": "Writer"}}}', "bot 'writer' needs allowed_tools"),
+        ('{"bots": {"writer": {"allowed_tools": ["echo", 3]}}}', "bot 'writer' needs allowed_tools"),
+        ('{"bots": {"writer": {"allowed_tools": []}}}', "allowed_tools must be non-empty"),
+        ('{"bots": {"writer": {"allowed_tools": ["echo"], "name": 7}}}', "name and description must be strings"),
+    ],
+)
+def test_load_bot_registry_rejects_malformed_files(tmp_path: Path, content: str, message: str) -> None:
+    """A malformed registry fails with a message naming the file and the bot, never a partial registry."""
+
+    path = tmp_path / "bots.json"
+    path.write_text(content, encoding="utf-8")
+
+    with pytest.raises(BotRegistryError, match=message):
+        load_bot_registry(path)
+
+
+def test_load_bot_registry_reports_a_missing_file(tmp_path: Path) -> None:
+    """A missing registry file is a ``BotRegistryError``, not an ``OSError`` traceback."""
+
+    with pytest.raises(BotRegistryError, match=r"cannot read bot registry .*missing\.json"):
+        load_bot_registry(tmp_path / "missing.json")

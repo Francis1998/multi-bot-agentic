@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from multi_bot_agentic.event_log import SQLiteEventLog
+from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
 from multi_bot_agentic.models import EventType, Observation, RunState
 
 
@@ -137,3 +137,37 @@ def load_latest_checkpoint(event_log: SQLiteEventLog, run_id: str) -> Checkpoint
             active_bot_id=str(active_bot_id) if active_bot_id is not None else None,
         )
     return latest
+
+
+def snapshot_from_event(event: EventRecord) -> CheckpointSnapshot:
+    """Rebuild the snapshot stored by one ``checkpoint`` event.
+
+    Parses the payload exactly like :func:`load_latest_checkpoint`, for callers that need a
+    specific checkpoint rather than the latest one (for example a fork after step ``N``).
+
+    Args:
+        event: A ``checkpoint`` event.
+
+    Returns:
+        The checkpoint snapshot.
+
+    Raises:
+        ValueError: If the event is not a checkpoint or its payload is malformed.
+    """
+
+    if event.event_type != EventType.CHECKPOINT.value:
+        raise ValueError(f"event {event.seq} of run {event.run_id} is a {event.event_type}, not a checkpoint")
+    payload = event.payload
+    try:
+        observations = tuple(observation_from_dict(item) for item in payload.get("observations", []))
+        active_bot_id = payload.get("active_bot_id")
+        return CheckpointSnapshot(
+            run_id=event.run_id,
+            goal=str(payload.get("goal", "")),
+            step=int(payload.get("step", 0)),
+            state=RunState(str(payload.get("state", RunState.CREATED.value))),
+            observations=observations,
+            active_bot_id=str(active_bot_id) if active_bot_id is not None else None,
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError(f"checkpoint event {event.seq} of run {event.run_id} is malformed: {error}") from error

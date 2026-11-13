@@ -7,7 +7,8 @@ Span shapes follow the OpenTelemetry GenAI semantic conventions (Development sta
 * an ``invoke_agent {bot}`` child span for each stretch of the run a registered bot was active;
 * a ``chat {model}`` (``generate_content`` for Gemini) span for every provider call;
 * an ``execute_tool {tool}`` span for every built-in or MCP tool call;
-* span events for handoffs, approvals, checkpoints, resumes, and the terminal decision.
+* span events for handoffs, approvals, checkpoints, resumes, fork points, and the terminal decision;
+* for a forked run, a span link from the root span to the parent run's root span.
 
 Timestamps come from the event log. An action span starts at its ``action_requested`` event
 and ends at its ``action_result`` event; an action without a result ends at the next recorded
@@ -31,6 +32,7 @@ from multi_bot_agentic.tracing.timeline import (
     Checkpoint,
     DecisionRef,
     FinalDecision,
+    Fork,
     Handoff,
     ModelCall,
     ObservationRef,
@@ -95,6 +97,21 @@ class SpanEvent:
 
 
 @dataclass(frozen=True)
+class SpanLink:
+    """A link from a span to a span of another (or the same) trace.
+
+    Attributes:
+        trace_id: 32-hex-digit trace id of the linked span.
+        span_id: 16-hex-digit span id of the linked span.
+        attributes: Link attributes.
+    """
+
+    trace_id: str
+    span_id: str
+    attributes: Mapping[str, Any]
+
+
+@dataclass(frozen=True)
 class Span:
     """One exported span.
 
@@ -109,6 +126,7 @@ class Span:
         events: Span events in time order.
         status_code: Span status code.
         status_message: Status description (only set for errors).
+        links: Links to causally related spans (a fork's root links to its parent run's root).
     """
 
     span_id: str
@@ -121,6 +139,7 @@ class Span:
     events: tuple[SpanEvent, ...] = ()
     status_code: StatusCode = StatusCode.UNSET
     status_message: str = ""
+    links: tuple[SpanLink, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -328,6 +347,7 @@ class _SpanDraft:
     events: list[SpanEvent] = field(default_factory=list)
     status_code: StatusCode = StatusCode.UNSET
     status_message: str = ""
+    links: list[SpanLink] = field(default_factory=list)
 
     def fail(self, error_type: str, message: str) -> None:
         """Mark the span as failed."""
@@ -350,6 +370,7 @@ class _SpanDraft:
             events=tuple(self.events),
             status_code=self.status_code,
             status_message=self.status_message,
+            links=tuple(self.links),
         )
 
 
@@ -387,6 +408,8 @@ class _TraceBuilder:
                 root.events.append(self._checkpoint_event(step))
             elif isinstance(step, Resume):
                 root.events.append(SpanEvent(f"{NAMESPACE}.run.resumed", timestamp_to_unix_nanos(step.at), {}))
+            elif isinstance(step, Fork):
+                root.events.append(self._fork_event(step))
         if agent_span is not root:
             agent_span.end = run_end
         spans = [root.freeze()] + [
@@ -420,6 +443,13 @@ class _TraceBuilder:
         resumes = sum(1 for step in timeline.steps if isinstance(step, Resume))
         if resumes:
             attributes[f"{NAMESPACE}.run.resume_count"] = resumes
+        fork = timeline.fork
+        if fork is not None:
+            attributes[f"{NAMESPACE}.fork.parent_run_id"] = fork.parent_run_id
+            attributes[f"{NAMESPACE}.fork.step"] = fork.fork_step
+            attributes[f"{NAMESPACE}.fork.inherited_events"] = fork.inherited_events
+            if fork.overrides:
+                attributes[f"{NAMESPACE}.fork.overrides"] = list(fork.overrides)
         if self.include_content:
             if timeline.goal is not None:
                 attributes["gen_ai.input.messages"] = [_text_message("user", timeline.goal)]
@@ -432,6 +462,18 @@ class _TraceBuilder:
         error_type = run_error_type(timeline)
         if error_type is not None and timeline.outcome is not None:
             root.fail(error_type, timeline.outcome.reason or "run failed")
+        if fork is not None:
+            # The fork continues the parent run's trace, so its root links to the parent's root span.
+            root.links.append(
+                SpanLink(
+                    trace_id=trace_id_for(fork.parent_run_id),
+                    span_id=span_id_for(fork.parent_run_id, "root"),
+                    attributes={
+                        f"{NAMESPACE}.link.type": "forked_from",
+                        f"{NAMESPACE}.fork.step": fork.fork_step,
+                    },
+                )
+            )
         return root
 
     def _bot_span(self, bot: str, *, start: int, order: int, allowed: tuple[str, ...]) -> _SpanDraft:
@@ -481,6 +523,8 @@ class _TraceBuilder:
             attributes[f"{NAMESPACE}.llm.directive"] = model_directive(call.output)[0]
         elif call.failure is None and not call.interrupted:
             attributes[f"{NAMESPACE}.action.incomplete"] = True
+        if call.requested_seq <= self.timeline.inherited_through_seq:
+            attributes[f"{NAMESPACE}.fork.inherited"] = True
         if self.include_content:
             attributes["gen_ai.input.messages"] = [_input_message(item) for item in call.inputs]
             if call.output is not None:
@@ -534,6 +578,8 @@ class _TraceBuilder:
             attributes[f"{NAMESPACE}.tool.ok"] = call.ok
         elif call.failure is None and not call.interrupted:
             attributes[f"{NAMESPACE}.action.incomplete"] = True
+        if call.requested_seq <= self.timeline.inherited_through_seq:
+            attributes[f"{NAMESPACE}.fork.inherited"] = True
         if self.include_content:
             attributes["gen_ai.tool.call.arguments"] = redact_value(tool_arguments(call))
             if call.ok and call.content is not None:
@@ -590,6 +636,18 @@ class _TraceBuilder:
         attributes: dict[str, Any] = {f"{NAMESPACE}.decision.action": decision.action}
         attributes.update(_decision_attributes(decision))
         return SpanEvent(f"{NAMESPACE}.decision", timestamp_to_unix_nanos(decision.timestamp), attributes)
+
+    def _fork_event(self, fork: Fork) -> SpanEvent:
+        """Return the root span event for a fork point (the run's own, or an ancestor's among its copies)."""
+
+        attributes: dict[str, Any] = {
+            f"{NAMESPACE}.fork.parent_run_id": fork.parent_run_id,
+            f"{NAMESPACE}.fork.step": fork.fork_step,
+            f"{NAMESPACE}.fork.inherited_events": fork.inherited_events,
+        }
+        if not fork.own:
+            attributes[f"{NAMESPACE}.fork.ancestor"] = True
+        return SpanEvent(f"{NAMESPACE}.run.forked", timestamp_to_unix_nanos(fork.at), attributes)
 
     def _checkpoint_event(self, checkpoint: Checkpoint) -> SpanEvent:
         """Return the root span event for a checkpoint."""

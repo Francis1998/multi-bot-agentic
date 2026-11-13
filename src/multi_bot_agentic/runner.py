@@ -11,6 +11,7 @@ from multi_bot_agentic.bots import BotSpec
 from multi_bot_agentic.checkpoint import load_latest_checkpoint, save_checkpoint
 from multi_bot_agentic.decision import DeterministicDecisionEngine
 from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
+from multi_bot_agentic.fork import plan_fork
 from multi_bot_agentic.lifecycle import InvalidTransitionError, RunStateMachine
 from multi_bot_agentic.llm.base import LLMAdapter
 from multi_bot_agentic.models import (
@@ -122,6 +123,8 @@ class AgentRunner:
         self.bots = dict(bots or {})
         self.active_bot_id = active_bot_id
         self.tool_specs = tuple(tool_specs)
+        # The allowlist before any bot scope; forks never run with tools outside it.
+        self._policy_allowed_tools = safety_policy.allowed_tools
         if self.active_bot_id is not None:
             if self.active_bot_id not in self.bots:
                 raise ValueError(f"active_bot_id is not registered: {self.active_bot_id}")
@@ -214,6 +217,72 @@ class AgentRunner:
             RunStateMachine(),
             start_step=max(0, snapshot.step),
         )
+
+    def fork(
+        self,
+        source_run_id: str,
+        at_step: int,
+        new_run_id: str,
+        *,
+        goal: str | None = None,
+        bot_id: str | None = None,
+    ) -> RunResult:
+        """Branch a recorded run after ``at_step`` into a new run and continue it.
+
+        The state after ``at_step`` is rebuilt from the event log alone (the latest checkpoint
+        recorded for that step; step 0 of an original run is its goal), without calling the
+        provider. The new run starts with a ``run_forked`` lineage event, then copies of the
+        source's events up to that point, then a checkpoint of its own starting state, then its
+        own steps from ``at_step`` on, with this runner's provider and step budget
+        (``SafetyPolicy.max_steps`` counts the inherited steps). The source run is not modified,
+        and it does not need to be finished.
+
+        Every check in :func:`multi_bot_agentic.fork.plan_fork` runs before anything is written.
+
+        Args:
+            source_run_id: Run to branch from.
+            at_step: Step to branch after (``0`` starts over from the goal).
+            new_run_id: Run id of the fork; it must not exist yet.
+            goal: New goal; the provider answers it before acting on earlier directives.
+            bot_id: Registered bot to continue as. The switch is recorded as a handoff, so
+                the first new step is a model call under that bot's scope.
+
+        Returns:
+            Final result of the fork.
+
+        Raises:
+            ForkError: If the fork is not allowed; nothing has been written.
+        """
+
+        plan = plan_fork(
+            self.event_log,
+            source_run_id,
+            at_step,
+            new_run_id,
+            provider=self.provider.provider_name,
+            policy=replace(self.safety_policy, allowed_tools=self._policy_allowed_tools),
+            bots=self.bots,
+            goal=goal,
+            bot_id=bot_id,
+        )
+        self.event_log.append(new_run_id, RunState.CREATED, EventType.RUN_FORKED, dict(plan.lineage))
+        for event in plan.point.prefix:
+            self.event_log.append(new_run_id, RunState(event.state), EventType(event.event_type), event.payload)
+        if plan.handoff is not None:
+            self.event_log.append(new_run_id, RunState.CREATED, EventType.ACTION_RESULT, dict(plan.handoff))
+        # The fork's own starting state: a fork that dies in its first step resumes with its overrides.
+        save_checkpoint(
+            self.event_log,
+            run_id=new_run_id,
+            goal=plan.goal,
+            step=plan.at_step,
+            state=RunState.CREATED,
+            observations=plan.observations,
+            active_bot_id=plan.bot,
+        )
+        self.active_bot_id = plan.bot
+        self.safety_policy = replace(self.safety_policy, allowed_tools=plan.allowed_tools)
+        return self._run_loop(new_run_id, plan.goal, plan.observations, RunStateMachine(), start_step=plan.at_step)
 
     def _run_loop(
         self,

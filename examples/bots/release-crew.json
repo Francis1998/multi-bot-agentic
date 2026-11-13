@@ -1,0 +1,14 @@
+{
+  "bots": {
+    "planner": {
+      "name": "Planner",
+      "description": "Plans the release with checklists",
+      "allowed_tools": ["checklist"]
+    },
+    "writer": {
+      "name": "Writer",
+      "description": "Writes release notes",
+      "allowed_tools": ["echo"]
+    }
+  }
+}

@@ -6,13 +6,25 @@ import argparse
 import json
 import sqlite3
 import sys
+from collections.abc import Iterable
 from contextlib import ExitStack
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from multi_bot_agentic.bots import BotRegistryError, BotSpec, load_bot_registry
 from multi_bot_agentic.config import AppConfig, build_llm_adapter
 from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
+from multi_bot_agentic.fork import (
+    RUN_FORKED,
+    ForkError,
+    RunHistory,
+    build_history,
+    fork_children,
+    inherited_events_intact,
+    parse_lineage,
+    plan_fork,
+)
 from multi_bot_agentic.mcp import McpConfigError, McpServerStatus, McpToolset, load_mcp_config
 from multi_bot_agentic.models import ToolSpec
 from multi_bot_agentic.runner import AgentRunner, RunResult, build_default_tools, recorded_outcome
@@ -20,6 +32,7 @@ from multi_bot_agentic.safety import SafetyPolicy
 from multi_bot_agentic.tools.base import ToolAdapter
 
 MCP_CONFIG_HELP = "MCP servers JSON (Claude Desktop 'mcpServers' format); tools appear as mcp__<server>__<tool>"
+BOTS_HELP = 'bot registry JSON: {"bots": {"<id>": {"allowed_tools": [...], "name": "...", "description": "..."}}}'
 TRACE_FORMATS = ("otlp-json", "mermaid")
 
 
@@ -50,6 +63,10 @@ def main() -> int:
         return mcp_tools_command(args)
     if args.command == "trace":
         return trace_command(args)
+    if args.command == "history":
+        return history_command(args)
+    if args.command == "fork":
+        return fork_command(args)
     parser.print_help()
     return 1
 
@@ -137,7 +154,52 @@ def build_parser() -> argparse.ArgumentParser:
         default=10.0,
         help="OTLP request timeout in seconds (default 10)",
     )
+
+    history_parser = subparsers.add_parser(
+        "history", help="list the steps of a recorded run and the steps a fork can continue after"
+    )
+    history_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
+    history_parser.add_argument("--run-id", default=None, help="run id (default: the most recently active run)")
+    history_parser.add_argument("--format", choices=("text", "json"), default="text", help="output format")
+
+    fork_parser = subparsers.add_parser(
+        "fork", help="branch a recorded run after step N into a new run and continue it (time travel)"
+    )
+    fork_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path (the fork is added)")
+    fork_parser.add_argument("--run-id", required=True, help="run to branch from (it is not modified)")
+    fork_parser.add_argument(
+        "--at-step",
+        type=_step_number,
+        required=True,
+        help="continue after this step; 0 starts over from the goal (see `history`)",
+    )
+    fork_parser.add_argument("--new-run-id", required=True, help="run id of the fork (must not exist yet)")
+    fork_parser.add_argument("--goal", default=None, help="new goal; the model answers it before earlier directives")
+    fork_parser.add_argument(
+        "--provider", default=None, help="fake, openai, claude_code, gemini, kimi (default: MULTIBOT_PROVIDER or fake)"
+    )
+    fork_parser.add_argument("--bot", default=None, help="registered bot to continue as (needs --bots)")
+    fork_parser.add_argument("--bots", type=Path, default=None, help=BOTS_HELP)
+    fork_parser.add_argument(
+        "--max-steps", type=int, default=None, help="step budget of the fork, inherited steps included"
+    )
+    fork_parser.add_argument("--mcp-config", type=Path, default=None, help=MCP_CONFIG_HELP)
+    fork_parser.add_argument(
+        "--dry-run", action="store_true", help="print the rebuilt state and the first decision; write nothing"
+    )
     return parser
+
+
+def _step_number(value: str) -> int:
+    """Parse a ``--at-step`` value: an integer >= 0."""
+
+    try:
+        number = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"must be an integer >= 0, got {value!r}") from None
+    if number < 0:
+        raise argparse.ArgumentTypeError(f"must be an integer >= 0, got {value!r}")
+    return number
 
 
 def run_command(args: argparse.Namespace) -> int:
@@ -222,7 +284,10 @@ def report_command(args: argparse.Namespace) -> int:
 
     event_log = SQLiteEventLog(args.event_log)
     try:
-        print(json.dumps(build_run_report(event_log.list_events(run_id=args.run_id)), indent=2))
+        events = event_log.list_events(run_id=args.run_id)
+        # Children of a single run can be anywhere in the log: read every run's first event.
+        forks = events if args.run_id is None else event_log.list_events()
+        print(json.dumps(build_run_report(events, forks=forks), indent=2))
     finally:
         event_log.close()
     return 0
@@ -388,21 +453,36 @@ def format_event_text(event: EventRecord) -> str:
                 detail += f" era={metadata['mcp_era']}"
     elif event.event_type in {"run_completed", "run_failed", "run_cancelled"}:
         detail = f" result={event.payload}"
+    elif event.event_type == RUN_FORKED:
+        payload = event.payload
+        detail = (
+            f" parent={payload.get('parent_run_id')} step={payload.get('fork_step')}"
+            f" inherited={payload.get('inherited_events')}"
+        )
     return f"{event.seq:03d} {event.state:<10} {event.event_type}{detail}"
 
 
-def build_run_report(events: list[EventRecord]) -> dict[str, Any]:
+def build_run_report(events: list[EventRecord], forks: Iterable[EventRecord] = ()) -> dict[str, Any]:
     """Build a structured summary from durable event records.
+
+    A run that was forked, or forked from, also gets a ``lineage`` entry: its ``parent`` (with
+    a check that the inherited events still match their recorded digest) and its ``children``.
 
     Args:
         events: Event records.
+        forks: Further events to find children in (only each run's first event is read), for
+            reports of a single run.
 
     Returns:
         Report dictionary grouped by run id.
     """
 
+    lineage_events = {event.run_id: event for event in (*forks, *events) if event.seq == 1}
+    children = fork_children(lineage_events.values())
+    events_by_run: dict[str, list[EventRecord]] = {}
     reports: dict[str, dict[str, Any]] = {}
     for event in events:
+        events_by_run.setdefault(event.run_id, []).append(event)
         report = reports.setdefault(
             event.run_id,
             {
@@ -434,7 +514,203 @@ def build_run_report(events: list[EventRecord]) -> dict[str, Any]:
             )
         elif event.event_type == "run_completed":
             report["answer"] = event.payload.get("answer")
+    for run_id, report in reports.items():
+        run_events = events_by_run[run_id]
+        lineage = parse_lineage(min(run_events, key=lambda item: item.seq))
+        forked = children.get(run_id, [])
+        if lineage is None and not forked:
+            continue
+        parent = None
+        if lineage is not None:
+            parent = lineage.summary() | {"inherited_events_verified": inherited_events_intact(run_events, lineage)}
+        report["lineage"] = {
+            "parent": parent,
+            "children": [
+                {"run_id": child.run_id, "fork_step": child.fork_step, "overrides": dict(child.overrides)}
+                for child in forked
+            ],
+        }
     return {"runs": list(reports.values())}
+
+
+def history_command(args: argparse.Namespace) -> int:
+    """Execute the history subcommand: list a run's steps and which ones can be forked.
+
+    Reads the event log only; never calls a provider or tool.
+
+    Args:
+        args: Parsed arguments.
+
+    Returns:
+        0 on success, 2 for a missing or unreadable log or an unknown run.
+    """
+
+    from multi_bot_agentic.tracing import select_latest_run
+
+    path: Path = args.event_log
+    if not path.is_file():
+        print(f"error: event log not found: {path}", file=sys.stderr)
+        return 2
+    try:
+        event_log = SQLiteEventLog(path)
+        try:
+            run_id = args.run_id or select_latest_run(event_log.last_event_timestamps())
+            events = event_log.list_events(run_id=run_id) if run_id is not None else []
+        finally:
+            event_log.close()
+    except sqlite3.DatabaseError as error:
+        print(f"error: cannot read event log {path}: {error}", file=sys.stderr)
+        return 2
+    if run_id is None:
+        print(f"error: event log {path} has no runs", file=sys.stderr)
+        return 2
+    if not events:
+        print(f"error: run {run_id} not found in event log {path}", file=sys.stderr)
+        return 2
+    if args.run_id is None:
+        print(f"note: --run-id not given; showing the most recent run {run_id}", file=sys.stderr)
+    history = build_history(events)
+    if args.format == "json":
+        print(json.dumps(history.to_dict(), indent=2))
+    else:
+        print(format_history_text(history))
+    return 0
+
+
+def format_history_text(history: RunHistory) -> str:
+    """Format a run's steps as a table; ``*`` marks steps inherited from the parent run.
+
+    Args:
+        history: Run history.
+
+    Returns:
+        Multi-line text.
+    """
+
+    status = f"{history.final_state} after {_quantity(history.last_step, 'step')}"
+    lines = [f"run {history.run_id}: {status} (provider {history.provider or 'unknown'})"]
+    lineage = history.lineage
+    if lineage is not None:
+        changed = f" (new {', '.join(sorted(lineage.overrides))})" if lineage.overrides else ""
+        lines.append(f"forked from {lineage.parent_run_id} after step {lineage.fork_step}{changed}; * = inherited")
+    if history.goal is not None:
+        lines.append(f"goal: {history.goal}")
+    header = ("step", "bot", "action", "target", "rule", "outcome", "fork")
+    rows = [
+        (
+            f"{item.step}{'*' if item.inherited else ''}",
+            item.bot or "-",
+            item.action or "start",
+            item.target or "-",
+            item.rule_id or "-",
+            item.outcome if item.step else "-",
+            "yes" if item.forkable else "no",
+        )
+        for item in history.steps
+    ]
+    widths = [max(len(row[column]) for row in (header, *rows)) for column in range(len(header))]
+    for row in (header, *rows):
+        cells = [row[0].rjust(widths[0])] + [cell.ljust(width) for cell, width in zip(row[1:], widths[1:], strict=True)]
+        lines.append("  ".join(cells).rstrip())
+    forkable = ", ".join(str(step) for step in history.forkable_steps()) or "none"
+    lines.append(f"forkable steps: {forkable}")
+    return "\n".join(lines)
+
+
+def _quantity(number: int, noun: str) -> str:
+    """Return ``"<n> <noun>"`` with a plural ``s`` when ``n != 1``."""
+
+    return f"{number} {noun}{'' if number == 1 else 's'}"
+
+
+def fork_command(args: argparse.Namespace) -> int:
+    """Execute the fork subcommand: branch a recorded run after a step and continue it.
+
+    Every check runs before anything is written, and the provider is built (never called)
+    before the fork starts, so a missing API key fails without leaving a half-written fork.
+    ``--dry-run`` prints the rebuilt state and the first decision instead.
+
+    Args:
+        args: Parsed arguments.
+
+    Returns:
+        0 when the fork succeeded (or the dry run passed), otherwise 2.
+    """
+
+    path: Path = args.event_log
+    if not path.is_file():
+        print(f"error: event log not found: {path}", file=sys.stderr)
+        return 2
+    if args.bot is not None and args.bots is None:
+        print("error: --bot needs --bots PATH, the registry that defines the bot's tool scope", file=sys.stderr)
+        return 2
+    try:
+        config = AppConfig.from_env(provider=args.provider, event_log=path, max_steps=args.max_steps)
+        bots: dict[str, BotSpec] = load_bot_registry(args.bots) if args.bots is not None else {}
+    except (BotRegistryError, ValueError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    try:
+        toolset = start_mcp_toolset(args.mcp_config)
+    except (McpConfigError, McpStartupError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    with ExitStack() as cleanup:
+        if toolset is not None:
+            cleanup.callback(toolset.close)
+        event_log = SQLiteEventLog(path)
+        cleanup.callback(event_log.close)
+        tools, safety_policy, tool_specs = build_runtime_tools(config.safety, toolset)
+        try:
+            plan = plan_fork(
+                event_log,
+                args.run_id,
+                args.at_step,
+                args.new_run_id,
+                provider=config.provider,
+                policy=safety_policy,
+                bots=bots,
+                goal=args.goal,
+                bot_id=args.bot,
+            )
+            provider = build_llm_adapter(config.provider)
+        except (ForkError, ValueError) as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 2
+        if args.dry_run:
+            print(json.dumps(plan.to_dict(), indent=2))
+            return 0
+        runner = AgentRunner(
+            provider=provider,
+            event_log=event_log,
+            tools=tools,
+            safety_policy=safety_policy,
+            bots=bots,
+            tool_specs=tool_specs,
+        )
+        result = runner.fork(args.run_id, args.at_step, args.new_run_id, goal=args.goal, bot_id=args.bot)
+        overrides = plan.lineage.get("overrides", {})
+        changed = f"; new {', '.join(sorted(overrides))}" if overrides else ""
+        print(
+            f"note: forked run {args.run_id} after step {args.at_step} into {result.run_id} "
+            f"({_quantity(len(plan.point.prefix), 'event')} inherited{changed})",
+            file=sys.stderr,
+        )
+        print(
+            json.dumps(
+                {
+                    "run_id": result.run_id,
+                    "parent_run_id": args.run_id,
+                    "fork_step": args.at_step,
+                    "state": result.state.value,
+                    "answer": result.answer,
+                    "steps": result.steps,
+                    "event_log": str(path),
+                },
+                indent=2,
+            )
+        )
+        return 0 if result.state.value == "succeeded" else 2
 
 
 def eval_command(args: argparse.Namespace) -> int:

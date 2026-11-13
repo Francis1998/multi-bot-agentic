@@ -20,7 +20,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from multi_bot_agentic.tracing.spans import Span, SpanEvent, Trace
+from multi_bot_agentic.tracing.spans import Span, SpanEvent, SpanLink, Trace
 
 SERVICE_NAME: Final[str] = "multi-bot-agentic"
 SCOPE_NAME: Final[str] = "multi_bot_agentic.tracing"
@@ -412,6 +412,8 @@ def _encode_span(span: Span, trace_id: str) -> dict[str, Any]:
     )
     if span.events:
         encoded["events"] = [_encode_event(event) for event in span.events]
+    if span.links:
+        encoded["links"] = [_encode_link(link) for link in span.links]
     status: dict[str, Any] = {"code": int(span.status_code)}
     if span.status_message:
         status["message"] = span.status_message
@@ -427,3 +429,9 @@ def _encode_event(event: SpanEvent) -> dict[str, Any]:
         "name": event.name,
         "attributes": encode_attributes(event.attributes),
     }
+
+
+def _encode_link(link: SpanLink) -> dict[str, Any]:
+    """Encode one span link as an OTLP/JSON ``Span.Link``."""
+
+    return {"traceId": link.trace_id, "spanId": link.span_id, "attributes": encode_attributes(link.attributes)}
