@@ -8,8 +8,9 @@
 **A deterministic, auditable orchestrator for multi-bot AI agents.** Models propose, and a rule-based
 **Observe → Decide → Act** engine decides. Every decision, tool call, and MCP call is written to a
 replayable SQLite event log. It runs fully offline with a deterministic fake provider, and it works with GPT-6,
-Claude 5.5, Gemini, Kimi K3, and any [Model Context Protocol](https://modelcontextprotocol.io) server. It is
-a portfolio-quality, local-first reference implementation.
+Claude 5.5 and Fable 5.2, Gemini 4 and 3.8 Flash, Kimi K3.1, and any
+[Model Context Protocol](https://modelcontextprotocol.io) server. It is a portfolio-quality, local-first reference
+implementation.
 
 ![MCP tool bridge demo: official MCP servers in both protocol eras, an MCP-calling run, and its replay](assets/demo/mcp-tools.gif)
 
@@ -26,7 +27,7 @@ a portfolio-quality, local-first reference implementation.
 - **Tools are explicit and bounded.** Built-in and MCP tools pass the same allowlist and per-bot scopes. MCP
   calls also get per-call timeouts and result byte caps. Built-in tools run offline and in-process with
   size-limited inputs. A model can only request a tool; the engine decides whether it runs.
-- **Provider-neutral.** One adapter interface covers GPT-6, the Claude Code CLI, Gemini, and Kimi K3, and every
+- **Provider-neutral.** One adapter interface covers GPT-6, the Claude Code CLI, Gemini, and Kimi K3.1, and every
   adapter sends parameters that current reasoning models accept.
 - **CI-friendly.** The fake provider exercises the real runtime, so lint, types, tests, a smoke run, and
   offline evaluation need no API keys.
@@ -37,7 +38,7 @@ a portfolio-quality, local-first reference implementation.
 flowchart LR
     goal([Goal]) --> observe[Observe]
     observe --> decide{"Decide<br/>deterministic rules<br/>+ rationale trace"}
-    decide -->|call_llm| llm["LLM adapter<br/>GPT-6 · Claude 5.5 · Gemini · Kimi K3 · fake"]
+    decide -->|call_llm| llm["LLM adapter<br/>GPT-6 · Claude 5.5 / Fable 5.2 · Gemini · Kimi K3.1 · fake"]
     decide -->|call_tool| tool["Allowlisted tool<br/>built-in or mcp__server__tool"]
     decide -->|handoff| bot["Bot handoff<br/>scoped tool allowlist"]
     decide -->|finish / fail / cancel| done([Terminal state])
@@ -89,7 +90,7 @@ To use a real model, export its key and pick the provider, for example
 | Checkpoint & resume | Resume an interrupted run; the active bot's tool scope is restored | `checkpoint.py` | [Checkpoint resume](docs/guides/CHECKPOINT_RESUME_GUIDE.md) |
 | Multi-bot handoffs | `HANDOFF:<bot>:<summary>` with per-bot tool allowlists | `bots.py` | [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md) |
 | **MCP tool bridge** | Tools from any MCP server, with a dual-era (2026-07-28 + legacy) stdio client and no dependencies | `mcp/` | [MCP tools](docs/guides/MCP_TOOLS_GUIDE.md) |
-| Provider adapters | GPT-6, Claude Code CLI, Gemini, Kimi K3, and a fake provider, all sending reasoning-safe parameters | `llm/` | [Configuration](docs/CONFIGURATION.md) |
+| Provider adapters | GPT-6, Claude Code CLI, Gemini, Kimi K3.1, and a fake provider, all sending reasoning-safe parameters | `llm/` | [Configuration](docs/CONFIGURATION.md) |
 | Safety controls | Step budgets, timeouts, cancellation file, tool allowlists, prompt bounds | `safety.py` | [Safety](docs/SAFETY.md) |
 | Human-in-the-loop | File-backed approval gate for sensitive tools | `approval.py` | [HITL gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md) |
 | Parallel fan-out | Capped, order-preserving task batches | `fanout.py` | [Fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md) |
@@ -103,15 +104,19 @@ To use a real model, export its key and pick the provider, for example
 | Provider (`--provider`) | Adapter | Default | Also current | Credential |
 | --- | --- | --- | --- | --- |
 | OpenAI (`openai`) | `OpenAIAdapter` | `gpt-6.1-sol` | `gpt-6-astra`, `gpt-6.1-terra`, `gpt-6-luna` | `OPENAI_API_KEY` |
-| Anthropic via Claude Code CLI (`claude_code`) | `ClaudeCodeCLIAdapter` | the CLI's configured model (recommended: `CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"`; keep `-p`, print mode) | `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-1` | local `claude` |
-| Google Gemini (`gemini`) | `GeminiAdapter` | `gemini-3.8-flash` | `gemini-4-argon` | `GEMINI_API_KEY` |
+| Anthropic via Claude Code CLI (`claude_code`) | `ClaudeCodeCLIAdapter` | the CLI's configured model (recommended: `CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"`; keep `-p`, print mode) | `claude-fable-5-2`, `claude-sonnet-5-5`, `claude-haiku-5-5` | local `claude` |
+| Google Gemini (`gemini`) | `GeminiAdapter` | `gemini-3.8-flash` | `gemini-4-hydrogen` (Google's recommended upgrade), `gemini-4-carbon`, `gemini-4-argon`, `gemini-3.5-flash-lite` | `GEMINI_API_KEY` |
 | Kimi / Moonshot (`kimi`) | `KimiAdapter` | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed`, `kimi-k3` | `KIMI_API_KEY` |
 | Deterministic (`fake`) | `FakeLLMAdapter` | offline, used by CI | n/a | none |
 
-Verified against provider docs on 2026-11-06. Every adapter normalizes output into `ModelOutput`, which the runner
-treats as an observation. `OPENAI_BASE_URL` points the OpenAI adapter at any OpenAI-compatible gateway. No adapter
-sends `temperature`, `top_p`, or `top_k`: current GPT-6, Claude 5.5, Gemini 3.x, and Kimi K3 models reject, fix, or
-ignore them ([parameter rules](docs/CONFIGURATION.md#provider-parameter-rules)).
+Verified on 2026-11-12 against the [OpenAI](https://developers.openai.com/api/docs/models),
+[Anthropic](https://platform.claude.com/docs/en/models/overview), [Google](https://aistudio.google.com/docs/models),
+and [Moonshot](https://platform.kimi.ai/docs/models.md) model pages. The Gemini default stays on 3.8 Flash for now;
+[Configuration › Gemini default](docs/CONFIGURATION.md#gemini-default) explains why and how to switch to Hydrogen.
+Every adapter normalizes output into `ModelOutput`, which the runner treats as an observation. `OPENAI_BASE_URL`
+points the OpenAI adapter at any OpenAI-compatible gateway. No adapter sends `temperature`, `top_p`, or `top_k`:
+current GPT-6, Claude 5.5 and Fable 5.2, Gemini 4 and 3.x, and Kimi K3.1 models reject, fix, or ignore them
+([parameter rules](docs/CONFIGURATION.md#provider-parameter-rules)).
 
 ## Documentation Map
 

@@ -18,30 +18,51 @@ cp .env.example .env
 
 ## Current Model Stack
 
-Defaults were verified against the providers' documentation on 2026-11-06. Override any of them with the
-environment variables below. For prices, see each provider's pricing page.
+Defaults and model lists were verified against the providers' documentation on 2026-11-12. Override any default
+with the environment variables below. For prices, see each provider's pricing page.
 
 | Provider | Default here | Other current models | Notes |
 | --- | --- | --- | --- |
-| OpenAI ([models](https://developers.openai.com/api/docs/guides/latest-model)) | `gpt-6.1-sol` | `gpt-6-astra` (highest intelligence), `gpt-6.1-terra` (fast), `gpt-6-luna` (fastest, lowest cost) | Reasoning models: the adapter sends `max_completion_tokens` (default 32768, which covers reasoning and visible output; set it with `OPENAI_MAX_COMPLETION_TOKENS`) and no `temperature`/`top_p` |
-| Anthropic via Claude Code CLI ([models](https://platform.claude.com/docs/en/models/overview)) | the CLI's own setting | `claude-opus-5-5` (recommended default), `claude-sonnet-5-5`, `claude-haiku-5-5`, `claude-fable-5-1` | Choose one with `CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"` (keep `-p`, print mode) |
-| Google Gemini ([models](https://aistudio.google.com/docs/models)) | `gemini-3.8-flash` | `gemini-4-argon` (flagship reasoning), `gemini-3.6-flash`, `gemini-3.5-flash-lite` | `generateContent` API |
-| Kimi / Moonshot ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed`, `kimi-k3` | K3 fixes `temperature`/`top_p`/`n`/penalties and always reasons, so none of those are sent. `KIMI_MAX_COMPLETION_TOKENS` sets the budget (default 32768). K2 is being retired |
+| OpenAI ([models](https://developers.openai.com/api/docs/models)) | `gpt-6.1-sol` | `gpt-6-astra` (flagship, highest intelligence), `gpt-6.1-terra` (fast), `gpt-6-luna` (fastest, lowest cost) | Reasoning models: the adapter sends `max_completion_tokens` (default 32768, which covers reasoning and visible output; set it with `OPENAI_MAX_COMPLETION_TOKENS`) and no `temperature`/`top_p` |
+| Anthropic via Claude Code CLI ([models](https://platform.claude.com/docs/en/models/overview)) | the CLI's own setting | `claude-opus-5-5` (recommended starting point), `claude-fable-5-2` (demanding reasoning and long-horizon agentic work), `claude-sonnet-5-5`, `claude-haiku-5-5` | Choose one with `CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"` (keep `-p`, print mode). `claude-fable-5-2` (released 2026-11-09) supersedes Fable 5.1 and requires 30-day data retention ([Fable 5.2](https://platform.claude.com/docs/en/models/fable-5-2/overview)) |
+| Google Gemini ([models](https://aistudio.google.com/docs/models)) | `gemini-3.8-flash` | `gemini-4-hydrogen` (fast agentic model, Google's recommended upgrade from 3.8 Flash), `gemini-4-carbon` (strongest reasoning, paid tier only), `gemini-4-argon` (efficient frontier reasoning, paid tier only), `gemini-3.5-flash-lite` (fastest, lowest cost) | `generateContent` API. Gemini 4 models share one 1,048,576-token window for input, thinking, and output. See [Gemini default](#gemini-default) |
+| Kimi / Moonshot ([models](https://platform.kimi.ai/docs/models.md), [parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed` (same model, about 2-3× faster), `kimi-k3` (previous-generation flagship) | The K3 series fixes `temperature`/`top_p`/`n`/penalties and always reasons, so none of those are sent. `KIMI_MAX_COMPLETION_TOKENS` sets the budget (default 32768). The K2 series closed to new users on 2026-10-31 and retires by the end of December 2026 |
 
 If you override `OPENAI_MODEL` with an older model whose output limit is below 32768 tokens, lower
 `OPENAI_MAX_COMPLETION_TOKENS` to match. For example, `gpt-4o` documents a 16384-token output limit.
+
+### Gemini default
+
+`gemini-3.8-flash` stays the default even though Google recommends `gemini-4-hydrogen` as the upgrade from
+3.8 Flash ([What's new in Gemini 4 Hydrogen](https://aistudio.google.com/docs/whats-new-gemini-4-hydrogen)). This
+was decided on 2026-11-12 for three reasons:
+
+- **Tool protocol.** Hydrogen's migration checklist says not to prompt for custom raw-text tool calls with zero
+  declared tools, because the response can end with `MALFORMED_FUNCTION_CALL`. That is how this adapter works: the
+  model answers with `TOOL:<name>:<payload>`, `HANDOFF:`, or `DONE:` text, and no native function declarations
+  are sent. The 3.8 Flash migration guide does not warn against this pattern.
+- **Latency.** Hydrogen thinks at `high` by default (3.8 Flash at `medium`), and Google recommends client timeouts
+  of at least 20 minutes for Gemini 4 `generateContent` calls. `MULTIBOT_TIMEOUT_SECONDS` defaults to 30.
+- **Cost.** Hydrogen costs $1.50/$7.50 per 1M input/output tokens, twice 3.8 Flash's introductory $0.75/$3.75,
+  which runs through 2026-12-31. From 2027-01-01, 3.8 Flash also costs $1.50/$7.50
+  ([pricing](https://aistudio.google.com/docs/pricing)).
+
+To use Hydrogen now, set `GEMINI_MODEL=gemini-4-hydrogen` and raise `MULTIBOT_TIMEOUT_SECONDS`. If a run fails
+with `finishReason=MALFORMED_FUNCTION_CALL` in its failure reason, Hydrogen tried to emit a native function call
+instead of a text directive. Switch back to `gemini-3.8-flash`. Revisit this default when the Gemini adapter
+declares its tools natively.
 
 ## Provider Parameter Rules
 
 Current models reject or ignore sampling parameters, so no adapter sends `temperature`, `top_p`, `top_k`, `n`,
 penalties, or logprobs. `tests/test_adapters.py` guards this for every provider.
 
-| Provider | Rule (official docs, checked 2026-11-07) | What the adapter does |
+| Provider | Rule (official docs, checked 2026-11-12) | What the adapter does |
 | --- | --- | --- |
 | OpenAI GPT-6 | When reasoning effort is not `none`, remove `temperature`, `top_p`, and `top_logprobs` (and `logprobs` on Chat Completions). `gpt-6.1-sol` and `gpt-6-astra` support only `low`..`max`. `gpt-6.1-terra` and `gpt-6-luna` accept `temperature` only with `reasoning_effort: none` ([GPT-6 guide](https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md)) | Sends only `model`, `messages`, and `max_completion_tokens` |
-| Anthropic Claude 5.5 | A non-default `temperature`, `top_p`, or `top_k` returns 400. Since API version 2026-10-21, any of them returns 400 on every model. Use `output_config.effort` instead ([thinking](https://platform.claude.com/docs/en/build-with-claude/thinking.md), [effort](https://platform.claude.com/docs/en/build-with-claude/effort.md)) | The Claude Code CLI adapter runs only the configured command (for example `claude -p --model claude-opus-5-5`) and adds no flags of its own |
-| Google Gemini 3.x | Remove `temperature`, `top_p`, and `top_k`; if provided, they are ignored ([Gemini 3 guide](https://aistudio.google.com/docs/gemini-3.md)) | Sends only `contents`, with no `generationConfig` |
-| Kimi K3 | `temperature` is fixed at 1.0 (any other value errors), as are `top_p`, `n`, and penalties. Use top-level `reasoning_effort` (`low`/`high`/`max`) ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | Sends only `model`, `messages`, and `max_completion_tokens` |
+| Anthropic Claude 5.5 and Fable 5.2 | A non-default `temperature`, `top_p`, or `top_k` returns 400. Since API version 2026-10-21, any of them returns 400 on every model. Use `output_config.effort` instead; Fable 5.2 and Opus 5.5 always think ([thinking](https://platform.claude.com/docs/en/build-with-claude/thinking.md), [effort](https://platform.claude.com/docs/en/build-with-claude/effort.md)) | The Claude Code CLI adapter runs only the configured command (for example `claude -p --model claude-opus-5-5`) and adds no flags of its own |
+| Google Gemini 4 and 3.x | Remove `temperature`, `top_p`, and `top_k`; if provided, they are ignored. Thinking is on by default and set with `thinkingConfig.thinkingLevel`: Hydrogen defaults to `high` and adds `xhigh`, while Carbon, Argon, and 3.8 Flash default to `medium`. Gemini 4 and 3.8 Flash reject `minimal` ([Hydrogen migration](https://aistudio.google.com/docs/whats-new-gemini-4-hydrogen#migrate-from-gemini-3-8-flash), [thinking levels](https://aistudio.google.com/docs/thinking#thinking-levels), [Gemini 3 guide](https://aistudio.google.com/docs/gemini-3.md)) | Sends only `contents`, with no `generationConfig`, so each model keeps its default thinking level |
+| Kimi K3 series (`kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`, `kimi-k3`) | `temperature` is fixed at 1.0 (any other value errors), as are `top_p`, `n`, and penalties. Use top-level `reasoning_effort` (`low`/`high`/`max`, default `max`) ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | Sends only `model`, `messages`, and `max_completion_tokens` |
 
 ## Provider Commands
 
@@ -70,7 +91,7 @@ Gemini:
 
 ```bash
 export GEMINI_API_KEY=...
-export GEMINI_MODEL=gemini-3.8-flash
+export GEMINI_MODEL=gemini-3.8-flash  # or gemini-4-hydrogen, see "Gemini default" above
 multi-bot-agentic run --goal "Draft a launch checklist" --provider gemini
 ```
 

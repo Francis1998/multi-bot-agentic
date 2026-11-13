@@ -33,6 +33,6 @@ Real problems **multi-bot-agentic** solves.
 
 - Deterministic decision engine with rationale traces
 - State-machine run lifecycle + durable event log
-- Tool/adapter abstraction (GPT-6, Claude 5.5 via Claude Code, Gemini 3.8 Flash / 4 Argon, Kimi K3, and any MCP server)
+- Tool/adapter abstraction (GPT-6, Claude 5.5 and Fable 5.2 via Claude Code, Gemini 3.8 Flash / 4 Hydrogen / 4 Carbon / 4 Argon, Kimi K3.1, and any MCP server)
 - Safety: timeouts, bounded scope, cancellation
 - Built-in compare tool (`diff`) for trustworthy before/after observations

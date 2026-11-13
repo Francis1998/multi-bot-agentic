@@ -133,7 +133,12 @@ def test_required_provider_secret_rejects_blank_value(monkeypatch: MonkeyPatch) 
 
 
 def test_gemini_adapter_default_uses_latest_flash_stack(monkeypatch: MonkeyPatch) -> None:
-    """Gemini adapter defaults should stay aligned with the current Flash stack."""
+    """The Gemini default stays on 3.8 Flash until the adapter declares tools natively.
+
+    Google recommends ``gemini-4-hydrogen`` as the upgrade, but its migration guide warns that raw-text
+    tool calls with no declared tools (this adapter's protocol) can fail with ``MALFORMED_FUNCTION_CALL``.
+    See ``docs/CONFIGURATION.md#gemini-default`` before changing this default.
+    """
 
     monkeypatch.setenv("GEMINI_API_KEY", "dummy-key")
     monkeypatch.delenv("GEMINI_MODEL", raising=False)
@@ -201,7 +206,7 @@ def test_claude_code_default_command_runs_print_mode(monkeypatch: MonkeyPatch, c
 
 
 def test_kimi_adapter_default_uses_latest_k3_stack(monkeypatch: MonkeyPatch) -> None:
-    """Kimi adapter defaults should stay aligned with the current K3 stack (K2 is being retired)."""
+    """Kimi adapter defaults should stay on the current K3.1 lineup (the K2 series retires by end of December 2026)."""
 
     monkeypatch.setenv("KIMI_API_KEY", "dummy-key")
     monkeypatch.delenv("KIMI_MODEL", raising=False)
@@ -213,7 +218,8 @@ def test_kimi_adapter_default_uses_latest_k3_stack(monkeypatch: MonkeyPatch) -> 
 
 
 # Sampling parameters that reasoning models reject: GPT-6 (reasoning effort above "none") does not accept
-# temperature/top_p/logprobs, and Kimi K3 fixes temperature/top_p/n/penalties ("omit them from requests").
+# temperature/top_p/logprobs, and the Kimi K3 series (K3.1 Pro, K3) fixes temperature/top_p/n/penalties
+# ("omit them from requests").
 _FIXED_OR_UNSUPPORTED = {
     "temperature",
     "top_p",
@@ -249,7 +255,7 @@ def _captured_payload(monkeypatch: MonkeyPatch, adapter: OpenAIAdapter) -> dict[
 def test_reasoning_model_payload_uses_max_completion_tokens(
     monkeypatch: MonkeyPatch, adapter_cls: type[OpenAIAdapter], model: str
 ) -> None:
-    """Current GPT-6 and Kimi K3 models are reasoning models with fixed or unsupported sampling knobs.
+    """Current GPT-6 and Kimi K3.1 models are reasoning models with fixed or unsupported sampling knobs.
 
     ``max_tokens`` is deprecated in favor of ``max_completion_tokens`` (which counts reasoning
     tokens), so a 500-token ``max_tokens`` cap could be spent entirely on reasoning before any
@@ -297,8 +303,14 @@ def test_completion_budget_rejects_invalid_values(monkeypatch: MonkeyPatch, valu
         build_llm_adapter("openai")
 
 
-def test_gemini_payload_sends_no_sampling_parameters(monkeypatch: MonkeyPatch) -> None:
-    """Gemini 3.x ignores temperature/topP/topK, so the adapter sends no ``generationConfig`` at all."""
+@pytest.mark.parametrize("model", ["gemini-3.8-flash", "gemini-4-hydrogen", "gemini-4-carbon", "gemini-4-argon"])
+def test_gemini_payload_sends_no_sampling_parameters(monkeypatch: MonkeyPatch, model: str) -> None:
+    """Gemini 4 and 3.x ignore temperature/topP/topK, so the adapter sends no ``generationConfig`` at all.
+
+    Without a ``thinkingConfig`` each model keeps its own default thinking level (``high`` on Hydrogen,
+    ``medium`` on Carbon, Argon, and 3.8 Flash), and the ``minimal`` level that Gemini 4 rejects is
+    never sent. The model ID goes into the URL path unchanged.
+    """
 
     captured: dict[str, object] = {}
 
@@ -310,16 +322,17 @@ def test_gemini_payload_sends_no_sampling_parameters(monkeypatch: MonkeyPatch) -
         return {"candidates": [{"content": {"parts": [{"text": "DONE: ok"}]}}]}
 
     monkeypatch.setattr("multi_bot_agentic.llm.gemini.post_json", fake_post_json)
-    adapter = GeminiAdapter(api_key="k", model="gemini-3.8-flash")
+    adapter = GeminiAdapter(api_key="k", model=model)
     request = ModelRequest(goal="demo", observations=(Observation(source="user", content="demo"),))
 
     assert adapter.complete(request, timeout_seconds=1.0).text == "DONE: ok"
-    assert "gemini-3.8-flash:generateContent" in str(captured.pop("url"))
+    assert f"/v1beta/models/{model}:generateContent?" in str(captured.pop("url"))
     assert set(captured) == {"contents"}
 
 
-def test_claude_code_adapter_adds_no_sampling_flags(monkeypatch: MonkeyPatch) -> None:
-    """Claude 5.5 rejects temperature/top_p/top_k, so the CLI adapter only runs the configured command."""
+@pytest.mark.parametrize("model", ["claude-opus-5-5", "claude-fable-5-2"])
+def test_claude_code_adapter_adds_no_sampling_flags(monkeypatch: MonkeyPatch, model: str) -> None:
+    """Claude 5.5 and Fable 5.2 reject temperature/top_p/top_k, so the CLI adapter only runs the configured command."""
 
     seen: list[list[str]] = []
 
@@ -328,8 +341,8 @@ def test_claude_code_adapter_adds_no_sampling_flags(monkeypatch: MonkeyPatch) ->
         return subprocess.CompletedProcess(command, 0, stdout="DONE: ok", stderr="")
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    adapter = ClaudeCodeCLIAdapter(command="claude -p --model claude-opus-5-5")
+    adapter = ClaudeCodeCLIAdapter(command=f"claude -p --model {model}")
     request = ModelRequest(goal="demo", observations=(Observation(source="user", content="demo"),))
 
     assert adapter.complete(request, timeout_seconds=1.0).text == "DONE: ok"
-    assert seen == [["claude", "-p", "--model", "claude-opus-5-5"]]
+    assert seen == [["claude", "-p", "--model", model]]
