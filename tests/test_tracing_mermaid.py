@@ -105,6 +105,30 @@ def test_content_snippets_are_opt_in_and_redacted(tmp_path: Path) -> None:
     assert FAKE_KEY not in "\n".join(content)
 
 
+def test_directive_targets_the_run_never_used_are_content(tmp_path: Path) -> None:
+    """A malformed TOOL:/HANDOFF: "target" is model output: hidden by default, redacted with content."""
+
+    leak = f"look up jane.doe@example.com with {FAKE_KEY}"
+    provider = _ScriptedProvider(f"TOOL: {leak}", f"HANDOFF: {leak}", "TOOL:checklist:ship", "DONE: shipped")
+    events = _run(tmp_path, provider, run_id="directive-run", bots=True)
+
+    default = render_mermaid(events).splitlines()
+    content = render_mermaid(events, include_content=True).splitlines()
+
+    assert [line for line in default if line.startswith("    A1-->>O:")] == [
+        "    A1-->>O: TOOL",
+        "    A1-->>O: HANDOFF",
+        "    A1-->>O: TOOL checklist",
+        "    A1-->>O: DONE",
+    ]
+    assert "    A1-->>O: TOOL look up [EMAIL] with [TOKEN]:" in content
+    assert "    A1-->>O: HANDOFF look up [EMAIL] with [TOKEN]:" in content
+    assert "    A1-->>O: TOOL checklist: ship" in content
+    for rendered in (default, content):
+        assert "jane.doe" not in "\n".join(rendered)
+        assert FAKE_KEY not in "\n".join(rendered)
+
+
 def test_mermaid_text_escapes_syntax_characters() -> None:
     """Semicolons, hashes, quotes, comment markers, HTML, and line breaks become entity codes or spaces."""
 

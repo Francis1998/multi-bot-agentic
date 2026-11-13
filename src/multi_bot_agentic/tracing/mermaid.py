@@ -4,8 +4,10 @@ Participants are the orchestrator, the model-backed agents (each registered bot,
 provider when no bot is active), every built-in tool, every MCP server, and a human approver.
 Messages are provider calls, tool calls and results, handoffs, and approvals, each labelled
 with the decision's rule id. Content (model output, tool arguments and results, handoff
-summaries) is shown only with ``include_content`` and is always redacted. Text is escaped
-with Mermaid entity codes, so ``#``, ``;``, quotes, and line breaks cannot break the diagram.
+summaries) is shown only with ``include_content`` and is always redacted. The target of a
+model's ``TOOL:``/``HANDOFF:`` directive is model output too, so by default it is shown only
+when it names a tool the run called or a bot it ran. Text is escaped with Mermaid entity
+codes, so ``#``, ``;``, quotes, and line breaks cannot break the diagram.
 """
 
 from __future__ import annotations
@@ -117,6 +119,16 @@ class _MermaidRenderer:
             if isinstance(step, Approval) and step.request_id is not None and step.status in {"approved", "rejected"}
         }
         self._collect_participants()
+        self._used_names: dict[str, frozenset[str]] = {
+            "tool": frozenset(
+                name
+                for step in timeline.steps
+                if isinstance(step, ToolCall)
+                for name in (step.tool, step.decision.target)
+                if name
+            ),
+            "handoff": frozenset(bot for bot in self.agents if bot is not None),
+        }
 
     def render(self) -> str:
         """Return the diagram source."""
@@ -196,8 +208,10 @@ class _MermaidRenderer:
         if call.output is not None:
             kind, target = model_directive(call.output)
             reply = {"tool": "TOOL", "handoff": "HANDOFF", "done": "DONE", "text": "reply"}[kind]
-            if target:
+            if target and target in self._used_names.get(kind, frozenset()):
                 reply += f" {target}"
+            elif target and self.include_content:
+                reply += f" {self._snippet(target)}"
             if self.include_content:
                 reply += f": {self._snippet(_directive_payload(kind, call.output))}"
             lines.append(self._arrow(agent, "-->>", "O", reply))
