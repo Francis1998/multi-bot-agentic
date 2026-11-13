@@ -45,7 +45,7 @@ flowchart LR
     llm --> observe
     tool --> observe
     bot --> observe
-    observe -.-> log[("SQLite event log<br/>replay · report · resume · trace")]
+    observe -.-> log[("SQLite event log<br/>replay · report · resume · fork · trace")]
     decide -.-> log
     tool -.-> log
 ```
@@ -70,6 +70,11 @@ multi-bot-agentic report --event-log data/runs.sqlite --run-id demo
 multi-bot-agentic trace --event-log data/runs.sqlite --run-id demo --format mermaid
 multi-bot-agentic trace --event-log data/runs.sqlite --run-id demo --otlp-endpoint http://localhost:4318/v1/traces
 
+# Time travel: list the forkable steps, then branch the run after step 1 with a new goal
+multi-bot-agentic history --event-log data/runs.sqlite --run-id demo
+multi-bot-agentic fork --event-log data/runs.sqlite --run-id demo --at-step 1 --new-run-id demo-rollback \
+  --goal "Create a rollback checklist" --provider fake
+
 # Tools from an MCP server (bundled demo server, works offline)
 multi-bot-agentic mcp-tools --mcp-config examples/mcp/mcp.json
 MULTIBOT_FAKE_TOOL=mcp__notes__search_notes multi-bot-agentic run --provider fake \
@@ -80,6 +85,13 @@ To use a real model, export its key and pick the provider, for example
 `export OPENAI_API_KEY=... && multi-bot-agentic run --provider openai --goal "..."`. For a full scenario, see the
 [release-readiness walkthrough](docs/use-cases/USE-CASE-mcp-release-readiness.md).
 
+**Time-travel forks:** `fork` branches any recorded run after any step into a new run with a new goal,
+provider, bot, or step budget. It rebuilds the state from the event log without calling a provider and leaves
+the original untouched, and the new run records its lineage
+([Run fork guide](docs/guides/RUN_FORK_GUIDE.md)).
+
+![Time-travel fork demo: history of a run, a fork with a new goal, a fork of the fork as another bot, refused forks, lineage, and the fork's trace](assets/demo/run-fork.gif)
+
 ## Feature Map
 
 | Capability | What you get | Code | Docs |
@@ -88,6 +100,7 @@ To use a real model, export its key and pick the provider, for example
 | Durable event log | Append-only SQLite log per run. `replay` and `report` never call providers | `event_log.py`, `cli.py` | [Replay diff](docs/guides/RUN_REPLAY_DIFF_GUIDE.md) |
 | **OpenTelemetry trace export** | `trace` turns any recorded run into OTLP/JSON with GenAI semantic conventions (`invoke_agent`, `chat`, `execute_tool` spans with rationale attributes), pushes it to Jaeger, Tempo, or Langfuse, or draws a Mermaid sequence diagram. Deterministic ids, content off by default | `tracing/` | [Trace export](docs/guides/OTEL_TRACE_EXPORT_GUIDE.md) |
 | Checkpoint & resume | Resume an interrupted run; the active bot's tool scope is restored | `checkpoint.py` | [Checkpoint resume](docs/guides/CHECKPOINT_RESUME_GUIDE.md) |
+| **Time-travel forks** | `fork` branches any recorded run after any step into a new run, with a new goal, provider, bot, or budget. The state is rebuilt from the log, and bot scopes are re-checked. `history` lists the forkable steps. Lineage shows up in `report`, and `trace` adds a span link to the parent run | `fork.py`, `cli.py` | [Run fork](docs/guides/RUN_FORK_GUIDE.md) |
 | Multi-bot handoffs | `HANDOFF:<bot>:<summary>` with per-bot tool allowlists | `bots.py` | [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md) |
 | **MCP tool bridge** | Tools from any MCP server, with a dual-era (2026-07-28 + legacy) stdio client and no dependencies | `mcp/` | [MCP tools](docs/guides/MCP_TOOLS_GUIDE.md) |
 | Provider adapters | GPT-6, Claude Code CLI, Gemini, Kimi K3.1, and a fake provider, all sending reasoning-safe parameters | `llm/` | [Configuration](docs/CONFIGURATION.md) |
@@ -127,6 +140,7 @@ current GPT-6, Claude 5.5 and Fable 5.2, Gemini 4 and 3.x, and Kimi K3.1 models 
   [OpenTelemetry trace export](docs/guides/OTEL_TRACE_EXPORT_GUIDE.md),
   [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md),
   [Checkpoint resume](docs/guides/CHECKPOINT_RESUME_GUIDE.md),
+  [Run fork (time travel)](docs/guides/RUN_FORK_GUIDE.md),
   [HITL approval gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md),
   [Parallel fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md),
   [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md),
@@ -155,6 +169,8 @@ These are the problems the project was built for. Each one is explained in
 9. "I need a clean example of agent architecture." Each module has one clear job.
 10. "CI must prove the agent works without credentials." `scripts/check.sh` runs on Python 3.10–3.12.
 11. "I want to see agent runs in our tracing backend, not a terminal." `trace` exports OpenTelemetry GenAI spans.
+12. "I want to retry from the middle of a run with another goal, bot, or provider, without re-running the start."
+    `fork` branches any recorded step into a new run.
 
 ## Repository Layout
 
@@ -176,8 +192,9 @@ scripts/check.sh
 ```
 
 `scripts/check.sh` runs `ruff check`, `ruff format --check`, `mypy src tests`, `pytest`, and a fake-provider
-smoke run with replay, report, and trace (OTLP/JSON and Mermaid). CI runs the same script on Python 3.10, 3.11,
-and 3.12. For a richer local demo, run `scripts/run_demo.sh`.
+smoke run with replay, report, and trace (OTLP/JSON and Mermaid), then lists its steps with `history`, forks it,
+and reports and traces the fork. CI runs the same script on Python 3.10, 3.11, and 3.12. For a richer local demo,
+run `scripts/run_demo.sh`.
 
 ## Contributing
 

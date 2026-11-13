@@ -29,6 +29,8 @@ Current deterministic rules:
 
 - `safety.cancel-file`: cancel if the configured cancellation file exists.
 - `observe.no-model-output`: call the selected provider first.
+- `observe.new-user-goal`: call the provider when the user set a new goal after its latest output (a fork's
+  `--goal`), so an earlier `TOOL:` or `DONE:` directive is not acted on first.
 - `model.requested-tool`: call an allowlisted tool for `TOOL:<name>:<payload>`.
 - `tool.result-needs-synthesis`: send tool results back to the provider.
 - `model.done-or-budget`: finish on `DONE:<answer>` or final budget step.
@@ -81,11 +83,11 @@ EventRecord[] -> parse_run() -> RunTimeline -> build_trace() -> Trace -> render_
 ```
 
 - `timeline.py` pairs each decision with its `action_requested`/`action_result` events and tracks the active bot,
-  handoffs, approvals, checkpoints, resumes, and the outcome.
+  handoffs, approvals, checkpoints, resumes, fork points, and the outcome.
 - `spans.py` builds the GenAI span tree: a root `invoke_agent` span, `invoke_agent {bot}` spans per bot,
   `chat`/`generate_content` spans for provider calls, and `execute_tool` spans for built-in and MCP tools. Each
   carries its decision's rule id, explanation, and rejected actions. Ids are SHA-256 digests of the run id and
-  event sequence numbers, so exports are deterministic.
+  event sequence numbers, so exports are deterministic. A fork's root span links to its parent run's root span.
 - `otlp.py` encodes OTLP/JSON and POSTs it with stdlib `urllib` (no redirects, header values never printed).
 - `mermaid.py` draws the orchestrator, bots, tools, MCP servers, and human approver as a sequence diagram.
 - `privacy.py` keeps content (goal, model inputs and outputs, tool arguments and results) opt-in and redacts
@@ -130,6 +132,32 @@ calls get rationale traces, replay, and resume like any other tool. See
 Durable checkpoint resume for ODA runs is available via `resume`. Only interrupted runs (no
 `run_completed`/`run_failed`/`run_cancelled` event) continue; a finished run returns its recorded
 outcome without executing anything. See `docs/guides/CHECKPOINT_RESUME_GUIDE.md`.
+
+## Time-Travel Forks
+
+`AgentRunner.fork()` (CLI `fork`) branches any recorded run after step N into a new run. `history` lists the
+forkable steps. `multi_bot_agentic.fork` only reads the log:
+
+```text
+EventRecord[] -> build_history() -> RunHistory (steps, forkable steps, lineage)
+              -> plan_fork() -> ForkPlan (rebuilt state + overrides + checks + first decision)  [fork --dry-run]
+AgentRunner.fork(): append run_forked + copies of the source's events up to step N
+                    + [bot-switch handoff] + starting checkpoint, then the normal ODA loop from step N
+```
+
+- The state after step N is the latest checkpoint recorded for step N, parsed like `resume` does
+  (`snapshot_from_event`). Step 0 is the goal.
+- The new run starts with a `run_forked` lineage event: parent run, fork step, SHA-256 of the fork-point event,
+  number and digest of the copied (inherited) events, and the overrides. The copies make the fork's `replay`,
+  `report`, and `trace` self-contained.
+- Checks run before anything is written. The step must have a recorded state, and the new run id must be
+  unused. Bots come from the runner's registry, never from the log, and may not widen the policy allowlist.
+  The budget must leave a step. A bot switch is recorded as a handoff, so the next decision is a model call under
+  the new scope. A new goal is answered first (`observe.new-user-goal`).
+- `report` shows parents (with a digest check) and children. `trace` adds a span link to the parent's root
+  span, `multi_bot_agentic.fork.*` attributes, and a `run.forked` event, and marks inherited spans.
+
+See `docs/guides/RUN_FORK_GUIDE.md`.
 
 ## SharedBlackboard
 

@@ -4,12 +4,15 @@ Real problems **multi-bot-agentic** solves.
 
 - **End-to-end walkthrough:** [An auditable release-readiness bot that uses MCP tools](USE-CASE-mcp-release-readiness.md).
   Every command was actually run.
-- **Problems this solves:** [eleven everyday agent-engineering problems](PROBLEMS_THIS_SOLVES.md) and how the
+- **Problems this solves:** [twelve everyday agent-engineering problems](PROBLEMS_THIS_SOLVES.md) and how the
   design addresses each.
 - **Observe runs in your tracing backend:** export any recorded run as an OpenTelemetry GenAI trace for Jaeger,
   Grafana Tempo, or Langfuse, or as a Mermaid sequence diagram of the bots, tools, and handoffs. See the
   [OpenTelemetry Trace Export Guide](../guides/OTEL_TRACE_EXPORT_GUIDE.md) and
   [problem 11](PROBLEMS_THIS_SOLVES.md#11-i-want-to-see-agent-runs-in-our-tracing-backend-not-a-terminal).
+- **Branch a run from any step:** fork a recorded run after any step with a new goal, provider, or bot, and
+  keep the original. See the [Run Fork Guide](../guides/RUN_FORK_GUIDE.md) and
+  [problem 12](PROBLEMS_THIS_SOLVES.md#12-i-want-to-retry-from-the-middle-of-a-run-with-another-goal-bot-or-provider-without-re-running-the-start).
 - **Issue stories:** regression write-ups from real fixes, listed below.
 
 | Issue | Title | Doc |
