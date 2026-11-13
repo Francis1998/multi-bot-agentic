@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -85,6 +86,29 @@ def test_gemini_parser_consumes_candidate_parts() -> None:
     text = _extract_gemini_text({"candidates": [{"content": {"parts": [{"text": "DONE:"}, {"text": " ok"}]}}]})
 
     assert text == "DONE:\n ok"
+
+
+@pytest.mark.parametrize(
+    ("candidate", "message"),
+    [
+        ({"finishReason": "MALFORMED_FUNCTION_CALL"}, "content (finishReason=MALFORMED_FUNCTION_CALL)"),
+        ({"content": {}, "finishReason": "MALFORMED_FUNCTION_CALL"}, "parts (finishReason=MALFORMED_FUNCTION_CALL)"),
+        ({"content": {"role": "model"}}, "parts"),
+    ],
+)
+def test_gemini_parser_names_finish_reason_when_candidate_has_no_text(
+    candidate: dict[str, object], message: str
+) -> None:
+    """A Gemini candidate without text parts fails with the ``finishReason`` that explains why.
+
+    Gemini 4 Hydrogen's migration guide warns that prompting for raw-text tool calls with no declared
+    tools, which is how this adapter asks for ``TOOL:<name>:<payload>``, can end a response with
+    ``MALFORMED_FUNCTION_CALL`` and no content parts. The runner stores the adapter error as the run's
+    failure reason, so the error must name the finish reason instead of only the missing field.
+    """
+
+    with pytest.raises(ValueError, match=rf"did not include {re.escape(message)}$"):
+        _extract_gemini_text({"candidates": [candidate]})
 
 
 def test_openai_adapter_default_uses_latest_gpt_stack(monkeypatch: MonkeyPatch) -> None:
