@@ -20,16 +20,16 @@ Many agent frameworks let the model choose and invoke tools directly. That is co
 
 This repo treats model output as an observation. The deterministic decision engine interprets constrained text like `TOOL:checklist:<payload>`, checks the safety policy, and only then executes an allowlisted tool adapter.
 
-### 3. "I need the same agent flow to work with GPT-6, Claude 5.5, Gemini, and Kimi K3."
+### 3. "I need the same agent flow to work with GPT-6, Claude 5.5, Gemini, and Kimi K3.1."
 
 Provider-specific SDKs and response shapes make agent code hard to port. A prototype built around one model often leaks provider details into the orchestration layer.
 
 `multi-bot-agentic` normalizes providers behind one adapter interface:
 
 - `OpenAIAdapter` for GPT-6 (`gpt-6.1-sol` by default) and OpenAI-compatible chat completions.
-- `ClaudeCodeCLIAdapter` for local Claude Code CLI workflows with `claude-opus-5-5` or `claude-sonnet-5-5`.
-- `GeminiAdapter` for Gemini `generateContent` (`gemini-3.8-flash` by default, `gemini-4-argon` for flagship reasoning).
-- `KimiAdapter` for Moonshot/Kimi K3 chat completions (`kimi-k3.1-pro` by default).
+- `ClaudeCodeCLIAdapter` for local Claude Code CLI workflows with `claude-opus-5-5`, `claude-fable-5-2`, or `claude-sonnet-5-5`.
+- `GeminiAdapter` for Gemini `generateContent` (`gemini-3.8-flash` by default; `gemini-4-hydrogen` is Google's recommended upgrade and `gemini-4-carbon` its strongest reasoning model).
+- `KimiAdapter` for Moonshot/Kimi K3.1 chat completions (`kimi-k3.1-pro` by default).
 - `FakeLLMAdapter` for deterministic CI and demos.
 
 The runner consumes all provider responses as `ModelOutput`, so orchestration logic stays provider-neutral.

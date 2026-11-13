@@ -4,6 +4,19 @@
 
 ### Changed
 
+- Refreshed the model stack to the lineup verified against the providers' model pages on 2026-11-12 (README,
+  `docs/CONFIGURATION.md`, `docs/QUICKSTART.md`, `.env.example`, use-case docs). `claude-fable-5-2` replaces the
+  superseded `claude-fable-5-1`. `gemini-4-hydrogen` (Google's recommended upgrade from 3.8 Flash) and
+  `gemini-4-carbon` (strongest reasoning) join `gemini-4-argon`, and Kimi references name the K3.1 lineup (the K2 series
+  closed to new users on 2026-10-31 and retires by the end of December 2026). The parameter rules now cover Fable 5.2
+  and Gemini 4 thinking levels (Hydrogen defaults to `high` and adds `xhigh`, Carbon and Argon default to `medium`).
+  No default changed. `gemini-3.8-flash` stays the Gemini default on purpose, because Hydrogen's migration guide warns
+  that raw-text tool calls with no declared tools, which is this adapter's `TOOL:` protocol, can end in
+  `MALFORMED_FUNCTION_CALL` (see `docs/CONFIGURATION.md#gemini-default`). A Gemini candidate without text now fails
+  with its `finishReason` in the run's failure reason, for example
+  `Gemini candidate did not include content (finishReason=MALFORMED_FUNCTION_CALL)`.
+  `tests/test_docs_model_stack_current.py` now also scans `.env.example`, matches backticked model IDs, and flags
+  Claude Fable 5.1 and the Kimi K2 series in model lists.
 - Guides, `docs/ADVISOR_CATALOG.md` `Stack:` lines, `docs/TOOLS.md`, and module docstrings no longer list the retired "GPT-5.5 (or 5.4) / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2" stack (about 780 changed lines across 464 files). They now name the provider flagships verified on 2026-11-07: GPT-6 Astra, Claude Opus 5.5, Gemini 4 Argon, and Kimi K3.1 Pro. The catalog's "model names are historical" note now says what changed. Old names used as tool sample data (CSV rows, YAML lists, sorted lines, base-N inputs) are unchanged, so documented outputs stay exact. `tests/test_docs_model_stack_current.py` fails if a retired name reappears inside a model list.
 - `docs/TOOLS.md`: the `uuid4` and `yaml_to_json` entries had been spliced together by a bad rebase (2026-08-08), which left the `yaml_to_json` description truncated mid-sentence. Both entries are restored, and the `yaml_to_json` entry is checked against the tool (sorted keys, 2-space indent, anchors/aliases/tags/constructors and non-finite numbers rejected). Three advisor entries that sat above the `# Changelog` title moved under Unreleased → Added.
 - README restructured into a short showcase: pitch with badges, hero GIF, why, an ODA mermaid diagram,
