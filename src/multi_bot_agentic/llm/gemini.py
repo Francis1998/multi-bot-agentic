@@ -95,9 +95,26 @@ def _extract_gemini_text(decoded: dict[str, Any]) -> str:
         raise ValueError("Gemini candidate was not an object")
     content = first_candidate.get("content")
     if not isinstance(content, dict):
-        raise ValueError("Gemini candidate did not include content")
+        raise ValueError(f"Gemini candidate did not include content{_finish_reason_suffix(first_candidate)}")
     parts = content.get("parts")
     if not isinstance(parts, list):
-        raise ValueError("Gemini content did not include parts")
+        raise ValueError(f"Gemini content did not include parts{_finish_reason_suffix(first_candidate)}")
     text_parts = [part.get("text") for part in parts if isinstance(part, dict)]
     return "\n".join(part for part in text_parts if isinstance(part, str))
+
+
+def _finish_reason_suffix(candidate: dict[str, Any]) -> str:
+    """Describe why Gemini stopped a candidate that has no text parts.
+
+    For example, Gemini 4 Hydrogen can stop with ``MALFORMED_FUNCTION_CALL`` when it tries to
+    call a tool that was described in the prompt but not declared.
+
+    Args:
+        candidate: First candidate of a Gemini response.
+
+    Returns:
+        A space and ``(finishReason=<reason>)``, or an empty string when the reason is absent.
+    """
+
+    reason = candidate.get("finishReason")
+    return f" (finishReason={reason})" if isinstance(reason, str) and reason else ""
