@@ -34,6 +34,23 @@
 
 ### Added
 
+- **OpenTelemetry trace export** (`multi_bot_agentic.tracing`, new `trace` command): exports any recorded run,
+  without calling a provider or tool, as an OTLP/JSON `ExportTraceServiceRequest` that follows the OpenTelemetry
+  GenAI semantic conventions (semantic-conventions-genai `e6658f14c9`, 2026-11-06). A run becomes a root
+  `invoke_agent` span, `invoke_agent {bot}` spans per bot, `chat {model}` (`generate_content` for Gemini) spans
+  with provider, model, finish reason, and token usage when recorded, and `execute_tool {tool}` spans with MCP
+  attributes. Handoffs, approvals, checkpoints, resumes, and terminal decisions are span events. Errors set status
+  ERROR and `error.type`, and every span carries its decision's rule id, explanation, and rejected actions. Trace
+  and span ids are SHA-256 digests of the run id and event sequence numbers, so the same run exports
+  byte-identical output. `--format mermaid` draws a GitHub-renderable `sequenceDiagram` of the orchestrator,
+  bots, tools, MCP servers, and human approver. `--otlp-endpoint` (with repeatable `--otlp-header`, `${VAR}`
+  expansion, and `--otlp-timeout`) pushes the trace over OTLP/HTTP with stdlib `urllib`, refuses redirects, and
+  never prints header values. Prompts, outputs, and tool payloads are opt-in (`--include-content`) and always
+  redacted with `ObservationRedactor` and `ToolArgumentSanitizer`. Also adds `record_approval` (HITL decisions
+  in the event log), `SQLiteEventLog.last_event_timestamps`, `scripts/render_terminal_gif.py`, and `trace` smoke
+  steps in `scripts/check.sh`. Verified against Jaeger 2.23.0 and Mermaid 11.17.2. Gap vs OpenAI Agents SDK
+  tracing, LangSmith, and CrewAI + OpenLLMetry: post-hoc, deterministic, and content-off by default. See
+  `docs/guides/OTEL_TRACE_EXPORT_GUIDE.md`.
 - `AgentMemoryPoisonBandAdvisor` (`agent_memory_poison_band.py`): HITL `poison_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen agent-memory poison monitors. Distinct from `SharedMemoryConflictBandAdvisor` / `PromptLeakBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/AGENT_MEMORY_POISON_BAND_ADVISOR_GUIDE.md`.
 - `SharedStateWriteSkewBandAdvisor` (`shared_state_write_skew_band.py`): HITL `write_skew_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen shared-state write-skew monitors. Distinct from `SharedMemoryQuotaThrashBandAdvisor` / `SharedLockContentionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/SHARED_STATE_WRITE_SKEW_BAND_ADVISOR_GUIDE.md`.
 - `ToolResultTruncationBandAdvisor` (`tool_result_truncation_band.py`): HITL `truncation_ratio` bands. Gap vs LangGraph/CrewAI/AutoGen tool-result truncation monitors. Distinct from `ToolResultSchemaDriftBandAdvisor` / `ToolBudgetExhaustionBandAdvisor`. Stack: GPT-5.5 / Claude Sonnet 4.6 / Gemini 3.x / Kimi K2. See `docs/guides/TOOL_RESULT_TRUNCATION_BAND_ADVISOR_GUIDE.md`.

@@ -17,6 +17,9 @@ from enum import Enum
 from pathlib import Path
 from uuid import uuid4
 
+from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
+from multi_bot_agentic.models import EventType, RunState
+
 
 class ApprovalDecision(str, Enum):
     """Lifecycle status for one approval request.
@@ -171,3 +174,37 @@ class HitlApprovalGate:
             payload=str(raw["payload"]),
             status=ApprovalDecision(str(raw["status"])),
         )
+
+
+def record_approval(
+    event_log: SQLiteEventLog,
+    request: ApprovalRequest,
+    *,
+    state: RunState = RunState.ACTING,
+) -> EventRecord:
+    """Append an approval request or decision to the run's durable event log.
+
+    The event is an ``action_result`` with ``kind: "approval"``, so ``replay`` lists it and
+    ``trace`` exports it as a span event and a human-approver message. Only identifiers and
+    the decision are recorded, never the tool payload text.
+
+    Args:
+        event_log: Event log of the run that requested the approval.
+        request: Approval request in its current status.
+        state: Run state to record with the event.
+
+    Returns:
+        The persisted event.
+    """
+
+    return event_log.append(
+        request.run_id,
+        state,
+        EventType.ACTION_RESULT,
+        {
+            "kind": "approval",
+            "request_id": request.request_id,
+            "tool": request.tool_name,
+            "status": request.status.value,
+        },
+    )

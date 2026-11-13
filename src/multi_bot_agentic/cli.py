@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sqlite3
 import sys
 from contextlib import ExitStack
 from dataclasses import replace
@@ -19,6 +20,7 @@ from multi_bot_agentic.safety import SafetyPolicy
 from multi_bot_agentic.tools.base import ToolAdapter
 
 MCP_CONFIG_HELP = "MCP servers JSON (Claude Desktop 'mcpServers' format); tools appear as mcp__<server>__<tool>"
+TRACE_FORMATS = ("otlp-json", "mermaid")
 
 
 class McpStartupError(RuntimeError):
@@ -46,6 +48,8 @@ def main() -> int:
         return eval_command(args)
     if args.command == "mcp-tools":
         return mcp_tools_command(args)
+    if args.command == "trace":
+        return trace_command(args)
     parser.print_help()
     return 1
 
@@ -95,6 +99,44 @@ def build_parser() -> argparse.ArgumentParser:
     mcp_parser = subparsers.add_parser("mcp-tools", help="start configured MCP servers and list their tools")
     mcp_parser.add_argument("--mcp-config", type=Path, required=True, help=MCP_CONFIG_HELP)
     mcp_parser.add_argument("--format", choices=("text", "json"), default="text", help="output format")
+
+    trace_parser = subparsers.add_parser(
+        "trace",
+        help="export a recorded run as an OpenTelemetry GenAI trace (OTLP/JSON) or a Mermaid sequence diagram",
+    )
+    trace_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
+    trace_parser.add_argument("--run-id", default=None, help="run id (default: the most recently active run)")
+    trace_parser.add_argument(
+        "--format",
+        choices=TRACE_FORMATS,
+        default=None,
+        help="output format (default otlp-json; with only --otlp-endpoint nothing is printed)",
+    )
+    trace_parser.add_argument("--output", type=Path, default=None, help="write the output to this file, not stdout")
+    trace_parser.add_argument(
+        "--include-content",
+        action="store_true",
+        help="also export the goal, model inputs/outputs, tool arguments/results, and handoff summaries (redacted)",
+    )
+    trace_parser.add_argument("--agent-name", default=None, help="gen_ai.agent.name of the root invoke_agent span")
+    trace_parser.add_argument(
+        "--otlp-endpoint",
+        default=None,
+        help="also POST the trace as OTLP/JSON to this URL, e.g. http://localhost:4318/v1/traces",
+    )
+    trace_parser.add_argument(
+        "--otlp-header",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="OTLP request header (repeatable); ${VAR} expands from the environment; values are never printed",
+    )
+    trace_parser.add_argument(
+        "--otlp-timeout",
+        type=float,
+        default=10.0,
+        help="OTLP request timeout in seconds (default 10)",
+    )
     return parser
 
 
@@ -433,6 +475,113 @@ def eval_command(args: argparse.Namespace) -> int:
         )
     )
     return 0 if report.pass_rate == 1.0 else 2
+
+
+def trace_command(args: argparse.Namespace) -> int:
+    """Execute the trace subcommand.
+
+    Reads one run from the event log (never calling a provider or tool), renders it as
+    OTLP/JSON or Mermaid, and optionally pushes the OTLP/JSON to an OTLP/HTTP endpoint.
+
+    Args:
+        args: Parsed arguments.
+
+    Returns:
+        0 on success, 2 for invalid arguments, a missing log, or an unknown run, and 1 when
+        the OTLP/HTTP export fails.
+    """
+
+    from multi_bot_agentic.tracing import (
+        OtlpExportError,
+        OtlpHeaderError,
+        TraceInputError,
+        build_trace,
+        parse_header_options,
+        push_otlp_json,
+        redact_url,
+        render_mermaid,
+        render_otlp_json,
+        select_latest_run,
+        validate_endpoint,
+    )
+
+    try:
+        headers = parse_header_options(args.otlp_header)
+        if args.otlp_endpoint is not None:
+            validate_endpoint(args.otlp_endpoint)
+        elif headers:
+            raise ValueError("--otlp-header requires --otlp-endpoint")
+        if args.otlp_timeout <= 0:
+            raise ValueError("--otlp-timeout must be > 0")
+    except (OtlpHeaderError, ValueError) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    path: Path = args.event_log
+    if not path.is_file():
+        print(f"error: event log not found: {path}", file=sys.stderr)
+        return 2
+    try:
+        event_log = SQLiteEventLog(path)
+        try:
+            run_id = args.run_id or select_latest_run(event_log.last_event_timestamps())
+            events = event_log.list_events(run_id=run_id) if run_id is not None else []
+        finally:
+            event_log.close()
+    except sqlite3.DatabaseError as error:
+        print(f"error: cannot read event log {path}: {error}", file=sys.stderr)
+        return 2
+    if run_id is None:
+        print(f"error: event log {path} has no runs", file=sys.stderr)
+        return 2
+    if not events:
+        print(f"error: run {run_id} not found in event log {path}", file=sys.stderr)
+        return 2
+    if args.run_id is None:
+        print(f"note: --run-id not given; tracing the most recent run {run_id}", file=sys.stderr)
+    try:
+        trace = build_trace(events, include_content=args.include_content, agent_name=args.agent_name)
+        output_format = args.format
+        if output_format is None and (args.otlp_endpoint is None or args.output is not None):
+            output_format = "otlp-json"
+        if output_format == "mermaid":
+            rendered = render_mermaid(events, include_content=args.include_content, agent_name=args.agent_name)
+        elif output_format == "otlp-json":
+            rendered = render_otlp_json(trace)
+        else:
+            rendered = None
+    except TraceInputError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    if rendered is not None:
+        if args.output is not None:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(rendered + "\n", encoding="utf-8")
+            print(f"wrote {output_format} trace of run {run_id} to {args.output}", file=sys.stderr)
+        else:
+            print(rendered)
+    if args.otlp_endpoint is None:
+        return 0
+    try:
+        result = push_otlp_json(
+            render_otlp_json(trace, indent=None).encode("utf-8"),
+            args.otlp_endpoint,
+            headers=headers,
+            timeout_seconds=args.otlp_timeout,
+        )
+    except OtlpExportError as error:
+        print(f"error: OTLP export failed: {error}", file=sys.stderr)
+        return 1
+    print(
+        f"exported {_count(tuple(span.name for span in trace.spans), 'span')} of run {run_id} "
+        f"(trace {trace.trace_id}) to {redact_url(args.otlp_endpoint)}: HTTP {result.status}",
+        file=sys.stderr,
+    )
+    if result.rejected_spans:
+        reason = result.message or "no reason given"
+        print(f"warning: the OTLP receiver rejected {result.rejected_spans} span(s): {reason}", file=sys.stderr)
+    elif result.message:
+        print(f"warning: the OTLP receiver said: {result.message}", file=sys.stderr)
+    return 0
 
 
 def start_mcp_toolset(path: Path | None) -> McpToolset | None:

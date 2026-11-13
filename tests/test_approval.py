@@ -7,7 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from multi_bot_agentic.approval import ApprovalDecision, ApprovalRequest, HitlApprovalGate
+from multi_bot_agentic.approval import ApprovalDecision, ApprovalRequest, HitlApprovalGate, record_approval
+from multi_bot_agentic.event_log import SQLiteEventLog
 
 
 def test_requires_approval_and_request_persists_pending_json(tmp_path: Path) -> None:
@@ -85,3 +86,28 @@ def test_constructor_rejects_empty_tool_set(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="tools_requiring_approval"):
         HitlApprovalGate(approval_dir=tmp_path, tools_requiring_approval=frozenset())
+
+
+def test_record_approval_appends_an_auditable_event_without_the_payload(tmp_path: Path) -> None:
+    """record_approval writes an action_result with kind=approval and never the tool payload."""
+
+    gate = HitlApprovalGate(approval_dir=tmp_path / "approvals", tools_requiring_approval=frozenset({"deploy"}))
+    request = gate.request(run_id="run-1", tool_name="deploy", payload="prod --token=s3cr3t")
+    log = SQLiteEventLog(tmp_path / "runs.sqlite")
+    try:
+        pending = record_approval(log, request)
+        approved = record_approval(log, gate.resolve(request.request_id, ApprovalDecision.APPROVED))
+        events = log.list_events("run-1")
+    finally:
+        log.close()
+
+    assert [event.seq for event in events] == [pending.seq, approved.seq]
+    assert approved.event_type == "action_result"
+    assert approved.state == "acting"
+    assert approved.payload == {
+        "kind": "approval",
+        "request_id": request.request_id,
+        "tool": "deploy",
+        "status": "approved",
+    }
+    assert "s3cr3t" not in json.dumps([event.payload for event in events])

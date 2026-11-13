@@ -1,7 +1,7 @@
 # Problems This Solves
 
-Ten everyday agent-engineering problems and how multi-bot-agentic addresses each one. This text was moved
-verbatim from the former README. For an end-to-end walkthrough with real commands, see
+Eleven everyday agent-engineering problems and how multi-bot-agentic addresses each one. Problems 1-10 were
+moved verbatim from the former README. For an end-to-end walkthrough with real commands, see
 [USE-CASE-mcp-release-readiness.md](USE-CASE-mcp-release-readiness.md).
 
 ### 1. "My agent did something, but I cannot explain why."
@@ -98,3 +98,22 @@ This repo keeps the boundaries visible:
 Live provider tests are useful, but they should not be required for every pull request.
 
 CI runs lint, format, typecheck, tests, and a fake-provider smoke demo across Python 3.10, 3.11, and 3.12. Live provider calls remain operator-triggered because they require credentials and external systems.
+
+### 11. "I want to see agent runs in our tracing backend, not a terminal."
+
+Teams already watch services in Jaeger, Grafana Tempo, Langfuse, or Datadog, and other agent frameworks feed
+those tools through OpenTelemetry. A durable log that can only be printed leaves agent runs outside that view,
+and a text timeline makes it hard to see which bot handed off to whom.
+
+`trace` exports any recorded run, even one that ran without tracing, as an OpenTelemetry trace that follows the
+GenAI semantic conventions: an `invoke_agent` span per run and per bot, `chat` spans for model calls, and
+`execute_tool` spans for built-in and MCP tools, each with the rule that chose it. The same run always exports
+the same ids and bytes. Prompts, outputs, and tool payloads stay out unless you pass `--include-content`, and
+then they are redacted. `--format mermaid` draws the run as a sequence diagram that GitHub renders inline.
+
+```bash
+multi-bot-agentic trace --event-log data/runs.sqlite --format mermaid
+multi-bot-agentic trace --event-log data/runs.sqlite --otlp-endpoint http://localhost:4318/v1/traces
+```
+
+See the [OpenTelemetry Trace Export Guide](../guides/OTEL_TRACE_EXPORT_GUIDE.md).

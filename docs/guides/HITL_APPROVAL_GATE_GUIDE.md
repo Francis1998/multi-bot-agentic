@@ -51,3 +51,20 @@ if gate.requires_approval("deploy"):
 - `resolve(..., PENDING)` is rejected; already-resolved requests cannot flip.
 - Request ids are plain filenames; path traversal characters are rejected.
 - v1 does not auto-wire `AgentRunner`; integrate at the call site when ready.
+
+## Recording Approvals In The Event Log
+
+`record_approval` appends a request or a decision to the run's durable event log as an `action_result` with
+`kind: "approval"`. It records the request id, tool, and status, never the payload text. `replay` lists the
+event, and `trace` exports it as a `multi_bot_agentic.approval` span event and a human-approver arrow in the
+Mermaid diagram:
+
+```python
+from multi_bot_agentic.approval import record_approval
+
+request = gate.request(run_id="run-1", tool_name="deploy", payload="canary")
+record_approval(event_log, request)  # pending
+record_approval(event_log, gate.resolve(request.request_id, ApprovalDecision.APPROVED))
+```
+
+See [OpenTelemetry Trace Export Guide](OTEL_TRACE_EXPORT_GUIDE.md).

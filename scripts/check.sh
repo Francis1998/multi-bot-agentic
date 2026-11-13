@@ -17,3 +17,9 @@ PYTHONPATH=src python -m multi_bot_agentic.cli replay \
   --format text
 PYTHONPATH=src python -m multi_bot_agentic.cli report \
   --event-log /tmp/multi-bot-agentic-check.sqlite
+PYTHONPATH=src python -m multi_bot_agentic.cli trace \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --format otlp-json
+PYTHONPATH=src python -m multi_bot_agentic.cli trace \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --format mermaid
