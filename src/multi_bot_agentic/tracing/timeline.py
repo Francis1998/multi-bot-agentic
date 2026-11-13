@@ -2,7 +2,7 @@
 
 The timeline is the shared input of the OpenTelemetry span builder and the Mermaid renderer.
 It pairs every decision with its ``action_requested``/``action_result`` events, tracks which
-bot was active, and records handoffs, approvals, checkpoints, resumes, and the outcome.
+bot was active, and records handoffs, approvals, checkpoints, resumes, fork points, and the outcome.
 Parsing is pure: it never calls a provider or a tool and never touches the event log.
 """
 
@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, TypeAlias
+from typing import Any, Final, TypeAlias, TypeGuard
 
 from multi_bot_agentic.event_log import EventRecord
 
@@ -23,6 +23,8 @@ TERMINAL_EVENT_STATES: Mapping[str, str] = {
 }
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+# Rule id of the handoff a fork records when it switches bots (mirrors multi_bot_agentic.fork).
+FORK_BOT_OVERRIDE_RULE: Final[str] = "fork.bot-override"
 
 
 class TraceInputError(ValueError):
@@ -218,7 +220,33 @@ class Resume:
     at: str
 
 
-Step: TypeAlias = ModelCall | ToolCall | Handoff | Approval | FinalDecision | Checkpoint | Resume
+@dataclass(frozen=True)
+class Fork:
+    """A fork point: where events copied from a parent run end and the fork's own steps begin.
+
+    A fork's own ``run_forked`` event is its first event. An ancestor's ``run_forked`` event can
+    also appear among the copied events, when the parent was itself a fork.
+
+    Attributes:
+        seq: Sequence number of the last copied event (the fork's own steps start after it).
+        at: Timestamp of that event.
+        parent_run_id: Run the fork branched from.
+        fork_step: Steps of the parent that were copied.
+        inherited_events: Number of copied events.
+        overrides: Names of the settings the fork changed (``goal``, ``bot``, ``provider``).
+        own: True for this run's own fork point, False for an ancestor's.
+    """
+
+    seq: int
+    at: str
+    parent_run_id: str
+    fork_step: int
+    inherited_events: int
+    overrides: tuple[str, ...]
+    own: bool
+
+
+Step: TypeAlias = ModelCall | ToolCall | Handoff | Approval | FinalDecision | Checkpoint | Resume | Fork
 
 
 @dataclass(frozen=True)
@@ -255,9 +283,12 @@ class RunTimeline:
         first_seq: Sequence number of the first event.
         event_count: Number of events.
         initial_bot: Bot active when the run started, if known.
-        steps: Ordered actions, handoffs, approvals, terminal decisions, checkpoints, and resumes.
+        steps: Ordered actions, handoffs, approvals, terminal decisions, checkpoints, resumes, and
+            fork points.
         outcome: Terminal event, or ``None`` for an unfinished run.
         final_decision: Last ``finish``/``fail``/``cancel`` decision, if any.
+        fork: Where this run was forked from, or ``None`` for an original run.
+        inherited_through_seq: Sequence number of the last event copied from the parent (0 if not a fork).
     """
 
     run_id: str
@@ -271,6 +302,8 @@ class RunTimeline:
     steps: tuple[Step, ...]
     outcome: Outcome | None
     final_decision: DecisionRef | None
+    fork: Fork | None = None
+    inherited_through_seq: int = 0
 
     @property
     def final_state(self) -> str:
@@ -378,24 +411,32 @@ class _TimelineBuilder:
     seen_checkpoint: bool = False
     outcome: Outcome | None = None
     final_decision: DecisionRef | None = None
+    fork_starting: bool = False
 
     def build(self) -> RunTimeline:
         """Consume every event and return the timeline."""
 
         initial_bot = _initial_bot(self.events)
         self.active_bot = initial_bot
+        fork_points = _fork_points(self.events)
         for event in self.events:
             open_action = self.open_action
             if open_action is not None and open_action.requested is not event and open_action.next_at is None:
                 open_action.next_at = event.timestamp
             self._consume(event)
+            forks = fork_points.get(event.seq, [])
+            self.steps.extend(forks)
+            if forks:
+                self.fork_starting = True
         if self.open_action is not None:
             self._close_open_action(ended_at=self.open_action.requested.timestamp, failure=None, interrupted=False)
         first, last = self.events[0], self.events[-1]
+        own = next((fork for forks in fork_points.values() for fork in forks if fork.own), None)
+        lineage = first.payload if own is not None else {}
         return RunTimeline(
             run_id=first.run_id,
-            goal=self.goal,
-            provider=self.provider,
+            goal=_optional_str(lineage.get("goal")) or self.goal,
+            provider=_optional_str(lineage.get("provider")) or self.provider,
             started_at=first.timestamp,
             ended_at=last.timestamp,
             first_seq=first.seq,
@@ -404,6 +445,8 @@ class _TimelineBuilder:
             steps=tuple(self.steps),
             outcome=self.outcome,
             final_decision=self.final_decision,
+            fork=own,
+            inherited_through_seq=own.seq if own is not None else 0,
         )
 
     def _consume(self, event: EventRecord) -> None:
@@ -442,12 +485,17 @@ class _TimelineBuilder:
             self._on_terminal(event)
 
     def _on_transition(self, event: EventRecord) -> None:
-        """Track step boundaries and detect resumes (a fresh state machine after a checkpoint)."""
+        """Track step boundaries and detect resumes (a fresh state machine after a checkpoint).
+
+        The first fresh state machine after a fork point starts the fork's own steps, not a resume.
+        """
 
         if event.payload.get("to") != "observing":
             return
         self.observations = []
-        if event.payload.get("from") == "created" and self.seen_checkpoint:
+        if event.payload.get("from") == "created" and self.fork_starting:
+            self.fork_starting = False
+        elif event.payload.get("from") == "created" and self.seen_checkpoint:
             if self.open_action is not None:
                 self._close_open_action(
                     ended_at=self.open_action.requested.timestamp,
@@ -542,7 +590,8 @@ class _TimelineBuilder:
 
         payload = event.payload
         to_bot = _optional_str(payload.get("to_bot")) or "unknown"
-        decision = self.pending_handoff or _synthetic_decision(event, action="handoff", target=to_bot)
+        rule_id = FORK_BOT_OVERRIDE_RULE if payload.get("fork_override") is True else ""
+        decision = self.pending_handoff or _synthetic_decision(event, action="handoff", target=to_bot, rule_id=rule_id)
         self.pending_handoff = None
         allowed = payload.get("allowed_tools")
         self.steps.append(
@@ -647,6 +696,48 @@ def _initial_bot(events: Sequence[EventRecord]) -> str | None:
     return None
 
 
+def _fork_points(events: Sequence[EventRecord]) -> dict[int, list[Fork]]:
+    """Return the fork points of a run keyed by the sequence number of their last copied event.
+
+    Every ``run_forked`` event (the run's own, and ancestors' among its copied events) is followed
+    by ``inherited_events`` copied events, so its fork point is that many events after it. Fork
+    points that share an event are listed oldest first: an ancestor's before the run's own.
+    """
+
+    points: dict[int, list[Fork]] = {}
+    first_seq = events[0].seq
+    timestamps = {event.seq: event.timestamp for event in events}
+    for event in events:
+        if event.event_type != "run_forked":
+            continue
+        payload = event.payload
+        parent = _optional_str(payload.get("parent_run_id"))
+        fork_step = payload.get("fork_step")
+        inherited = payload.get("inherited_events")
+        if parent is None or not _is_count(fork_step) or not _is_count(inherited):
+            continue
+        overrides = payload.get("overrides")
+        boundary = event.seq + inherited
+        fork = Fork(
+            seq=boundary,
+            at=timestamps.get(boundary, event.timestamp),
+            parent_run_id=parent,
+            fork_step=fork_step,
+            inherited_events=inherited,
+            overrides=tuple(sorted(str(key) for key in overrides)) if isinstance(overrides, dict) else (),
+            own=event.seq == first_seq,
+        )
+        # A later run_forked event among the copies belongs to an older fork (an ancestor), so it goes first.
+        points.setdefault(boundary, []).insert(0, fork)
+    return points
+
+
+def _is_count(value: Any) -> TypeGuard[int]:
+    """Return whether ``value`` is a non-negative integer (booleans excluded)."""
+
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
 def _decision_ref(event: EventRecord) -> DecisionRef:
     """Build a decision reference from a ``decision`` or ``action_requested`` event."""
 
@@ -665,15 +756,15 @@ def _decision_ref(event: EventRecord) -> DecisionRef:
     )
 
 
-def _synthetic_decision(event: EventRecord, *, action: str, target: str | None) -> DecisionRef:
-    """Stand in for a decision event that is missing from the log."""
+def _synthetic_decision(event: EventRecord, *, action: str, target: str | None, rule_id: str = "") -> DecisionRef:
+    """Stand in for a decision event that is missing from the log (or, for fork bot overrides, never existed)."""
 
     return DecisionRef(
         seq=event.seq,
         timestamp=event.timestamp,
         action=action,
         target=target,
-        rule_id="",
+        rule_id=rule_id,
         explanation="",
         rejected_actions=(),
         observations_used=(),

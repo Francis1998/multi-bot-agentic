@@ -141,6 +141,21 @@ The standard `OTEL_EXPORTER_OTLP_*` variables are not read: `trace` only pushes 
 so credentials meant for another collector are never sent by accident. See the
 [OpenTelemetry Trace Export Guide](guides/OTEL_TRACE_EXPORT_GUIDE.md) for backends, the span model, and privacy.
 
+## Forks And Bot Registries
+
+`multi-bot-agentic fork` reads the same settings as `run`. `--provider` defaults to `MULTIBOT_PROVIDER`, else
+`fake` (never to the source run's provider), and `--max-steps` defaults to `MULTIBOT_MAX_STEPS`. The budget counts
+the inherited steps. Bots and their tool scopes come from a `--bots` registry file:
+
+```json
+{"bots": {"writer": {"name": "Writer", "description": "Writes release notes", "allowed_tools": ["echo"]}}}
+```
+
+`allowed_tools` is required and non-empty, `name` defaults to the bot id, and unknown keys are rejected. Each
+bot's tools must be in the safety policy allowlist (the built-in tools, plus the MCP tools of `--mcp-config`).
+[`examples/bots/release-crew.json`](../examples/bots/release-crew.json) defines a `planner` and a `writer`. See the
+[Run Fork Guide](guides/RUN_FORK_GUIDE.md#cli-reference) for every flag.
+
 ## Safety Settings
 
 - `MULTIBOT_MAX_STEPS`: maximum Observe -> Decide -> Act iterations.

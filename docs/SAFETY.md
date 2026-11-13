@@ -14,6 +14,11 @@
   is given. Prompts, outputs, and tool payloads are excluded unless `--include-content` is passed, and everything
   exported is redacted with `ObservationRedactor` and `ToolArgumentSanitizer`. The push refuses redirects and
   never prints header values. See [OpenTelemetry Trace Export Guide](guides/OTEL_TRACE_EXPORT_GUIDE.md#privacy).
+- **Forks fail closed**: `fork` branches a recorded run only after a step whose state was recorded, never over
+  an existing run id. Bot scopes come from the runner's registry, not from the log, and may not include tools
+  outside the safety policy allowlist. A bot switch is recorded as a handoff, so a tool request the previous bot
+  was refused is never executed by the new bot. `max_steps` counts the inherited steps. Nothing is written when a
+  check fails, and `--dry-run` never calls the provider. See [Run Fork Guide](guides/RUN_FORK_GUIDE.md#safety).
 - **MCP servers (opt-in)**: tools from `--mcp-config` servers are namespaced `mcp__<server>__<tool>`, filtered by
   per-server `allowedTools`/`deniedTools`, bounded by call/startup timeouts and `maxResultBytes`, optionally
   redacted, and launched with a least-privilege environment (provider API keys are not inherited). See

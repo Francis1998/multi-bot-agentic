@@ -50,6 +50,22 @@ Without `--run-id`, `trace` exports the most recently active run. Prompts, outpu
 included with `--include-content`, and are redacted. See
 [OpenTelemetry Trace Export Guide](guides/OTEL_TRACE_EXPORT_GUIDE.md).
 
+## Branch A Run (Time Travel)
+
+```bash
+# Steps of a recorded run, and the ones a fork can continue after
+multi-bot-agentic history --event-log data/runs.sqlite --run-id <run-id>
+
+# Preview, then run, a fork after step 1 with a new goal (the source run is not modified)
+multi-bot-agentic fork --event-log data/runs.sqlite --run-id <run-id> --at-step 1 --new-run-id rollback \
+  --goal "Create a rollback checklist" --provider fake --dry-run
+multi-bot-agentic fork --event-log data/runs.sqlite --run-id <run-id> --at-step 1 --new-run-id rollback \
+  --goal "Create a rollback checklist" --provider fake
+multi-bot-agentic report --event-log data/runs.sqlite --run-id rollback
+```
+
+`run` prints the run id (pass `--run-id` to choose one). See [Run Fork Guide](guides/RUN_FORK_GUIDE.md).
+
 ## Run The Scripted Demo
 
 ```bash

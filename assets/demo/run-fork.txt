@@ -1,0 +1,63 @@
+$ multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log demo-output/fork.sqlite --run-id demo | jq -c .
+{"run_id":"demo","state":"succeeded","answer":"synthesized plan from 3 observations","steps":4,"event_log":"demo-output/fork.sqlite"}
+$ multi-bot-agentic history --event-log demo-output/fork.sqlite --run-id demo
+run demo: succeeded after 4 steps (provider fake)
+goal: Create a launch checklist
+step  bot  action     target     rule                         outcome         fork
+   0  -    start      -          -                            -               yes
+   1  -    call_llm   fake       observe.no-model-output      TOOL checklist  yes
+   2  -    call_tool  checklist  model.requested-tool         checklist ok    yes
+   3  -    call_llm   fake       tool.result-needs-synthesis  DONE            yes
+   4  -    finish     -          model.done-or-budget         succeeded       no
+forkable steps: 0, 1, 2, 3
+$ multi-bot-agentic fork --event-log demo-output/fork.sqlite --run-id demo --at-step 1 --new-run-id rollback --goal "Create a rollback checklist" --dry-run | jq -c "{remaining_steps, overrides, next_decision}"
+{"remaining_steps":5,"overrides":{"goal":"Create a rollback checklist"},"next_decision":{"action":"call_llm","target":"fake","rule_id":"observe.new-user-goal"}}
+$ multi-bot-agentic fork --event-log demo-output/fork.sqlite --run-id demo --at-step 1 --new-run-id rollback --goal "Create a rollback checklist" --provider fake | jq -c "{run_id, state, answer, steps}"
+note: forked run demo after step 1 into rollback (9 events inherited; new goal)
+{"run_id":"rollback","state":"succeeded","answer":"synthesized plan from 5 observations","steps":5}
+$ multi-bot-agentic history --event-log demo-output/fork.sqlite --run-id rollback
+run rollback: succeeded after 5 steps (provider fake)
+forked from demo after step 1 (new goal); * = inherited
+goal: Create a rollback checklist
+step  bot  action     target     rule                         outcome         fork
+  0*  -    start      -          -                            -               yes
+  1*  -    call_llm   fake       observe.no-model-output      TOOL checklist  yes
+   2  -    call_llm   fake       observe.new-user-goal        TOOL checklist  yes
+   3  -    call_tool  checklist  model.requested-tool         checklist ok    yes
+   4  -    call_llm   fake       tool.result-needs-synthesis  DONE            yes
+   5  -    finish     -          model.done-or-budget         succeeded       no
+forkable steps: 0, 1, 2, 3, 4
+$ MULTIBOT_FAKE_TOOL=echo multi-bot-agentic fork --event-log demo-output/fork.sqlite --run-id rollback --at-step 2 --new-run-id notes --bots examples/bots/release-crew.json --bot writer --provider fake | jq -c "{run_id, state, steps}"
+note: forked run rollback after step 2 into notes (21 events inherited; new bot)
+{"run_id":"notes","state":"succeeded","steps":6}
+$ multi-bot-agentic fork --event-log demo-output/fork.sqlite --run-id demo --at-step 1 --new-run-id notes
+error: run notes already exists in event log demo-output/fork.sqlite; choose a new --new-run-id
+$ multi-bot-agentic fork --event-log demo-output/fork.sqlite --run-id demo --at-step 4 --new-run-id again
+error: step 4 ended run demo (finish -> succeeded); forkable steps: 0, 1, 2, 3
+$ multi-bot-agentic report --event-log demo-output/fork.sqlite --run-id rollback | jq -c ".runs[0].lineage | {parent: .parent.parent_run_id, verified: .parent.inherited_events_verified, children: [.children[].run_id]}"
+{"parent":"demo","verified":true,"children":["notes"]}
+$ multi-bot-agentic trace --event-log demo-output/fork.sqlite --run-id notes --format mermaid
+sequenceDiagram
+    autonumber
+    participant O as Orchestrator
+    participant A1 as LLM fake
+    participant A2 as writer
+    participant T1 as echo
+    Note over O: run notes (provider fake)
+    O->>A1: call_llm (observe.no-model-output)
+    A1-->>O: TOOL
+    Note over O: forked from demo after step 1 (new goal)
+    O->>A1: call_llm (observe.new-user-goal)
+    A1-->>O: TOOL
+    Note over O: forked from rollback after step 2 (new bot)
+    A1->>A2: handoff (fork.bot-override)
+    O->>A2: call_llm (handoff.needs-continuation)
+    A2-->>O: TOOL echo
+    O->>T1: call_tool (model.requested-tool)
+    T1-->>O: ok
+    O->>A2: call_llm (tool.result-needs-synthesis)
+    A2-->>O: DONE
+    Note over O: finish (model.done-or-budget)
+    Note over O: succeeded after 6 steps
+$ multi-bot-agentic trace --event-log demo-output/fork.sqlite --run-id rollback | jq -c ".resourceSpans[0].scopeSpans[0].spans[0].links[0] | {traceId, spanId}"
+{"traceId":"404650800ef94467210fbdf6a123cb64","spanId":"e76685cb9eaabfc2"}

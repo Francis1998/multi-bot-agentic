@@ -52,6 +52,29 @@
 
 ### Added
 
+- **Time-travel forks** (`multi_bot_agentic.fork`, new `fork` and `history` commands, `AgentRunner.fork`).
+  `fork --run-id SRC --at-step N --new-run-id DST` branches any recorded run (finished, failed, or interrupted)
+  after step N into a new run. It can change the goal (`--goal`), provider (`--provider`), bot (`--bot` with a
+  `--bots` registry JSON), and budget (`--max-steps`), and leaves the source untouched. The state after step N
+  is rebuilt from the event log alone, without calling a provider, using the checkpoint parser `resume` uses
+  (new `checkpoint.snapshot_from_event`). The fork's first event, `run_forked`, records the parent run, the fork
+  step, the fork-point event's seq and SHA-256, the overrides, and a digest of the copied events. The fork then
+  copies the source's events up to that point, so its `replay`, `report`, and `trace` are self-contained, and
+  checkpoints its own starting state, so a fork that dies in its first step resumes with its overrides.
+  `--dry-run` prints the rebuilt state, the overrides, and the first decision, and writes nothing. `history`
+  lists each step's bot, action, rule, and outcome, and whether it can be forked. Every check fails closed
+  before anything is written: steps beyond the last step, the terminal step, and interrupted steps are refused,
+  and so are existing run ids. Bot scopes come from the registry, not the log, and may not widen the
+  safety-policy allowlist. A bot switch is recorded as a handoff, so a tool request the previous bot was refused
+  never runs under the new bot. `max_steps` counts the inherited steps. A new goal is answered by the model
+  before earlier directives (new `observe.new-user-goal` decision rule). `report` shows each run's parent (with
+  an `inherited_events_verified` digest check) and children. `trace` links a fork's root span to the parent
+  run's root span with an OpenTelemetry span link, adds `multi_bot_agentic.fork.*` attributes and
+  `run.forked` events, marks inherited spans, and no longer counts a fork's start as a resume. Mermaid
+  diagrams mark fork points. Adds `examples/bots/release-crew.json`, `bots.load_bot_registry`, and
+  `history`/`fork` smoke steps in `scripts/check.sh`. Gap vs LangGraph time travel, `crewai replay -t`, and
+  `temporal workflow reset`: the original is kept, lineage is verifiable, scopes are re-checked, and it works
+  offline. See `docs/guides/RUN_FORK_GUIDE.md`.
 - **OpenTelemetry trace export** (`multi_bot_agentic.tracing`, new `trace` command): exports any recorded run,
   without calling a provider or tool, as an OTLP/JSON `ExportTraceServiceRequest` that follows the OpenTelemetry
   GenAI semantic conventions (semantic-conventions-genai `e6658f14c9`, 2026-11-06). A run becomes a root

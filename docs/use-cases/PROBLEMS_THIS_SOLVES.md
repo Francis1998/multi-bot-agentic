@@ -117,3 +117,22 @@ multi-bot-agentic trace --event-log data/runs.sqlite --otlp-endpoint http://loca
 ```
 
 See the [OpenTelemetry Trace Export Guide](../guides/OTEL_TRACE_EXPORT_GUIDE.md).
+
+### 12. "I want to retry from the middle of a run with another goal, bot, or provider, without re-running the start."
+
+An agent run goes wrong at step 3, or the goal changes after the expensive research steps, or you want to see
+how another provider would have continued. Re-running from scratch repeats every provider call and tool side
+effect before that point, and `resume` only continues an interrupted run.
+
+`fork` branches any recorded run after any step into a new run. It rebuilds the state after that step from the
+event log without calling a provider, keeps the original untouched, and continues with a new goal, provider, bot,
+or step budget. Bot scopes are re-checked against the current registry and safety policy. The new run records its
+parent, the fork step, and digests of the events it inherited, so `report` shows the lineage and `trace` links
+it to the parent's trace.
+
+```bash
+multi-bot-agentic history --event-log data/runs.sqlite --run-id demo
+multi-bot-agentic fork --event-log data/runs.sqlite --run-id demo --at-step 2 --new-run-id demo-gemini --provider gemini
+```
+
+See the [Run Fork Guide](../guides/RUN_FORK_GUIDE.md).

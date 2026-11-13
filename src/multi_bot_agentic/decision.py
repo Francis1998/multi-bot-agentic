@@ -99,6 +99,22 @@ class DeterministicDecisionEngine:
                 ),
             )
 
+        if latest_observation.source == "user":
+            return Decision(
+                action="call_llm",
+                target=self.provider_name,
+                payload={"reason": "new user goal after the latest model output"},
+                rationale=RationaleTrace(
+                    rule_id="observe.new-user-goal",
+                    observations_used=(latest_observation.observation_id,),
+                    rejected_actions=("call_tool", "handoff", "finish"),
+                    explanation=(
+                        "The user set a new goal after the latest provider output, "
+                        "so the provider must answer it before any earlier directive runs."
+                    ),
+                ),
+            )
+
         if latest_model_output.content.startswith("TOOL:"):
             parsed_tool_request = _parse_tool_request(latest_model_output.content)
             if parsed_tool_request is None:
