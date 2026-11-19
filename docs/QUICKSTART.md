@@ -104,11 +104,12 @@ multi-bot-agentic run \
   --max-steps 4
 ```
 
-Current defaults: `gpt-6.1-sol` (OpenAI), `gemini-3.8-flash` (Gemini), and `kimi-k3.1-pro` (Kimi). For Claude Code,
-choose the model with `CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"` (or `claude-fable-5-2` for demanding
-long-horizon work, `claude-sonnet-5-5` for speed). Keep `-p` (print mode): plain `claude` starts an interactive
-session and cannot answer the prompt piped to it. Override any default with `OPENAI_MODEL`, `GEMINI_MODEL`, or
-`KIMI_MODEL`. Before switching Gemini to `gemini-4-hydrogen`, read
-[Gemini default](CONFIGURATION.md#gemini-default). See [Configuration](CONFIGURATION.md#current-model-stack).
+Current defaults: `gpt-6.2-sol` (OpenAI), `gemini-3.8-flash` (Gemini), and `kimi-k3.1-pro` (Kimi). Set
+`OPENAI_MODEL=gpt-6.2-astra` for OpenAI's flagship. For Claude Code, choose the model with
+`CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"` (or `claude-fable-5-2` for demanding long-horizon work,
+`claude-sonnet-5-5` for speed). Keep `-p` (print mode): plain `claude` starts an interactive session and cannot
+answer the prompt piped to it. Override any default with `OPENAI_MODEL`, `GEMINI_MODEL`, or `KIMI_MODEL`. Before
+switching Gemini to `gemini-4-hydrogen` or `gemini-4-neon`, read [Gemini default](CONFIGURATION.md#gemini-default).
+See [Configuration](CONFIGURATION.md#current-model-stack).
 
 Live providers are not required for tests or CI.

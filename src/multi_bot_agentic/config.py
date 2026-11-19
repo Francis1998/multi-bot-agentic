@@ -77,7 +77,7 @@ def build_llm_adapter(provider: str) -> LLMAdapter:
         api_key = _required_env("OPENAI_API_KEY")
         return OpenAIAdapter(
             api_key=api_key,
-            model=os.getenv("OPENAI_MODEL", "gpt-6.1-sol"),
+            model=os.getenv("OPENAI_MODEL", "gpt-6.2-sol"),
             base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1/chat/completions"),
             max_completion_tokens=_positive_int_env("OPENAI_MAX_COMPLETION_TOKENS", DEFAULT_MAX_COMPLETION_TOKENS),
         )

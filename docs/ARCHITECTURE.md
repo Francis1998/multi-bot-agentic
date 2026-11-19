@@ -54,6 +54,13 @@ ModelRequest -> ModelOutput
 
 Adapters normalize GPT/OpenAI, Claude Code CLI, Gemini, Kimi/Moonshot, and the deterministic fake provider.
 
+Adapters send only parameters the current models accept. The OpenAI adapter (also used for Kimi) calls Chat
+Completions with `model`, `messages`, and `max_completion_tokens`, and sends no sampling parameters, reasoning effort,
+or native `tools`. The tool catalog is part of the prompt and comes back as a `TOOL:` directive, so GPT-6.2, which
+rejects reasoning effort `none` and calls native tools only through the Responses API, works without a Responses
+client. The Gemini adapter sends only `contents`, so every Gemini 4 model, Neon included, keeps its default thinking
+level. See [Provider Parameter Rules](CONFIGURATION.md#provider-parameter-rules).
+
 ## State Machine
 
 ```text

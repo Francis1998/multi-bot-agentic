@@ -20,15 +20,15 @@ Many agent frameworks let the model choose and invoke tools directly. That is co
 
 This repo treats model output as an observation. The deterministic decision engine interprets constrained text like `TOOL:checklist:<payload>`, checks the safety policy, and only then executes an allowlisted tool adapter.
 
-### 3. "I need the same agent flow to work with GPT-6, Claude 5.5, Gemini, and Kimi K3.1."
+### 3. "I need the same agent flow to work with GPT-6.2, Claude 5.5, Gemini 4, and Kimi K3.1."
 
 Provider-specific SDKs and response shapes make agent code hard to port. A prototype built around one model often leaks provider details into the orchestration layer.
 
 `multi-bot-agentic` normalizes providers behind one adapter interface:
 
-- `OpenAIAdapter` for GPT-6 (`gpt-6.1-sol` by default) and OpenAI-compatible chat completions.
+- `OpenAIAdapter` for GPT-6.2 (`gpt-6.2-sol` by default; `gpt-6.2-astra` is OpenAI's flagship) and OpenAI-compatible chat completions.
 - `ClaudeCodeCLIAdapter` for local Claude Code CLI workflows with `claude-opus-5-5`, `claude-fable-5-2`, or `claude-sonnet-5-5`.
-- `GeminiAdapter` for Gemini `generateContent` (`gemini-3.8-flash` by default; `gemini-4-hydrogen` is Google's recommended upgrade and `gemini-4-carbon` its strongest reasoning model).
+- `GeminiAdapter` for Gemini `generateContent` (`gemini-3.8-flash` by default; `gemini-4-hydrogen` is Google's recommended upgrade, `gemini-4-neon` its frontier-level model for complex tasks, and `gemini-4-carbon` its strongest reasoning model).
 - `KimiAdapter` for Moonshot/Kimi K3.1 chat completions (`kimi-k3.1-pro` by default).
 - `FakeLLMAdapter` for deterministic CI and demos.
 
@@ -62,7 +62,7 @@ Unbounded agent loops are a common failure mode. They waste time, cost money, an
 
 ### 7. "I need to compare AI provider behavior without rewriting my orchestration."
 
-Teams often want to compare GPT-6.1 Sol, Gemini 3.8 Flash, Kimi K3.1 Pro, and Claude Opus 5.5, but provider-specific code makes comparisons noisy.
+Teams often want to compare GPT-6.2 Sol, Gemini 3.8 Flash, Kimi K3.1 Pro, and Claude Opus 5.5, but provider-specific code makes comparisons noisy.
 
 With provider adapters, you can keep the same runner, same decision engine, same event log, and same replay/report UX while swapping the provider:
 
