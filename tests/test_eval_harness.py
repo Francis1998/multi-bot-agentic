@@ -19,7 +19,7 @@ from multi_bot_agentic.event_log import SQLiteEventLog
 
 
 def test_score_tool_sequence_prefix_match() -> None:
-    """Tool-sequence score uses longest common prefix over expected length."""
+    """Tool-sequence score uses longest common prefix over the longer sequence's length."""
 
     assert score_tool_sequence(("checklist", "echo"), ("checklist", "echo")) == 1.0
     assert score_tool_sequence(("checklist",), ("checklist", "echo")) == 0.5
