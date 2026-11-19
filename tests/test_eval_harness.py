@@ -28,6 +28,13 @@ def test_score_tool_sequence_prefix_match() -> None:
     assert score_tool_sequence(("echo",), ()) == 0.0
 
 
+@pytest.mark.parametrize("actual", [("echo", "rot13"), ("echo", "echo")], ids=["unexpected-tool", "repeated-tool"])
+def test_score_tool_sequence_counts_calls_beyond_the_expected_tools(actual: tuple[str, ...]) -> None:
+    """A call after the expected tools lowers the score, just as any call does when none is expected."""
+
+    assert score_tool_sequence(actual, ("echo",)) == 0.5
+
+
 def test_score_answer_exact_and_contains() -> None:
     """Answer scoring supports exact match and substring checks."""
 
@@ -65,6 +72,30 @@ def test_harness_detects_wrong_tool_sequence(tmp_path: Path) -> None:
     assert report.pass_rate == 0.0
     assert report.scenarios[0].tool_sequence_score == 0.0
     assert report.scenarios[0].actual_tools == ("checklist",)
+
+
+def test_harness_fails_a_run_that_calls_a_tool_after_the_expected_ones(tmp_path: Path) -> None:
+    """``expected_tools`` is the whole sequence, so a run that goes on to call another tool fails.
+
+    A scenario expecting no tools already failed on any call, but one expecting ``echo`` passed
+    with a perfect tool-sequence score when the run then also called ``rot13``, so ``eval``
+    exited 0 for a run that called a tool its fixture never expected.
+    """
+
+    scenario = EvalScenario(
+        scenario_id="echo_only",
+        goal="Echo a confirmation token",
+        scripted_responses=("TOOL:echo:ready", "TOOL:rot13:ready", "DONE: echoed ready"),
+        expected_tools=("echo",),
+        expected_answer_contains="echoed",
+        max_steps=8,
+    )
+
+    report = EvaluationHarness((scenario,)).run(root=tmp_path, event_log_dir=tmp_path / "logs")
+    score = report.scenarios[0]
+
+    assert (score.actual_tools, score.answer_score, score.details["state"]) == (("echo", "rot13"), 1.0, "succeeded")
+    assert (score.passed, score.tool_sequence_score, report.pass_rate) == (False, 0.5, 0.0)
 
 
 @pytest.mark.parametrize(
