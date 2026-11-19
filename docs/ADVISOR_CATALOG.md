@@ -6,8 +6,10 @@ from the former README so the README can stay a short showcase. Each entry links
 
 > **Model names.** Every `Stack:` line was refreshed on 2026-11-07 to the provider flagships verified that day
 > (GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro), and `tests/test_docs_model_stack_current.py`
-> keeps retired names out of model lists. Older demo GIFs may still show the model names that were current when
-> they were rendered. The configured defaults are in [Configuration › Current Model Stack](CONFIGURATION.md#current-model-stack).
+> keeps retired names out of model lists. GPT-6.2 Astra has since superseded GPT-6 Astra (2026-11-17), which stays
+> available, so those lines still name working models. Older demo GIFs may still show the model names that were
+> current when they were rendered. The configured defaults are in
+> [Configuration › Current Model Stack](CONFIGURATION.md#current-model-stack).
 
 **Adding an entry:** add new advisor, guard, or limiter entries **here, not in the README**. Use a
 `### ClassName` heading, a demo GIF, a one-paragraph summary, and a link to the guide.

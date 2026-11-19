@@ -112,7 +112,7 @@ def test_gemini_parser_names_finish_reason_when_candidate_has_no_text(
 
 
 def test_openai_adapter_default_uses_latest_gpt_stack(monkeypatch: MonkeyPatch) -> None:
-    """OpenAI adapter defaults should stay aligned with the current GPT stack."""
+    """The OpenAI default is GPT-6.2 Sol, which superseded GPT-6.1 Sol on 2026-11-17 at the same price."""
 
     monkeypatch.setenv("OPENAI_API_KEY", "dummy-key")
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
@@ -120,7 +120,7 @@ def test_openai_adapter_default_uses_latest_gpt_stack(monkeypatch: MonkeyPatch) 
     adapter = build_llm_adapter("openai")
 
     assert isinstance(adapter, OpenAIAdapter)
-    assert adapter.model == "gpt-6.1-sol"
+    assert adapter.model == "gpt-6.2-sol"
 
 
 def test_required_provider_secret_rejects_blank_value(monkeypatch: MonkeyPatch) -> None:

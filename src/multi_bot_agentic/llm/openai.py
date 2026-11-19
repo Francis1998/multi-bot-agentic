@@ -8,7 +8,7 @@ from multi_bot_agentic.llm.base import render_tool_catalog
 from multi_bot_agentic.llm.http import post_json
 from multi_bot_agentic.models import ModelOutput, ModelRequest
 
-# Reasoning models (GPT-6, Kimi K3.1) count hidden reasoning tokens against
+# Reasoning models (GPT-6.2, GPT-6, Kimi K3.1) count hidden reasoning tokens against
 # max_completion_tokens; OpenAI recommends reserving at least 25,000 tokens.
 DEFAULT_MAX_COMPLETION_TOKENS = 32_768
 
@@ -61,7 +61,9 @@ class OpenAIAdapter:
                 {"role": "user", "content": _render_prompt(request)},
             ],
             # max_tokens is deprecated and rejected by reasoning models; sampling knobs such as
-            # temperature are unsupported (GPT-6) or fixed (Kimi K3.1), so none are sent.
+            # temperature are unsupported (GPT-6.2, GPT-6) or fixed (Kimi K3.1), so none are sent.
+            # Neither is reasoning_effort (GPT-6.2 rejects "none") nor native tools: GPT-6.2 calls
+            # tools only through the Responses API, so the tool catalog stays in the prompt text.
             "max_completion_tokens": self.max_completion_tokens,
         }
         decoded = post_json(

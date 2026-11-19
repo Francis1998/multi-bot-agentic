@@ -155,7 +155,7 @@ The same command works with a live provider. Adapters send only parameters the c
 `temperature`/`top_p`/`top_k` (see [Configuration](../CONFIGURATION.md#provider-parameter-rules)).
 
 ```bash
-export OPENAI_API_KEY=...               # default model: gpt-6.1-sol
+export OPENAI_API_KEY=...               # default model: gpt-6.2-sol
 multi-bot-agentic run --provider openai --mcp-config examples/mcp/mcp.json \
   --goal "Find our release checklist notes and turn them into a go/no-go list" \
   --event-log demo-output/release.sqlite --run-id release-live

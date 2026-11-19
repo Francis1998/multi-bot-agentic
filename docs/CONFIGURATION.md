@@ -9,7 +9,9 @@ cp .env.example .env
 ## Providers
 
 - `fake`: deterministic provider used by tests and demos.
-- `openai`: calls the OpenAI chat completions API using `OPENAI_API_KEY`.
+- `openai`: calls the OpenAI chat completions API using `OPENAI_API_KEY`. `OPENAI_BASE_URL` must be a Chat
+  Completions endpoint (default `https://api.openai.com/v1/chat/completions`); the adapter doesn't call the
+  Responses API.
 - `claude_code`: invokes the local Claude Code CLI configured by `CLAUDE_CODE_COMMAND` (default `claude -p`). The
   prompt is written to the command's stdin, so the command must run Claude Code in print mode (`-p`/`--print`, its
   non-interactive mode); plain `claude` starts an interactive session.
@@ -18,18 +20,41 @@ cp .env.example .env
 
 ## Current Model Stack
 
-Defaults and model lists were verified against the providers' documentation on 2026-11-12. Override any default
-with the environment variables below. For prices, see each provider's pricing page.
+Defaults and model lists were verified against the providers' documentation on 2026-11-19. Override any default
+with the environment variables below. For prices, see each provider's pricing page; the models added on
+2026-11-19 are summarized in [GPT-6.2 and Gemini 4 Neon](#gpt-62-and-gemini-4-neon).
 
 | Provider | Default here | Other current models | Notes |
 | --- | --- | --- | --- |
-| OpenAI ([models](https://developers.openai.com/api/docs/models)) | `gpt-6.1-sol` | `gpt-6-astra` (flagship, highest intelligence), `gpt-6.1-terra` (fast), `gpt-6-luna` (fastest, lowest cost) | Reasoning models: the adapter sends `max_completion_tokens` (default 32768, which covers reasoning and visible output; set it with `OPENAI_MAX_COMPLETION_TOKENS`) and no `temperature`/`top_p` |
+| OpenAI ([models](https://developers.openai.com/api/docs/models)) | `gpt-6.2-sol` | `gpt-6.2-astra` (flagship for the hardest work), `gpt-6.1-terra` (fast), `gpt-6-luna` (fastest, lowest cost). GPT-6.2 (released 2026-11-17) supersedes `gpt-6.1-sol` and `gpt-6-astra`, which stay available | Reasoning models: the adapter calls Chat Completions with `max_completion_tokens` (default 32768, which covers reasoning and visible output; set it with `OPENAI_MAX_COMPLETION_TOKENS`) and no `temperature`/`top_p`, reasoning effort, or native tools |
 | Anthropic via Claude Code CLI ([models](https://platform.claude.com/docs/en/models/overview)) | the CLI's own setting | `claude-opus-5-5` (recommended starting point), `claude-fable-5-2` (demanding reasoning and long-horizon agentic work), `claude-sonnet-5-5`, `claude-haiku-5-5` | Choose one with `CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"` (keep `-p`, print mode). `claude-fable-5-2` (released 2026-11-09) supersedes Fable 5.1 and requires 30-day data retention ([Fable 5.2](https://platform.claude.com/docs/en/models/fable-5-2/overview)) |
-| Google Gemini ([models](https://aistudio.google.com/docs/models)) | `gemini-3.8-flash` | `gemini-4-hydrogen` (fast agentic model, Google's recommended upgrade from 3.8 Flash), `gemini-4-carbon` (strongest reasoning, paid tier only), `gemini-4-argon` (efficient frontier reasoning, paid tier only), `gemini-3.5-flash-lite` (fastest, lowest cost) | `generateContent` API. Gemini 4 models share one 1,048,576-token window for input, thinking, and output. See [Gemini default](#gemini-default) |
+| Google Gemini ([models](https://aistudio.google.com/docs/models)) | `gemini-3.8-flash` | `gemini-4-hydrogen` (fast agentic model, Google's recommended upgrade from 3.8 Flash), `gemini-4-neon` (frontier-level quality with fast task completion, between Hydrogen and Carbon, paid tier only), `gemini-4-carbon` (strongest reasoning, paid tier only), `gemini-4-argon` (efficient frontier reasoning, paid tier only), `gemini-3.5-flash-lite` (fastest, lowest cost) | `generateContent` API. Gemini 4 models share one 1,048,576-token window for input, thinking, and output. See [Gemini default](#gemini-default) |
 | Kimi / Moonshot ([models](https://platform.kimi.ai/docs/models.md), [parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed` (same model, about 2-3× faster), `kimi-k3` (previous-generation flagship) | The K3 series fixes `temperature`/`top_p`/`n`/penalties and always reasons, so none of those are sent. `KIMI_MAX_COMPLETION_TOKENS` sets the budget (default 32768). The K2 series closed to new users on 2026-10-31 and retires by the end of December 2026 |
 
 If you override `OPENAI_MODEL` with an older model whose output limit is below 32768 tokens, lower
 `OPENAI_MAX_COMPLETION_TOKENS` to match. For example, `gpt-4o` documents a 16384-token output limit.
+
+### GPT-6.2 and Gemini 4 Neon
+
+OpenAI released GPT-6.2 Astra and GPT-6.2 Sol on 2026-11-17, and Google released Gemini 4 Neon on 2026-11-18.
+Limits and Standard prices per 1M tokens come from the
+[GPT-6.2 Astra](https://developers.openai.com/api/docs/models/gpt-6.2-astra),
+[GPT-6.2 Sol](https://developers.openai.com/api/docs/models/gpt-6.2-sol), and
+[Gemini 4 Neon](https://aistudio.google.com/docs/models/gemini-4-neon) model pages:
+
+| Model | Context window | Max output | Input | Cached input | Output | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| `gpt-6.2-sol` (default here) | 1,050,000 (up to 922,000 input) | 128,000 | $2 | $0.10 | $10 | OpenAI's everyday model for coding and agents, at GPT-6.1 Sol's price. Cache writes $2.50. Knowledge cutoff 2026-06-01 |
+| `gpt-6.2-astra` | 1,050,000 (up to 922,000 input) | 128,000 | $8 | $0.40 | $40 | Flagship for the hardest work, 20% below GPT-6 Astra's $10 / $50. Cache writes $10. Knowledge cutoff 2026-05-18 |
+| `gemini-4-neon` | 1,048,576, shared by input, thinking, and output | 65,536 per request; long decode can use the rest of the window | $3 | $0.15 (implicit caching only) | $15 | Paid tier only. The output price covers thinking tokens. Batch and Flex $1.50 / $7.50, Priority $5.40 / $27 |
+
+GPT-6.2 cache writes keep the prefix for 30 minutes. A request with more than 272K input tokens pays twice the
+input and cache rates and 1.5× the output rate for the whole request, and Batch costs half of Standard. GPT-6.2
+doesn't support Flex processing (`service_tier: "flex"`), which the adapter never sets. Both GPT-6.2 models
+reject reasoning effort `none` and require the Responses API for tool calling. This adapter needs neither: it
+sends no reasoning effort, and its tools travel as prompt text (see
+[Provider Parameter Rules](#provider-parameter-rules)). Gemini 4 Neon thinks at `high` by default; see
+[Gemini default](#gemini-default) before choosing it.
 
 ### Gemini default
 
@@ -47,21 +72,27 @@ was decided on 2026-11-12 for three reasons:
   which runs through 2026-12-31. From 2027-01-01, 3.8 Flash also costs $1.50/$7.50
   ([pricing](https://aistudio.google.com/docs/pricing)).
 
-To use Hydrogen now, set `GEMINI_MODEL=gemini-4-hydrogen` and raise `MULTIBOT_TIMEOUT_SECONDS`. If a run fails
-with `finishReason=MALFORMED_FUNCTION_CALL` in its failure reason, Hydrogen tried to emit a native function call
-instead of a text directive. Switch back to `gemini-3.8-flash`. Revisit this default when the Gemini adapter
-declares its tools natively.
+Gemini 4 Neon (`gemini-4-neon`, released 2026-11-18) doesn't change this. Its migration checklist repeats the
+warning against raw-text tool calls with zero declared tools, it thinks at `high` by default, Google recommends
+client timeouts of at least 15 minutes for hard prompts, and it is paid tier only at $3/$15 per 1M input/output
+tokens ([What's new in Gemini 4 Neon](https://aistudio.google.com/docs/whats-new-gemini-4-neon#migration-checklist)).
+
+To use Hydrogen or Neon now, set `GEMINI_MODEL=gemini-4-hydrogen` (or `gemini-4-neon` with a paid-tier key) and
+raise `MULTIBOT_TIMEOUT_SECONDS`. If a run fails with `finishReason=MALFORMED_FUNCTION_CALL` in its failure
+reason, the model tried to emit a native function call instead of a text directive. Switch back to
+`gemini-3.8-flash`. Revisit this default when the Gemini adapter declares its tools natively.
 
 ## Provider Parameter Rules
 
 Current models reject or ignore sampling parameters, so no adapter sends `temperature`, `top_p`, `top_k`, `n`,
-penalties, or logprobs. `tests/test_adapters.py` guards this for every provider.
+penalties, or logprobs. `tests/test_adapters.py` guards this for every provider. The rules were checked against
+the official docs on 2026-11-12, and the GPT-6.2 and Gemini 4 Neon rules on 2026-11-19.
 
-| Provider | Rule (official docs, checked 2026-11-12) | What the adapter does |
+| Provider | Rule (official docs) | What the adapter does |
 | --- | --- | --- |
-| OpenAI GPT-6 | When reasoning effort is not `none`, remove `temperature`, `top_p`, and `top_logprobs` (and `logprobs` on Chat Completions). `gpt-6.1-sol` and `gpt-6-astra` support only `low`..`max`. `gpt-6.1-terra` and `gpt-6-luna` accept `temperature` only with `reasoning_effort: none` ([GPT-6 guide](https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md)) | Sends only `model`, `messages`, and `max_completion_tokens` |
+| OpenAI GPT-6.2 and GPT-6 | GPT-6.2 Astra and Sol reject reasoning effort `none` (OpenAI's migration advice: use `low` instead of `none` or `minimal`), never take `temperature`, `top_p`, `logprobs`, or `top_logprobs` on Chat Completions, and require the Responses API for tool calling, although they support Chat Completions ([GPT-6.2 guide](https://developers.openai.com/api/docs/guides/latest-model?model=gpt-6.2-astra)). On GPT-6, when reasoning effort is not `none`, remove `temperature`, `top_p`, and `top_logprobs` (and `logprobs` on Chat Completions). `gpt-6.1-sol` and `gpt-6-astra` support only `low`..`max`. `gpt-6.1-terra` and `gpt-6-luna` accept `temperature` only with `reasoning_effort: none` ([GPT-6 guide](https://developers.openai.com/api/docs/guides/latest-model/gpt-6-astra.md)) | Sends only `model`, `messages`, and `max_completion_tokens` to Chat Completions: no reasoning effort (each model keeps its default), no sampling parameters, and no native `tools`. The tool catalog is part of the prompt, and the model answers with `TOOL:` text |
 | Anthropic Claude 5.5 and Fable 5.2 | A non-default `temperature`, `top_p`, or `top_k` returns 400. Since API version 2026-10-21, any of them returns 400 on every model. Use `output_config.effort` instead; Fable 5.2 and Opus 5.5 always think ([thinking](https://platform.claude.com/docs/en/build-with-claude/thinking.md), [effort](https://platform.claude.com/docs/en/build-with-claude/effort.md)) | The Claude Code CLI adapter runs only the configured command (for example `claude -p --model claude-opus-5-5`) and adds no flags of its own |
-| Google Gemini 4 and 3.x | Remove `temperature`, `top_p`, and `top_k`; if provided, they are ignored. Thinking is on by default and set with `thinkingConfig.thinkingLevel`: Hydrogen defaults to `high` and adds `xhigh`, while Carbon, Argon, and 3.8 Flash default to `medium`. Gemini 4 and 3.8 Flash reject `minimal` ([Hydrogen migration](https://aistudio.google.com/docs/whats-new-gemini-4-hydrogen#migrate-from-gemini-3-8-flash), [thinking levels](https://aistudio.google.com/docs/thinking#thinking-levels), [Gemini 3 guide](https://aistudio.google.com/docs/gemini-3.md)) | Sends only `contents`, with no `generationConfig`, so each model keeps its default thinking level |
+| Google Gemini 4 and 3.x | Remove `temperature`, `top_p`, and `top_k`; if provided, they are ignored. Thinking is on by default and set with `thinkingConfig.thinkingLevel`: Hydrogen and Neon default to `high` and add `xhigh`, while Carbon, Argon, and 3.8 Flash default to `medium`. Gemini 4 and 3.8 Flash reject `minimal` ([Hydrogen migration](https://aistudio.google.com/docs/whats-new-gemini-4-hydrogen#migrate-from-gemini-3-8-flash), [Neon migration](https://aistudio.google.com/docs/whats-new-gemini-4-neon#migration-checklist), [thinking levels](https://aistudio.google.com/docs/thinking#thinking-levels), [Gemini 3 guide](https://aistudio.google.com/docs/gemini-3.md)) | Sends only `contents`, with no `generationConfig`, so each model keeps its default thinking level |
 | Kimi K3 series (`kimi-k3.1-pro`, `kimi-k3.1-pro-highspeed`, `kimi-k3`) | `temperature` is fixed at 1.0 (any other value errors), as are `top_p`, `n`, and penalties. Use top-level `reasoning_effort` (`low`/`high`/`max`, default `max`) ([parameters](https://platform.kimi.ai/docs/api/models-overview.md)) | Sends only `model`, `messages`, and `max_completion_tokens` |
 
 ## Provider Commands
@@ -76,7 +107,7 @@ OpenAI GPT:
 
 ```bash
 export OPENAI_API_KEY=...
-export OPENAI_MODEL=gpt-6.1-sol
+export OPENAI_MODEL=gpt-6.2-sol  # or gpt-6.2-astra for the hardest work
 multi-bot-agentic run --goal "Draft a launch checklist" --provider openai
 ```
 
@@ -91,7 +122,7 @@ Gemini:
 
 ```bash
 export GEMINI_API_KEY=...
-export GEMINI_MODEL=gemini-3.8-flash  # or gemini-4-hydrogen, see "Gemini default" above
+export GEMINI_MODEL=gemini-3.8-flash  # or gemini-4-hydrogen / gemini-4-neon, see "Gemini default" above
 multi-bot-agentic run --goal "Draft a launch checklist" --provider gemini
 ```
 

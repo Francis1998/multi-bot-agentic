@@ -7,8 +7,8 @@
 
 **A deterministic, auditable orchestrator for multi-bot AI agents.** Models propose, and a rule-based
 **Observe → Decide → Act** engine decides. Every decision, tool call, and MCP call is written to a
-replayable SQLite event log. It runs fully offline with a deterministic fake provider, and it works with GPT-6,
-Claude 5.5 and Fable 5.2, Gemini 4 and 3.8 Flash, Kimi K3.1, and any
+replayable SQLite event log. It runs fully offline with a deterministic fake provider, and it works with GPT-6.2
+Sol and Astra, Claude 5.5 and Fable 5.2, Gemini 4 (Hydrogen, Neon, Carbon, Argon) and 3.8 Flash, Kimi K3.1, and any
 [Model Context Protocol](https://modelcontextprotocol.io) server. It is a portfolio-quality, local-first reference
 implementation.
 
@@ -27,7 +27,7 @@ implementation.
 - **Tools are explicit and bounded.** Built-in and MCP tools pass the same allowlist and per-bot scopes. MCP
   calls also get per-call timeouts and result byte caps. Built-in tools run offline and in-process with
   size-limited inputs. A model can only request a tool; the engine decides whether it runs.
-- **Provider-neutral.** One adapter interface covers GPT-6, the Claude Code CLI, Gemini, and Kimi K3.1, and every
+- **Provider-neutral.** One adapter interface covers GPT-6.2, the Claude Code CLI, Gemini 4, and Kimi K3.1, and every
   adapter sends parameters that current reasoning models accept.
 - **CI-friendly.** The fake provider exercises the real runtime, so lint, types, tests, a smoke run, and
   offline evaluation need no API keys.
@@ -38,7 +38,7 @@ implementation.
 flowchart LR
     goal([Goal]) --> observe[Observe]
     observe --> decide{"Decide<br/>deterministic rules<br/>+ rationale trace"}
-    decide -->|call_llm| llm["LLM adapter<br/>GPT-6 · Claude 5.5 / Fable 5.2 · Gemini · Kimi K3.1 · fake"]
+    decide -->|call_llm| llm["LLM adapter<br/>GPT-6.2 · Claude 5.5 / Fable 5.2 · Gemini 4 · Kimi K3.1 · fake"]
     decide -->|call_tool| tool["Allowlisted tool<br/>built-in or mcp__server__tool"]
     decide -->|handoff| bot["Bot handoff<br/>scoped tool allowlist"]
     decide -->|finish / fail / cancel| done([Terminal state])
@@ -103,7 +103,7 @@ the original untouched, and the new run records its lineage
 | **Time-travel forks** | `fork` branches any recorded run after any step into a new run, with a new goal, provider, bot, or budget. The state is rebuilt from the log, and bot scopes are re-checked. `history` lists the forkable steps. Lineage shows up in `report`, and `trace` adds a span link to the parent run | `fork.py`, `cli.py` | [Run fork](docs/guides/RUN_FORK_GUIDE.md) |
 | Multi-bot handoffs | `HANDOFF:<bot>:<summary>` with per-bot tool allowlists | `bots.py` | [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md) |
 | **MCP tool bridge** | Tools from any MCP server, with a dual-era (2026-07-28 + legacy) stdio client and no dependencies | `mcp/` | [MCP tools](docs/guides/MCP_TOOLS_GUIDE.md) |
-| Provider adapters | GPT-6, Claude Code CLI, Gemini, Kimi K3.1, and a fake provider, all sending reasoning-safe parameters | `llm/` | [Configuration](docs/CONFIGURATION.md) |
+| Provider adapters | GPT-6.2, Claude Code CLI, Gemini 4, Kimi K3.1, and a fake provider, all sending reasoning-safe parameters | `llm/` | [Configuration](docs/CONFIGURATION.md) |
 | Safety controls | Step budgets, timeouts, cancellation file, tool allowlists, prompt bounds | `safety.py` | [Safety](docs/SAFETY.md) |
 | Human-in-the-loop | File-backed approval gate for sensitive tools | `approval.py` | [HITL gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md) |
 | Parallel fan-out | Capped, order-preserving task batches | `fanout.py` | [Fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md) |
@@ -116,19 +116,24 @@ the original untouched, and the new run records its lineage
 
 | Provider (`--provider`) | Adapter | Default | Also current | Credential |
 | --- | --- | --- | --- | --- |
-| OpenAI (`openai`) | `OpenAIAdapter` | `gpt-6.1-sol` | `gpt-6-astra`, `gpt-6.1-terra`, `gpt-6-luna` | `OPENAI_API_KEY` |
+| OpenAI (`openai`) | `OpenAIAdapter` | `gpt-6.2-sol` | `gpt-6.2-astra` (flagship), `gpt-6.1-terra`, `gpt-6-luna`; the superseded `gpt-6.1-sol` and `gpt-6-astra` stay available | `OPENAI_API_KEY` |
 | Anthropic via Claude Code CLI (`claude_code`) | `ClaudeCodeCLIAdapter` | the CLI's configured model (recommended: `CLAUDE_CODE_COMMAND="claude -p --model claude-opus-5-5"`; keep `-p`, print mode) | `claude-fable-5-2`, `claude-sonnet-5-5`, `claude-haiku-5-5` | local `claude` |
-| Google Gemini (`gemini`) | `GeminiAdapter` | `gemini-3.8-flash` | `gemini-4-hydrogen` (Google's recommended upgrade), `gemini-4-carbon`, `gemini-4-argon`, `gemini-3.5-flash-lite` | `GEMINI_API_KEY` |
+| Google Gemini (`gemini`) | `GeminiAdapter` | `gemini-3.8-flash` | `gemini-4-hydrogen` (Google's recommended upgrade), `gemini-4-neon` (paid tier), `gemini-4-carbon`, `gemini-4-argon`, `gemini-3.5-flash-lite` | `GEMINI_API_KEY` |
 | Kimi / Moonshot (`kimi`) | `KimiAdapter` | `kimi-k3.1-pro` | `kimi-k3.1-pro-highspeed`, `kimi-k3` | `KIMI_API_KEY` |
 | Deterministic (`fake`) | `FakeLLMAdapter` | offline, used by CI | n/a | none |
 
-Verified on 2026-11-12 against the [OpenAI](https://developers.openai.com/api/docs/models),
+Verified on 2026-11-19 against the [OpenAI](https://developers.openai.com/api/docs/models),
 [Anthropic](https://platform.claude.com/docs/en/models/overview), [Google](https://aistudio.google.com/docs/models),
-and [Moonshot](https://platform.kimi.ai/docs/models.md) model pages. The Gemini default stays on 3.8 Flash for now;
-[Configuration › Gemini default](docs/CONFIGURATION.md#gemini-default) explains why and how to switch to Hydrogen.
+and [Moonshot](https://platform.kimi.ai/docs/models.md) model pages. GPT-6.2 Sol (2026-11-17) replaces GPT-6.1 Sol as
+the OpenAI default at the same price, and Gemini 4 Neon (2026-11-18) joins the Gemini 4 lineup; their limits and
+prices are in [Configuration › GPT-6.2 and Gemini 4 Neon](docs/CONFIGURATION.md#gpt-62-and-gemini-4-neon). The Gemini
+default stays on 3.8 Flash for now; [Configuration › Gemini default](docs/CONFIGURATION.md#gemini-default) explains
+why and how to switch to Hydrogen or Neon.
 Every adapter normalizes output into `ModelOutput`, which the runner treats as an observation. `OPENAI_BASE_URL`
-points the OpenAI adapter at any OpenAI-compatible gateway. No adapter sends `temperature`, `top_p`, or `top_k`:
-current GPT-6, Claude 5.5 and Fable 5.2, Gemini 4 and 3.x, and Kimi K3.1 models reject, fix, or ignore them
+points the OpenAI adapter at any OpenAI-compatible Chat Completions gateway. No adapter sends `temperature`, `top_p`,
+or `top_k`: current GPT-6.2, Claude 5.5 and Fable 5.2, Gemini 4 and 3.x Flash, and Kimi K3.1 models reject, fix, or
+ignore them. The OpenAI adapter also sends no reasoning effort and no native tools, so GPT-6.2, which rejects effort
+`none` and calls native tools only through the Responses API, works over Chat Completions
 ([parameter rules](docs/CONFIGURATION.md#provider-parameter-rules)).
 
 ## Documentation Map
@@ -160,7 +165,7 @@ These are the problems the project was built for. Each one is explained in
 
 1. "My agent did something, but I can't explain why." Rationale traces and replay answer that.
 2. "I don't want the model executing tools directly." Text directives go through an allowlisted engine.
-3. "The same agent flow must work across GPT-6, Claude, Gemini, and Kimi." One adapter interface covers them.
+3. "The same agent flow must work across GPT-6.2, Claude, Gemini, and Kimi." One adapter interface covers them.
 4. "I need a safe demo path without API keys." The deterministic fake provider runs the real runtime.
 5. "Runs fail silently or leave no audit trail." Every run gets a durable SQLite event log plus `report`.
 6. "The agent loops or burns tokens." Step budgets, timeouts, and cancellation stop it.

@@ -4,6 +4,20 @@
 
 ### Changed
 
+- Refreshed the model stack to the lineup verified against the providers' model pages on 2026-11-19. GPT-6.2 Sol
+  (`gpt-6.2-sol`, released 2026-11-17) is the new `OPENAI_MODEL` default, replacing `gpt-6.1-sol` at the same
+  price, and GPT-6.2 Astra (`gpt-6.2-astra`) is listed as OpenAI's flagship. The superseded `gpt-6.1-sol` and
+  `gpt-6-astra` stay available. Gemini 4 Neon (`gemini-4-neon`, released 2026-11-18, paid tier only) joins the
+  Gemini 4 lineup. `gemini-3.8-flash` stays the Gemini default, because Neon's migration checklist repeats
+  Hydrogen's warning about raw-text tool calls with no declared tools (`docs/CONFIGURATION.md#gemini-default`).
+  `docs/CONFIGURATION.md` now lists the limits and prices of the three new models (including GPT-6.2's surcharge
+  for requests over 272K input tokens) and GPT-6.2's API rules: reasoning effort `none` is rejected (`minimal`
+  should become `low`), `temperature`, `top_p`, `logprobs`, and `top_logprobs` must be omitted on Chat Completions,
+  and tool calling requires the Responses API. The adapters already comply: the OpenAI adapter sends only `model`,
+  `messages`, and `max_completion_tokens` to Chat Completions and puts the tool catalog in the prompt, and the
+  Gemini adapter sends only `contents`. New tests pin this for `gpt-6.2-sol`, `gpt-6.2-astra`, and
+  `gemini-4-neon`. `tests/test_docs_model_stack_current.py` also checks that the README, Configuration,
+  Quickstart, `.env.example`, and use-case docs state the defaults the adapters really use.
 - Refreshed the model stack to the lineup verified against the providers' model pages on 2026-11-12 (README,
   `docs/CONFIGURATION.md`, `docs/QUICKSTART.md`, `.env.example`, use-case docs). `claude-fable-5-2` replaces the
   superseded `claude-fable-5-1`. `gemini-4-hydrogen` (Google's recommended upgrade from 3.8 Flash) and
