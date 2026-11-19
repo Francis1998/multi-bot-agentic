@@ -14,7 +14,7 @@ from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.llm.gemini import GeminiAdapter, _extract_gemini_text
 from multi_bot_agentic.llm.kimi import KimiAdapter
 from multi_bot_agentic.llm.openai import OpenAIAdapter, _extract_openai_text
-from multi_bot_agentic.models import ModelRequest, Observation
+from multi_bot_agentic.models import ModelRequest, Observation, ToolSpec
 
 if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
@@ -217,9 +217,9 @@ def test_kimi_adapter_default_uses_latest_k3_stack(monkeypatch: MonkeyPatch) -> 
     assert adapter.model == "kimi-k3.1-pro"
 
 
-# Sampling parameters that reasoning models reject: GPT-6 (reasoning effort above "none") does not accept
-# temperature/top_p/logprobs, and the Kimi K3 series (K3.1 Pro, K3) fixes temperature/top_p/n/penalties
-# ("omit them from requests").
+# Sampling parameters that reasoning models reject: GPT-6 (reasoning effort above "none") and GPT-6.2 (every
+# effort) do not accept temperature/top_p/logprobs, and the Kimi K3 series (K3.1 Pro, K3) fixes
+# temperature/top_p/n/penalties ("omit them from requests").
 _FIXED_OR_UNSUPPORTED = {
     "temperature",
     "top_p",
@@ -250,12 +250,17 @@ def _captured_payload(monkeypatch: MonkeyPatch, adapter: OpenAIAdapter) -> dict[
 
 @pytest.mark.parametrize(
     ("adapter_cls", "model"),
-    [(OpenAIAdapter, "gpt-6.1-sol"), (KimiAdapter, "kimi-k3.1-pro")],
+    [
+        (OpenAIAdapter, "gpt-6.2-sol"),
+        (OpenAIAdapter, "gpt-6.2-astra"),
+        (OpenAIAdapter, "gpt-6.1-sol"),
+        (KimiAdapter, "kimi-k3.1-pro"),
+    ],
 )
 def test_reasoning_model_payload_uses_max_completion_tokens(
     monkeypatch: MonkeyPatch, adapter_cls: type[OpenAIAdapter], model: str
 ) -> None:
-    """Current GPT-6 and Kimi K3.1 models are reasoning models with fixed or unsupported sampling knobs.
+    """Current GPT-6.2, GPT-6, and Kimi K3.1 models are reasoning models with fixed or unsupported sampling knobs.
 
     ``max_tokens`` is deprecated in favor of ``max_completion_tokens`` (which counts reasoning
     tokens), so a 500-token ``max_tokens`` cap could be spent entirely on reasoning before any
@@ -271,6 +276,47 @@ def test_reasoning_model_payload_uses_max_completion_tokens(
     assert isinstance(max_completion_tokens, int)
     assert max_completion_tokens >= 25_000
     assert _FIXED_OR_UNSUPPORTED.isdisjoint(payload)
+
+
+@pytest.mark.parametrize("model", ["gpt-6.2-sol", "gpt-6.2-astra"])
+def test_gpt_6_2_chat_payload_sends_tools_as_prompt_text_and_no_effort(monkeypatch: MonkeyPatch, model: str) -> None:
+    """A configured GPT-6.2 model gets a Chat Completions request it accepts.
+
+    OpenAI's GPT-6.2 guide (2026-11-17): the API rejects reasoning effort ``none`` (use ``low`` instead of
+    ``none`` or ``minimal``), Chat Completions requests must omit ``temperature``, ``top_p``, ``logprobs``, and
+    ``top_logprobs``, Flex processing is unsupported, and tool calling requires the Responses API. So the
+    request to ``/v1/chat/completions`` carries only the model, the messages, and the completion budget:
+    no ``reasoning_effort``, ``service_tier``, or native ``tools``. The tool catalog is prompt text, and the
+    model answers with a ``TOOL:`` directive.
+    """
+
+    monkeypatch.setenv("OPENAI_API_KEY", "dummy-key")
+    monkeypatch.setenv("OPENAI_MODEL", model)
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+    captured: dict[str, object] = {}
+
+    def fake_post_json(
+        url: str, payload: dict[str, object], headers: dict[str, str], timeout_seconds: float
+    ) -> dict[str, object]:
+        del headers, timeout_seconds
+        captured.update(payload, url=url)
+        return {"choices": [{"message": {"content": "TOOL:echo:hi"}, "finish_reason": "stop"}]}
+
+    monkeypatch.setattr("multi_bot_agentic.llm.openai.post_json", fake_post_json)
+    request = ModelRequest(
+        goal="demo",
+        observations=(Observation(source="user", content="demo"),),
+        tools=(ToolSpec(name="echo", description="Echo text back."),),
+    )
+
+    assert build_llm_adapter("openai").complete(request, timeout_seconds=1.0).text == "TOOL:echo:hi"
+    assert captured.pop("url") == "https://api.openai.com/v1/chat/completions"
+    assert set(captured) == {"model", "messages", "max_completion_tokens"}
+    assert captured["model"] == model
+    messages = captured["messages"]
+    assert isinstance(messages, list)
+    assert [message["role"] for message in messages] == ["system", "user"]
+    assert "- echo: Echo text back." in messages[-1]["content"]
 
 
 @pytest.mark.parametrize(
@@ -303,13 +349,16 @@ def test_completion_budget_rejects_invalid_values(monkeypatch: MonkeyPatch, valu
         build_llm_adapter("openai")
 
 
-@pytest.mark.parametrize("model", ["gemini-3.8-flash", "gemini-4-hydrogen", "gemini-4-carbon", "gemini-4-argon"])
+@pytest.mark.parametrize(
+    "model", ["gemini-3.8-flash", "gemini-4-hydrogen", "gemini-4-neon", "gemini-4-carbon", "gemini-4-argon"]
+)
 def test_gemini_payload_sends_no_sampling_parameters(monkeypatch: MonkeyPatch, model: str) -> None:
     """Gemini 4 and 3.x ignore temperature/topP/topK, so the adapter sends no ``generationConfig`` at all.
 
-    Without a ``thinkingConfig`` each model keeps its own default thinking level (``high`` on Hydrogen,
-    ``medium`` on Carbon, Argon, and 3.8 Flash), and the ``minimal`` level that Gemini 4 rejects is
-    never sent. The model ID goes into the URL path unchanged.
+    Without a ``thinkingConfig`` each model keeps its own default thinking level (``high`` on Hydrogen and Neon,
+    ``medium`` on Carbon, Argon, and 3.8 Flash), and the ``minimal`` level that Gemini 4 rejects is never sent.
+    No low ``maxOutputTokens`` cap cuts thinking short either (Neon defaults to 65,536 output tokens per
+    request). The model ID goes into the URL path unchanged.
     """
 
     captured: dict[str, object] = {}
