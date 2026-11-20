@@ -69,6 +69,17 @@ multi-bot-agentic replay --event-log data/eval-logs/echo_then_done.sqlite \
 }
 ```
 
+## Scoring
+
+- `tool_sequence_score` is the longest common prefix of the run's tool calls (`actual_tools`) and
+  `expected_tools`, divided by the length of the longer of the two. It is `1.0` only when the run called exactly
+  `expected_tools`, in order. Missing calls and extra calls both lower it: with `"expected_tools": ["echo"]`, a run
+  that calls `["echo", "rot13"]` or `["echo", "echo"]` scores `0.5`. With `"expected_tools": []`, any call scores
+  `0.0`. List every tool call the run should make, including repeated calls.
+- `answer_score` is `1.0` when the DONE answer equals `expected_answer` (ignoring surrounding whitespace) and
+  contains `expected_answer_contains`, checking only the ones that are set. With neither set, it is `1.0`.
+- A scenario passes when both scores are `1.0` and the run succeeded. `eval` exits `2` when any scenario fails.
+
 ## Safety
 
 Fixtures execute only allowlisted tools under `SafetyPolicy`. Scripted responses

@@ -28,7 +28,7 @@ class EvalScenario:
         scenario_id: Stable fixture identifier.
         goal: User goal passed to the runner.
         scripted_responses: Ordered Fake-LLM outputs (`TOOL:` / `DONE:`).
-        expected_tools: Expected tool names in order.
+        expected_tools: Every tool the run is expected to call, in order; any other call fails the scenario.
         expected_answer_contains: Optional substring that must appear in DONE answer.
         expected_answer: Optional exact DONE answer.
         max_steps: Step budget for the scenario.
@@ -118,8 +118,9 @@ class ScriptedLLMAdapter:
 def score_tool_sequence(actual: tuple[str, ...], expected: tuple[str, ...]) -> float:
     """Score tool-sequence fidelity in ``[0.0, 1.0]``.
 
-    Uses longest common prefix length divided by ``max(len(expected), 1)``.
-    When ``expected`` is empty, returns ``1.0`` if ``actual`` is also empty else ``0.0``.
+    Uses the longest common prefix length divided by the length of the longer sequence, so
+    missing calls and calls beyond ``expected`` both lower the score. Only a run that called
+    exactly ``expected``, in order, scores ``1.0``; two empty sequences also score ``1.0``.
 
     Args:
         actual: Tools invoked during the run.
@@ -129,14 +130,15 @@ def score_tool_sequence(actual: tuple[str, ...], expected: tuple[str, ...]) -> f
         Sequence score.
     """
 
-    if not expected:
-        return 1.0 if not actual else 0.0
+    longest = max(len(actual), len(expected))
+    if longest == 0:
+        return 1.0
     matched = 0
     for left, right in zip(actual, expected, strict=False):
         if left != right:
             break
         matched += 1
-    return matched / len(expected)
+    return matched / longest
 
 
 def score_answer(
