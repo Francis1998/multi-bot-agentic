@@ -44,6 +44,8 @@ Actions are limited to provider calls, allowlisted tools, finish, fail, or cance
 
 The sqlite event log stores every lifecycle transition, observation, decision, action request, action result, and failure with a per-run sequence number. A run can be replayed without calling a provider.
 
+`run` creates the log file and its directory when they are missing. Commands that read a log (`replay`, `report`, `resume`, `history`, `trace`, and `fork`) never create one: a missing `--event-log` fails with `error: event log not found: <path>` and exit code 2, so a mistyped path is not mistaken for a run that recorded nothing.
+
 ## Provider Adapters
 
 All providers implement one interface:

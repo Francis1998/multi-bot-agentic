@@ -251,6 +251,28 @@ def run_command(args: argparse.Namespace) -> int:
         return 0 if result.state.value == "succeeded" else 2
 
 
+def _event_log_missing(path: Path) -> bool:
+    """Report a missing event log for a command that reads an existing one.
+
+    Opening a ``SQLiteEventLog`` creates a missing file and its parent directories, which only
+    commands that write a new log (``run``, ``eval``) should do. Commands that read a log check
+    first, so a mistyped ``--event-log`` is an error instead of a new, empty log that looks like
+    a run that recorded nothing.
+
+    Args:
+        path: Event log path.
+
+    Returns:
+        ``True`` after printing an ``error:`` line on stderr when ``path`` is not an existing
+        file, otherwise ``False``.
+    """
+
+    if path.is_file():
+        return False
+    print(f"error: event log not found: {path}", file=sys.stderr)
+    return True
+
+
 def replay_command(args: argparse.Namespace) -> int:
     """Execute the replay subcommand.
 
@@ -258,9 +280,11 @@ def replay_command(args: argparse.Namespace) -> int:
         args: Parsed arguments.
 
     Returns:
-        Process exit code.
+        0 on success, 2 when the event log does not exist.
     """
 
+    if _event_log_missing(args.event_log):
+        return 2
     event_log = SQLiteEventLog(args.event_log)
     try:
         for event in event_log.list_events(run_id=args.run_id):
@@ -279,9 +303,11 @@ def report_command(args: argparse.Namespace) -> int:
         args: Parsed arguments.
 
     Returns:
-        Process exit code.
+        0 on success, 2 when the event log does not exist.
     """
 
+    if _event_log_missing(args.event_log):
+        return 2
     event_log = SQLiteEventLog(args.event_log)
     try:
         events = event_log.list_events(run_id=args.run_id)
@@ -296,8 +322,8 @@ def report_command(args: argparse.Namespace) -> int:
 def resume_command(args: argparse.Namespace) -> int:
     """Execute the resume subcommand.
 
-    A finished run's recorded outcome is read first, so it is reported without starting
-    MCP servers or building the provider.
+    A missing event log is an error and is never created. A finished run's recorded outcome
+    is read first, so it is reported without starting MCP servers or building the provider.
 
     Args:
         args: Parsed arguments.
@@ -311,6 +337,8 @@ def resume_command(args: argparse.Namespace) -> int:
         event_log=args.event_log,
         max_steps=args.max_steps,
     )
+    if _event_log_missing(config.event_log):
+        return 2
     finished = _finished_run_outcome(config.event_log, args.run_id)
     if finished is not None:
         return _print_resume_result(finished, config.event_log)
@@ -548,8 +576,7 @@ def history_command(args: argparse.Namespace) -> int:
     from multi_bot_agentic.tracing import select_latest_run
 
     path: Path = args.event_log
-    if not path.is_file():
-        print(f"error: event log not found: {path}", file=sys.stderr)
+    if _event_log_missing(path):
         return 2
     try:
         event_log = SQLiteEventLog(path)
@@ -638,8 +665,7 @@ def fork_command(args: argparse.Namespace) -> int:
     """
 
     path: Path = args.event_log
-    if not path.is_file():
-        print(f"error: event log not found: {path}", file=sys.stderr)
+    if _event_log_missing(path):
         return 2
     if args.bot is not None and args.bots is None:
         print("error: --bot needs --bots PATH, the registry that defines the bot's tool scope", file=sys.stderr)
@@ -793,8 +819,7 @@ def trace_command(args: argparse.Namespace) -> int:
         print(f"error: {error}", file=sys.stderr)
         return 2
     path: Path = args.event_log
-    if not path.is_file():
-        print(f"error: event log not found: {path}", file=sys.stderr)
+    if _event_log_missing(path):
         return 2
     try:
         event_log = SQLiteEventLog(path)

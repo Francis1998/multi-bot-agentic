@@ -32,6 +32,10 @@ multi-bot-agentic replay --event-log data/runs.sqlite --event-type decision --fo
 multi-bot-agentic report --event-log data/runs.sqlite
 ```
 
+These commands only read the log. If the `--event-log` path does not exist, they print
+`error: event log not found: <path>` and exit with code `2` instead of creating an empty log, as do `resume`,
+`history`, `trace`, and `fork`. Only `run` and `eval` create a log.
+
 ## Export A Run As A Trace
 
 ```bash
