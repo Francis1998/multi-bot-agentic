@@ -33,6 +33,9 @@ multi-bot-agentic run --goal "Draft a launch plan" --provider fake --run-id run-
 multi-bot-agentic resume --run-id run-1 --event-log /tmp/runs.sqlite --provider fake
 ```
 
+`resume` never creates a log: a missing `--event-log` fails with `error: event log not found: <path>` and
+exit code 2 before any MCP server or provider starts.
+
 Library API:
 
 ```python
