@@ -1,4 +1,5 @@
-"""CLI tests for ``history`` and ``fork``, and for fork lineage in ``report``, ``replay``, and ``trace``."""
+"""CLI tests for ``history`` and ``fork``, for fork lineage in ``report``, ``replay``, and ``trace``, and for
+commands that read a log refusing a missing one."""
 
 from __future__ import annotations
 
@@ -17,6 +18,7 @@ from multi_bot_agentic.cli import (
     history_command,
     replay_command,
     report_command,
+    resume_command,
     run_command,
     trace_command,
 )
@@ -33,6 +35,7 @@ COMMANDS: dict[str, Callable[[argparse.Namespace], int]] = {
     "history": history_command,
     "report": report_command,
     "replay": replay_command,
+    "resume": resume_command,
     "trace": trace_command,
 }
 
@@ -292,18 +295,27 @@ def test_fork_errors_exit_2_and_write_nothing(
     assert _all_events(event_log) == before
 
 
-@pytest.mark.parametrize("command", ["history", "fork"])
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["replay"],
+        ["replay", "--run-id", "demo", "--format", "text"],
+        ["report"],
+        ["report", "--run-id", "demo"],
+        ["resume", "--run-id", "demo"],
+        ["history", "--run-id", "demo"],
+        ["fork", "--run-id", "demo", "--at-step", "1", "--new-run-id", "branch"],
+    ],
+    ids=["replay", "replay-run", "report", "report-run", "resume", "history", "fork"],
+)
 def test_a_missing_event_log_is_reported_and_never_created(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], command: str
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], argv: list[str]
 ) -> None:
-    """``history`` and ``fork`` read an existing log only."""
+    """Commands that read a log never create it, so a mistyped path is not an empty log with no runs."""
 
-    missing = tmp_path / "missing.sqlite"
-    argv = [command, "--event-log", str(missing), "--run-id", "demo"]
-    if command == "fork":
-        argv += ["--at-step", "1", "--new-run-id", "branch"]
+    missing = tmp_path / "typo" / "missing.sqlite"
 
-    code, _, err = _invoke(capsys, *argv)
+    code, out, err = _invoke(capsys, *argv, "--event-log", str(missing))
 
-    assert (code, err) == (2, f"error: event log not found: {missing}\n")
-    assert not missing.exists()
+    assert (code, out, err) == (2, "", f"error: event log not found: {missing}\n")
+    assert not missing.parent.exists()
