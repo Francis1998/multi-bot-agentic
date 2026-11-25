@@ -279,7 +279,12 @@ class ForkPlan:
         """Return the plan as a JSON-serializable dictionary (``fork --dry-run`` output)."""
 
         decision = self.next_decision
-        return {
+        next_decision: dict[str, Any] = {
+            "action": decision.action,
+            "target": decision.target,
+            "rule_id": decision.rationale.rule_id,
+        }
+        payload: dict[str, Any] = {
             "dry_run": True,
             "source_run_id": self.source_run_id,
             "new_run_id": self.new_run_id,
@@ -297,16 +302,16 @@ class ForkPlan:
             "observations": [
                 {"source": observation.source, "content": observation.content} for observation in self.observations
             ],
-            "next_decision": {
-                "action": decision.action,
-                "target": decision.target,
-                "rule_id": decision.rationale.rule_id,
-                "needs_approval": decision.action == "call_tool"
-                and decision.target is not None
-                and any(fnmatchcase(decision.target, pattern) for pattern in self.require_approval),
-            },
-            "require_approval": list(self.require_approval),
+            "next_decision": next_decision,
         }
+        if self.require_approval:
+            payload["require_approval"] = list(self.require_approval)
+            next_decision["needs_approval"] = (
+                decision.action == "call_tool"
+                and decision.target is not None
+                and any(fnmatchcase(decision.target, pattern) for pattern in self.require_approval)
+            )
+        return payload
 
 
 def event_digest(event: EventRecord) -> str:
