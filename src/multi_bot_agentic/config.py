@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -12,7 +13,7 @@ from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.llm.gemini import GeminiAdapter
 from multi_bot_agentic.llm.kimi import KimiAdapter
 from multi_bot_agentic.llm.openai import DEFAULT_MAX_COMPLETION_TOKENS, OpenAIAdapter
-from multi_bot_agentic.safety import SafetyPolicy
+from multi_bot_agentic.safety import SafetyPolicy, parse_approval_patterns
 
 
 @dataclass(frozen=True)
@@ -29,6 +30,7 @@ class AppConfig:
         provider: str | None = None,
         event_log: Path | None = None,
         max_steps: int | None = None,
+        require_approval: Sequence[str] | None = None,
     ) -> AppConfig:
         """Load configuration from environment with optional CLI overrides.
 
@@ -36,6 +38,8 @@ class AppConfig:
             provider: Optional provider override.
             event_log: Optional event-log path override.
             max_steps: Optional max-step override.
+            require_approval: Optional ``--require-approval`` values; they replace
+                ``MULTIBOT_REQUIRE_APPROVAL``.
 
         Returns:
             Application configuration.
@@ -49,11 +53,15 @@ class AppConfig:
         resolved_max_steps = max_steps if max_steps is not None else int(os.getenv("MULTIBOT_MAX_STEPS", "6"))
         if resolved_max_steps < 1:
             raise ValueError(f"max_steps must be >= 1, got {resolved_max_steps}")
+        approval_values = (
+            require_approval if require_approval is not None else [os.getenv("MULTIBOT_REQUIRE_APPROVAL", "")]
+        )
         safety = SafetyPolicy(
             max_steps=resolved_max_steps,
             timeout_seconds=float(os.getenv("MULTIBOT_TIMEOUT_SECONDS", "30")),
             max_prompt_chars=int(os.getenv("MULTIBOT_MAX_PROMPT_CHARS", "4000")),
             cancellation_file=_optional_path(os.getenv("MULTIBOT_CANCEL_FILE")),
+            require_approval=parse_approval_patterns(approval_values),
         )
         return cls(provider=selected_provider, event_log=selected_event_log, safety=safety)
 

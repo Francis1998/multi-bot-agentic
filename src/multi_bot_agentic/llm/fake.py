@@ -28,9 +28,19 @@ class FakeLLMAdapter:
             timeout_seconds: Provider timeout budget.
 
         Returns:
-            Model output containing either a tool request or final answer.
+            Model output containing either a tool request or final answer. After a human
+            rejected the tool call, it re-plans by finishing without the tool.
         """
 
+        latest = request.observations[-1] if request.observations else None
+        if latest is not None and latest.source.startswith("approval:"):
+            tool = latest.source.removeprefix("approval:")
+            reason = str(latest.metadata.get("reason") or "no reason given")
+            return ModelOutput(
+                provider=self.provider_name,
+                text=f"DONE: re-planned without {tool} after a human rejected it ({reason})",
+                raw={"timeout_seconds": timeout_seconds, "mode": "deterministic-replan-after-rejection"},
+            )
         tool_results = [observation for observation in request.observations if observation.source.startswith("tool:")]
         if not tool_results:
             mode = "deterministic-checklist-request" if self.tool_name == "checklist" else "deterministic-tool-request"

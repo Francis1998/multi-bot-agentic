@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -74,6 +75,46 @@ class SQLiteEventLog:
             Persisted event record.
         """
 
+        record = self._insert(run_id, state, event_type, payload)
+        self._connection.commit()
+        return record
+
+    def append_guarded(
+        self,
+        run_id: str,
+        entries: Sequence[tuple[RunState, EventType, dict[str, Any]]],
+        guard: Callable[[list[EventRecord]], None],
+    ) -> list[EventRecord]:
+        """Atomically check a run's events and append events, or append nothing.
+
+        The check and the inserts run in one ``BEGIN IMMEDIATE`` transaction, which holds
+        SQLite's write lock, so two processes cannot both pass the same check (for example two
+        decisions on one interrupt, or two resumes executing one approved tool call).
+
+        Args:
+            run_id: Run identifier.
+            entries: ``(state, event_type, payload)`` of each event to append, in order.
+            guard: Called with the run's events; raises to abort without appending.
+
+        Returns:
+            The persisted records.
+        """
+
+        if self._connection.in_transaction:
+            self._connection.commit()
+        self._connection.execute("BEGIN IMMEDIATE")
+        try:
+            guard(self.list_events(run_id))
+            records = [self._insert(run_id, state, event_type, payload) for state, event_type, payload in entries]
+        except BaseException:
+            self._connection.rollback()
+            raise
+        self._connection.commit()
+        return records
+
+    def _insert(self, run_id: str, state: RunState, event_type: EventType, payload: dict[str, Any]) -> EventRecord:
+        """Insert one event without committing."""
+
         seq = self._next_sequence(run_id)
         timestamp = datetime.now(timezone.utc).isoformat()
         payload_json = json.dumps(payload, sort_keys=True)
@@ -84,7 +125,6 @@ class SQLiteEventLog:
             """,
             (run_id, seq, timestamp, event_type.value, state.value, payload_json),
         )
-        self._connection.commit()
         return EventRecord(
             run_id=run_id,
             seq=seq,

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
+from fnmatch import fnmatchcase
 from pathlib import Path
 
 
@@ -20,6 +22,8 @@ class SafetyPolicy:
         max_prompt_chars: Maximum accepted goal size.
         allowed_tools: Tool names allowed for execution.
         cancellation_file: Optional file whose existence cancels a run.
+        require_approval: Tool names or ``fnmatch`` patterns (``mcp__*``) whose calls pause the run
+            until a human approves or rejects them (human-in-the-loop interrupts).
     """
 
     max_steps: int = 6
@@ -152,6 +156,19 @@ class SafetyPolicy:
         }
     )
     cancellation_file: Path | None = None
+    require_approval: frozenset[str] = frozenset()
+
+    def requires_approval(self, tool_name: str) -> bool:
+        """Return whether a call to ``tool_name`` must pause for a human decision.
+
+        Args:
+            tool_name: Tool name.
+
+        Returns:
+            True when the name matches a ``require_approval`` entry (exact name or pattern).
+        """
+
+        return any(fnmatchcase(tool_name, pattern) for pattern in self.require_approval)
 
     def validate_goal(self, goal: str) -> None:
         """Validate a user goal before starting a run.
@@ -202,3 +219,18 @@ class SafetyPolicy:
         """
 
         return self.cancellation_file is not None and self.cancellation_file.exists()
+
+
+def parse_approval_patterns(values: Iterable[str]) -> frozenset[str]:
+    """Parse ``TOOL[,TOOL]`` values (``--require-approval`` or ``MULTIBOT_REQUIRE_APPROVAL``).
+
+    Args:
+        values: Comma-separated tool names or ``fnmatch`` patterns; blanks are ignored.
+
+    Returns:
+        The patterns, stripped.
+    """
+
+    patterns = {item.strip() for value in values for item in value.split(",")}
+    patterns.discard("")
+    return frozenset(patterns)

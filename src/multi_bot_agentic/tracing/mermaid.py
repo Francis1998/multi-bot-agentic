@@ -288,6 +288,8 @@ class _MermaidRenderer:
         """Return the closing note with the run's terminal state."""
 
         outcome = self.timeline.outcome
+        if outcome is None and self.timeline.awaiting_approval:
+            return self._note("paused: awaiting human approval")
         if outcome is None:
             return self._note("unfinished (no terminal event)")
         if outcome.state == "failed":

@@ -14,7 +14,11 @@ class InvalidTransitionError(ValueError):
 ALLOWED_TRANSITIONS: dict[RunState, frozenset[RunState]] = {
     RunState.CREATED: frozenset({RunState.OBSERVING, RunState.CANCELLED, RunState.FAILED}),
     RunState.OBSERVING: frozenset({RunState.DECIDING, RunState.CANCELLED, RunState.FAILED}),
-    RunState.DECIDING: frozenset({RunState.ACTING, RunState.SUCCEEDED, RunState.CANCELLED, RunState.FAILED}),
+    RunState.DECIDING: frozenset(
+        {RunState.ACTING, RunState.AWAITING_APPROVAL, RunState.SUCCEEDED, RunState.CANCELLED, RunState.FAILED}
+    ),
+    # A paused run continues by acting on an approved call, or by observing a rejection and re-planning.
+    RunState.AWAITING_APPROVAL: frozenset({RunState.ACTING, RunState.OBSERVING, RunState.CANCELLED, RunState.FAILED}),
     RunState.ACTING: frozenset({RunState.OBSERVING, RunState.SUCCEEDED, RunState.CANCELLED, RunState.FAILED}),
     RunState.SUCCEEDED: frozenset(),
     RunState.FAILED: frozenset(),

@@ -8,6 +8,7 @@ separate checkpoint store, thread IDs, or graph-node cursors.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any
 
@@ -26,6 +27,9 @@ class CheckpointSnapshot:
         state: Lifecycle state recorded at checkpoint time.
         observations: Observations restored into the runner.
         active_bot_id: Bot whose tool scope was active at checkpoint time, if any.
+        require_approval: Approval policy of the run (tool names or patterns), restored on resume.
+        interrupt_id: Set when the run paused awaiting a human decision on this interrupt; ``step``
+            is then the paused step, whose decision is recorded but not yet acted on.
     """
 
     run_id: str
@@ -34,6 +38,8 @@ class CheckpointSnapshot:
     state: RunState
     observations: tuple[Observation, ...]
     active_bot_id: str | None = None
+    require_approval: tuple[str, ...] = ()
+    interrupt_id: str | None = None
 
     def to_payload(self) -> dict[str, Any]:
         """Return a JSON-serializable checkpoint payload.
@@ -50,6 +56,10 @@ class CheckpointSnapshot:
         }
         if self.active_bot_id is not None:
             payload["active_bot_id"] = self.active_bot_id
+        if self.require_approval:
+            payload["require_approval"] = sorted(self.require_approval)
+        if self.interrupt_id is not None:
+            payload["interrupt_id"] = self.interrupt_id
         return payload
 
 
@@ -82,6 +92,8 @@ def save_checkpoint(
     state: RunState,
     observations: tuple[Observation, ...],
     active_bot_id: str | None = None,
+    require_approval: Iterable[str] = (),
+    interrupt_id: str | None = None,
 ) -> CheckpointSnapshot:
     """Persist a checkpoint event and return the snapshot.
 
@@ -93,6 +105,8 @@ def save_checkpoint(
         state: State at checkpoint time.
         observations: Observations to restore on resume.
         active_bot_id: Bot whose tool scope is active, restored on resume.
+        require_approval: Approval policy of the run, restored on resume.
+        interrupt_id: Interrupt the run is paused at, if any.
 
     Returns:
         Saved checkpoint snapshot.
@@ -105,6 +119,8 @@ def save_checkpoint(
         state=state,
         observations=observations,
         active_bot_id=active_bot_id,
+        require_approval=tuple(sorted(set(require_approval))),
+        interrupt_id=interrupt_id,
     )
     event_log.append(run_id, state, EventType.CHECKPOINT, snapshot.to_payload())
     return snapshot
@@ -125,18 +141,28 @@ def load_latest_checkpoint(event_log: SQLiteEventLog, run_id: str) -> Checkpoint
     for event in event_log.list_events(run_id):
         if event.event_type != EventType.CHECKPOINT.value:
             continue
-        payload = event.payload
-        observations = tuple(observation_from_dict(item) for item in payload.get("observations", []))
-        active_bot_id = payload.get("active_bot_id")
-        latest = CheckpointSnapshot(
-            run_id=run_id,
-            goal=str(payload.get("goal", "")),
-            step=int(payload.get("step", 0)),
-            state=RunState(str(payload.get("state", RunState.CREATED.value))),
-            observations=observations,
-            active_bot_id=str(active_bot_id) if active_bot_id is not None else None,
-        )
+        latest = _snapshot(run_id, event.payload)
     return latest
+
+
+def _snapshot(run_id: str, payload: dict[str, Any]) -> CheckpointSnapshot:
+    """Parse a checkpoint payload."""
+
+    observations = tuple(observation_from_dict(item) for item in payload.get("observations", []))
+    active_bot_id = payload.get("active_bot_id")
+    raw_policy = payload.get("require_approval")
+    require_approval = tuple(str(item) for item in raw_policy) if isinstance(raw_policy, list) else ()
+    interrupt_id = payload.get("interrupt_id")
+    return CheckpointSnapshot(
+        run_id=run_id,
+        goal=str(payload.get("goal", "")),
+        step=int(payload.get("step", 0)),
+        state=RunState(str(payload.get("state", RunState.CREATED.value))),
+        observations=observations,
+        active_bot_id=str(active_bot_id) if active_bot_id is not None else None,
+        require_approval=require_approval,
+        interrupt_id=str(interrupt_id) if interrupt_id else None,
+    )
 
 
 def snapshot_from_event(event: EventRecord) -> CheckpointSnapshot:
@@ -157,17 +183,7 @@ def snapshot_from_event(event: EventRecord) -> CheckpointSnapshot:
 
     if event.event_type != EventType.CHECKPOINT.value:
         raise ValueError(f"event {event.seq} of run {event.run_id} is a {event.event_type}, not a checkpoint")
-    payload = event.payload
     try:
-        observations = tuple(observation_from_dict(item) for item in payload.get("observations", []))
-        active_bot_id = payload.get("active_bot_id")
-        return CheckpointSnapshot(
-            run_id=event.run_id,
-            goal=str(payload.get("goal", "")),
-            step=int(payload.get("step", 0)),
-            state=RunState(str(payload.get("state", RunState.CREATED.value))),
-            observations=observations,
-            active_bot_id=str(active_bot_id) if active_bot_id is not None else None,
-        )
+        return _snapshot(event.run_id, event.payload)
     except (KeyError, TypeError, ValueError) as error:
         raise ValueError(f"checkpoint event {event.seq} of run {event.run_id} is malformed: {error}") from error
