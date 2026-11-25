@@ -81,6 +81,21 @@ multi-bot-agentic report --event-log data/runs.sqlite --run-id rollback
 
 `run` prints the run id (pass `--run-id` to choose one). See [Run Fork Guide](guides/RUN_FORK_GUIDE.md).
 
+## Pause For Human Approval
+
+```bash
+# The run stops before calling `checklist` and exits with code 3
+multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log data/runs.sqlite \
+  --run-id gated --require-approval checklist
+
+# See what it waits for, decide (approve, optionally editing the arguments, or reject with a reason), resume
+multi-bot-agentic approvals list --event-log data/runs.sqlite
+multi-bot-agentic approve --run-id gated --event-log data/runs.sqlite --args '{"text": "Create a rollback checklist"}'
+multi-bot-agentic resume --run-id gated --event-log data/runs.sqlite
+```
+
+See the [Human-in-the-Loop Interrupts Guide](guides/HITL_INTERRUPTS_GUIDE.md).
+
 ## Run The Scripted Demo
 
 ```bash

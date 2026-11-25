@@ -9,6 +9,10 @@
 - **Timeouts**: each provider call has a timeout.
 - **Cancellation**: a cancellation file can stop a run before the next action.
 - **Tool allowlist**: tools must be registered and allowed by policy.
+- **Human approval for sensitive tools (fail closed)**: `--require-approval TOOL[,TOOL]` /
+  `MULTIBOT_REQUIRE_APPROVAL` pause the run in `awaiting_approval` before any matching call (exit code 3); the tool
+  runs only after an `approve` decision and a `resume`, exactly once. Rejections are fed back to the model instead of
+  running. See [Human-In-The-Loop Interrupts](#human-in-the-loop-interrupts).
 - **Rationale traces**: every decision records matched rule IDs, inputs used, and rejected actions.
 - **One run per run id**: `run` refuses a `--run-id` the event log already holds (exit code 2, nothing written), so
   a repeated command never mixes a second run into a recorded one that `history`, `report`, `fork`, or `resume`
@@ -160,6 +164,27 @@ Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 
 Set `MULTIBOT_CANCEL_FILE=/path/to/cancel`. If that file exists before the next action, the run transitions to `cancelled` and persists a `run_cancelled` event.
 
+## Human-In-The-Loop Interrupts
+
+- A gated call is never executed without an `approved` decision. The tool is checked against the allowlist and
+  registry before a human is asked, and again (with the restored bot scope) before it runs.
+- Policy entries that match no registered tool are refused, so a typo cannot silently disable a gate. The policy is
+  recorded in the run; `resume` and `fork` can add to it, never remove from it.
+- Decisions are append-only `approval_decision` events (who, when, decision, reason, whether arguments were
+  edited). The first decision wins: check and append are one SQLite write transaction, so a second decision is
+  refused even when two approvers race.
+- An approved call runs exactly once: its `action_requested` append is an atomic claim, a concurrent resume is
+  refused, and a resume after a crash continues from the recorded tool result or refuses; it never runs the call
+  twice.
+- Edited arguments (`approve --args`) must keep the call's keys and JSON types and are size-limited. The rejection
+  reason is shown to the model, so keep secrets out of it.
+- The cancellation file and the step budget are checked at resume before anything runs. A paused run holds no
+  process or lock and has no timeout.
+- Argument previews and `approvals show` are redacted with the trace scrubbers; the full arguments stay in the event
+  log, as for every decision. Decisions are not authenticated (`--by` is self-declared): restrict who can write the
+  event log if approvals must be attributable. See the
+  [Human-in-the-Loop Interrupts Guide](guides/HITL_INTERRUPTS_GUIDE.md#safety).
+
 ## Provider Credentials
 
 Credentials are read from environment variables and are never written to the event log. Event payloads store normalized provider output text and metadata, not secret values.
@@ -200,3 +225,5 @@ This repo does not expose a network service or remote terminal control. If adapt
 Durable checkpoint resume for ODA runs is available via `resume`. A finished run (succeeded, failed, or
 cancelled) is never re-executed: `resume` returns its recorded outcome and appends no events, so tools
 with side effects are not repeated and removing the cancellation file does not reopen a cancelled run.
+A run paused awaiting approval resumes only after a decision (otherwise `resume` exits 3 and writes nothing),
+unless the cancellation file exists, which cancels it without running the gated call.
