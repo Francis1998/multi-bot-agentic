@@ -25,6 +25,7 @@ from multi_bot_agentic.runner import AgentRunner, ResumeError, RunNotFoundError,
 from multi_bot_agentic.safety import SafetyPolicy
 
 SRC = Path(__file__).resolve().parents[1] / "src"
+MCP_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "mcp"
 GOAL = "Create a launch checklist"
 UNKNOWN = "does-not-exist"
 # Every command that reads one run by --run-id, with the arguments it needs besides --event-log.
@@ -170,24 +171,30 @@ def test_resume_of_a_run_it_cannot_continue_is_one_error_line_with_exit_code_2(
     assert _events(event_log) == before
 
 
-@pytest.mark.parametrize("unavailable", ["mcp-server", "provider-credentials"])
-def test_resume_reports_an_unknown_run_before_starting_mcp_servers_or_the_provider(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, unavailable: str
+@pytest.mark.parametrize("command", ["resume", "fork"])
+@pytest.mark.parametrize("setup", ["broken-mcp-server", "working-mcp-server", "missing-credentials"])
+def test_an_unknown_run_is_reported_before_mcp_servers_or_the_provider_start(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, command: str, setup: str
 ) -> None:
-    """A mistyped run id is reported as such, not hidden behind an MCP server or provider setup error."""
+    """A mistyped run id is not hidden behind an MCP or provider setup error, nor mixed with ``mcp:`` status lines."""
 
     event_log = tmp_path / "runs.sqlite"
     _record(event_log, "demo")
-    argv = ["resume", "--run-id", UNKNOWN, "--event-log", str(event_log)]
-    if unavailable == "mcp-server":
-        config = tmp_path / "mcp.json"
-        config.write_text(
-            json.dumps({"mcpServers": {"gone": {"command": str(tmp_path / "missing-server")}}}), encoding="utf-8"
-        )
-        argv += ["--provider", "fake", "--mcp-config", str(config)]
-    else:
+    argv = [command, "--run-id", UNKNOWN, "--event-log", str(event_log)]
+    if command == "fork":
+        argv += ["--at-step", "1", "--new-run-id", "branch"]
+    if setup == "missing-credentials":
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         argv += ["--provider", "openai"]
+    else:
+        server = [str(tmp_path / "missing-server")]
+        if setup == "working-mcp-server":
+            server = [sys.executable, str(MCP_FIXTURES / "modern_server.py")]
+        config = tmp_path / "mcp.json"
+        config.write_text(
+            json.dumps({"mcpServers": {"notes": {"command": server[0], "args": server[1:]}}}), encoding="utf-8"
+        )
+        argv += ["--provider", "fake", "--mcp-config", str(config)]
 
     result = _cli(*argv)
 

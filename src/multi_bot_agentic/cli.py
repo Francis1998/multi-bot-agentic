@@ -27,14 +27,7 @@ from multi_bot_agentic.fork import (
 )
 from multi_bot_agentic.mcp import McpConfigError, McpServerStatus, McpToolset, load_mcp_config
 from multi_bot_agentic.models import ToolSpec
-from multi_bot_agentic.runner import (
-    AgentRunner,
-    ResumeError,
-    RunNotFoundError,
-    RunResult,
-    build_default_tools,
-    recorded_outcome,
-)
+from multi_bot_agentic.runner import AgentRunner, ResumeError, RunResult, build_default_tools, recorded_outcome
 from multi_bot_agentic.safety import SafetyPolicy
 from multi_bot_agentic.tools.base import ToolAdapter
 
@@ -355,10 +348,9 @@ def resume_command(args: argparse.Namespace) -> int:
     )
     if _event_log_missing(config.event_log):
         return 2
-    try:
-        finished = _finished_run_outcome(config.event_log, args.run_id)
-    except RunNotFoundError:
+    if not _run_recorded(config.event_log, args.run_id):
         return _report_unknown_run(config.event_log, args.run_id)
+    finished = _finished_run_outcome(config.event_log, args.run_id)
     if finished is not None:
         return _print_resume_result(finished, config.event_log)
     try:
@@ -396,18 +388,34 @@ def _finished_run_outcome(path: Path, run_id: str) -> RunResult | None:
 
     Returns:
         The recorded outcome, or ``None`` when the run has not finished.
-
-    Raises:
-        RunNotFoundError: If the event log exists but holds no events for ``run_id``.
     """
 
     if not path.exists():
         return None
     event_log = SQLiteEventLog(path)
     try:
-        if not event_log.list_events(run_id):
-            raise RunNotFoundError(f"run {run_id} not found in event log {path}")
         return recorded_outcome(event_log, run_id)
+    finally:
+        event_log.close()
+
+
+def _run_recorded(path: Path, run_id: str) -> bool:
+    """Return whether the existing event log at ``path`` holds any event of ``run_id``.
+
+    Commands check this before they start MCP servers or build a provider, so a mistyped run id
+    is reported as such rather than behind an unrelated startup error or status output.
+
+    Args:
+        path: Path of an existing event log.
+        run_id: Requested run id.
+
+    Returns:
+        ``True`` when the run has at least one event.
+    """
+
+    event_log = SQLiteEventLog(path)
+    try:
+        return bool(event_log.list_events(run_id))
     finally:
         event_log.close()
 
@@ -725,6 +733,8 @@ def fork_command(args: argparse.Namespace) -> int:
     path: Path = args.event_log
     if _event_log_missing(path):
         return 2
+    if not _run_recorded(path, args.run_id):
+        return _report_unknown_run(path, args.run_id)
     if args.bot is not None and args.bots is None:
         print("error: --bot needs --bots PATH, the registry that defines the bot's tool scope", file=sys.stderr)
         return 2
@@ -744,8 +754,6 @@ def fork_command(args: argparse.Namespace) -> int:
             cleanup.callback(toolset.close)
         event_log = SQLiteEventLog(path)
         cleanup.callback(event_log.close)
-        if not event_log.list_events(args.run_id):
-            return _report_unknown_run(path, args.run_id)
         tools, safety_policy, tool_specs = build_runtime_tools(config.safety, toolset)
         try:
             plan = plan_fork(
