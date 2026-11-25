@@ -1031,8 +1031,7 @@ def approvals_command(args: argparse.Namespace) -> int:
     """
 
     path: Path = args.event_log
-    if not path.is_file():
-        print(f"error: event log not found: {path}", file=sys.stderr)
+    if _event_log_missing(path):
         return 2
     try:
         event_log = SQLiteEventLog(path)
@@ -1051,8 +1050,7 @@ def approvals_command(args: argparse.Namespace) -> int:
         print(f"error: {error}", file=sys.stderr)
         return 2
     if args.run_id is not None and not events:
-        print(f"error: run {args.run_id} not found in event log {path}", file=sys.stderr)
-        return 2
+        return _report_unknown_run(path, args.run_id)
     records = [record for record in collect_interrupts(events) if args.all or record.status == "pending"]
     if args.format == "json":
         print(json.dumps([record.to_dict() for record in records], indent=2))
@@ -1143,8 +1141,7 @@ def decide_command(args: argparse.Namespace, decision: ApprovalDecision) -> int:
     """
 
     path: Path = args.event_log
-    if not path.is_file():
-        print(f"error: event log not found: {path}", file=sys.stderr)
+    if _event_log_missing(path):
         return 2
     if args.interrupt_id is None and args.run_id is None:
         print("error: give an interrupt id, or --run-id to decide the interrupt that run is paused at", file=sys.stderr)
