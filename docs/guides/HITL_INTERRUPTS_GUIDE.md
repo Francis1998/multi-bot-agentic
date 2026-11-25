@@ -245,8 +245,13 @@ paused = runner.run("Create a launch checklist", run_id="lib-demo")
 assert paused.state is RunState.AWAITING_APPROVAL and paused.interrupt is not None
 print(paused.interrupt.tool, paused.interrupt.step, paused.interrupt.arguments_preview)
 
-decide_interrupt(log, paused.interrupt.interrupt_id, ApprovalDecision.APPROVED, decided_by="alice",
-                 arguments={"text": "Create a launch checklist with a rollback plan"})
+decide_interrupt(
+    log,
+    paused.interrupt.interrupt_id,
+    ApprovalDecision.APPROVED,
+    decided_by="alice",
+    arguments={"text": "Create a launch checklist with a rollback plan"},
+)
 print(runner.resume("lib-demo").answer)
 log.close()
 ```
