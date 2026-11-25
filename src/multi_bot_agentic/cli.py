@@ -27,13 +27,15 @@ from multi_bot_agentic.fork import (
 )
 from multi_bot_agentic.mcp import McpConfigError, McpServerStatus, McpToolset, load_mcp_config
 from multi_bot_agentic.models import ToolSpec
-from multi_bot_agentic.runner import AgentRunner, RunResult, build_default_tools, recorded_outcome
+from multi_bot_agentic.runner import AgentRunner, ResumeError, RunResult, build_default_tools, recorded_outcome
 from multi_bot_agentic.safety import SafetyPolicy
 from multi_bot_agentic.tools.base import ToolAdapter
 
 MCP_CONFIG_HELP = "MCP servers JSON (Claude Desktop 'mcpServers' format); tools appear as mcp__<server>__<tool>"
 BOTS_HELP = 'bot registry JSON: {"bots": {"<id>": {"allowed_tools": [...], "name": "...", "description": "..."}}}'
 TRACE_FORMATS = ("otlp-json", "mermaid")
+# How many of the log's runs an unknown-run error names.
+RECENT_RUNS_SHOWN = 5
 
 
 class McpStartupError(RuntimeError):
@@ -280,14 +282,18 @@ def replay_command(args: argparse.Namespace) -> int:
         args: Parsed arguments.
 
     Returns:
-        0 on success, 2 when the event log does not exist.
+        0, also when ``--event-type`` matches no events; 2 when the event log does not exist or
+        ``--run-id`` names a run it doesn't hold.
     """
 
     if _event_log_missing(args.event_log):
         return 2
     event_log = SQLiteEventLog(args.event_log)
     try:
-        for event in event_log.list_events(run_id=args.run_id):
+        events = event_log.list_events(run_id=args.run_id)
+        if args.run_id is not None and not events:
+            return _report_unknown_run(args.event_log, args.run_id)
+        for event in events:
             if args.event_type is not None and event.event_type != args.event_type:
                 continue
             print(format_event(event, args.format))
@@ -303,7 +309,7 @@ def report_command(args: argparse.Namespace) -> int:
         args: Parsed arguments.
 
     Returns:
-        0 on success, 2 when the event log does not exist.
+        0 on success, 2 when the event log does not exist or ``--run-id`` names a run it doesn't hold.
     """
 
     if _event_log_missing(args.event_log):
@@ -311,6 +317,8 @@ def report_command(args: argparse.Namespace) -> int:
     event_log = SQLiteEventLog(args.event_log)
     try:
         events = event_log.list_events(run_id=args.run_id)
+        if args.run_id is not None and not events:
+            return _report_unknown_run(args.event_log, args.run_id)
         # Children of a single run can be anywhere in the log: read every run's first event.
         forks = events if args.run_id is None else event_log.list_events()
         print(json.dumps(build_run_report(events, forks=forks), indent=2))
@@ -322,14 +330,15 @@ def report_command(args: argparse.Namespace) -> int:
 def resume_command(args: argparse.Namespace) -> int:
     """Execute the resume subcommand.
 
-    A missing event log is an error and is never created. A finished run's recorded outcome
-    is read first, so it is reported without starting MCP servers or building the provider.
+    A missing event log is an error and is never created. A finished run's recorded outcome, or
+    an unknown run id, is read first, so it is reported without starting MCP servers or building
+    the provider.
 
     Args:
         args: Parsed arguments.
 
     Returns:
-        Process exit code.
+        Process exit code: 2 also when the run is unknown or cannot be resumed.
     """
 
     config = AppConfig.from_env(
@@ -339,6 +348,8 @@ def resume_command(args: argparse.Namespace) -> int:
     )
     if _event_log_missing(config.event_log):
         return 2
+    if not _run_recorded(config.event_log, args.run_id):
+        return _report_unknown_run(config.event_log, args.run_id)
     finished = _finished_run_outcome(config.event_log, args.run_id)
     if finished is not None:
         return _print_resume_result(finished, config.event_log)
@@ -360,7 +371,12 @@ def resume_command(args: argparse.Namespace) -> int:
             safety_policy=safety_policy,
             tool_specs=tool_specs,
         )
-        return _print_resume_result(runner.resume(run_id=args.run_id), config.event_log)
+        try:
+            result = runner.resume(run_id=args.run_id)
+        except ResumeError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 2
+        return _print_resume_result(result, config.event_log)
 
 
 def _finished_run_outcome(path: Path, run_id: str) -> RunResult | None:
@@ -381,6 +397,57 @@ def _finished_run_outcome(path: Path, run_id: str) -> RunResult | None:
         return recorded_outcome(event_log, run_id)
     finally:
         event_log.close()
+
+
+def _run_recorded(path: Path, run_id: str) -> bool:
+    """Return whether the existing event log at ``path`` holds any event of ``run_id``.
+
+    Commands check this before they start MCP servers or build a provider, so a mistyped run id
+    is reported as such rather than behind an unrelated startup error or status output.
+
+    Args:
+        path: Path of an existing event log.
+        run_id: Requested run id.
+
+    Returns:
+        ``True`` when the run has at least one event.
+    """
+
+    event_log = SQLiteEventLog(path)
+    try:
+        return bool(event_log.list_events(run_id))
+    finally:
+        event_log.close()
+
+
+def _report_unknown_run(path: Path, run_id: str) -> int:
+    """Print the one-line error for a run id that has no events in the event log at ``path``.
+
+    The line names the log's most recently active runs, so a mistyped run id is easy to correct.
+
+    Args:
+        path: Path of an existing event log.
+        run_id: Requested run id.
+
+    Returns:
+        Exit code 2.
+    """
+
+    event_log = SQLiteEventLog(path)
+    try:
+        latest = event_log.last_event_timestamps()
+    finally:
+        event_log.close()
+    # The log writes UTC ISO 8601 timestamps, so their string order is their time order.
+    runs = sorted(latest, key=lambda run: (latest[run], run), reverse=True)
+    if not runs:
+        hint = "the log has no runs"
+    else:
+        hint = "recent runs: " + ", ".join(runs[:RECENT_RUNS_SHOWN])
+        if len(runs) > RECENT_RUNS_SHOWN:
+            hint += f", and {len(runs) - RECENT_RUNS_SHOWN} more"
+    print(f"error: run {run_id} not found in event log {path} ({hint})", file=sys.stderr)
+    return 2
 
 
 def _print_resume_result(result: RunResult, event_log_path: Path) -> int:
@@ -592,8 +659,7 @@ def history_command(args: argparse.Namespace) -> int:
         print(f"error: event log {path} has no runs", file=sys.stderr)
         return 2
     if not events:
-        print(f"error: run {run_id} not found in event log {path}", file=sys.stderr)
-        return 2
+        return _report_unknown_run(path, run_id)
     if args.run_id is None:
         print(f"note: --run-id not given; showing the most recent run {run_id}", file=sys.stderr)
     history = build_history(events)
@@ -667,6 +733,8 @@ def fork_command(args: argparse.Namespace) -> int:
     path: Path = args.event_log
     if _event_log_missing(path):
         return 2
+    if not _run_recorded(path, args.run_id):
+        return _report_unknown_run(path, args.run_id)
     if args.bot is not None and args.bots is None:
         print("error: --bot needs --bots PATH, the registry that defines the bot's tool scope", file=sys.stderr)
         return 2
@@ -835,8 +903,7 @@ def trace_command(args: argparse.Namespace) -> int:
         print(f"error: event log {path} has no runs", file=sys.stderr)
         return 2
     if not events:
-        print(f"error: run {run_id} not found in event log {path}", file=sys.stderr)
-        return 2
+        return _report_unknown_run(path, run_id)
     if args.run_id is None:
         print(f"note: --run-id not given; tracing the most recent run {run_id}", file=sys.stderr)
     try:

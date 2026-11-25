@@ -61,6 +61,8 @@ there are no repeated tool side effects, no extra provider spend, and no duplica
 | Succeeded (`run_completed`) | Returns the recorded answer; executes nothing | `True` | `false` | 0 |
 | Failed (`run_failed`, e.g. a provider error) | Returns the recorded reason; executes nothing | `True` | `false` | 2 |
 | Cancelled (`run_cancelled`) | Returns the recorded reason; executes nothing | `True` | `false` | 2 |
+| Not in the log (unknown or mistyped run id) | Raises `RunNotFoundError`; executes nothing | - | - (no stdout) | 2 |
+| Interrupted before its first checkpoint, or its checkpoint names a bot this runner doesn't register | Raises `ResumeError`; executes nothing | - | - (no stdout) | 2 |
 
 For a finished run the CLI also prints `note: run <id> already finished (<state>); nothing to resume`
 on stderr, and stdout stays JSON. The CLI reads the recorded outcome before it starts MCP servers or
@@ -95,14 +97,31 @@ $ multi-bot-agentic report --event-log runs.sqlite --run-id run-1 | grep event_c
       "event_count": 37,
 ```
 
+A run `resume` refuses gets one `error:` line on stderr, exit code 2, and no new events. `ResumeError`
+and its subclass `RunNotFoundError` are `ValueError`s, so code that caught `ValueError` keeps working.
+An unknown run id is detected before MCP servers start, and the error names the log's five most recently
+active runs (`report --event-log <path>` lists them all). Continuing the transcript above:
+
+```text
+$ multi-bot-agentic resume --run-id run-l --event-log runs.sqlite --provider fake
+error: run run-l not found in event log runs.sqlite (recent runs: run-1)
+```
+
+A run killed before its first checkpoint (written when its first step finishes) is refused with
+`error: cannot resume run <id>: it has no checkpoint (it stopped before its first step finished)`.
+Start it again with `run` and a new run id. The CLI `resume` has no bot registry, so it also refuses a
+run whose checkpoint records a bot, such as an interrupted `fork --bot writer`:
+`error: cannot resume run <id>: checkpoint active bot is not registered: writer`.
+
 ## Safety
 
 - Checkpoints store observation text already accepted by the runner; they do not grant new tools.
 - A finished run is never re-executed, so tools with side effects are not repeated by `resume`.
 - `resume` does not lock a run. Do not resume the same interrupted run from two processes at once.
 - Checkpoints record the active bot (`active_bot_id`) for multi-bot runs. `resume` restores that bot's
-  tool scope, executes later `HANDOFF:` directives exactly like `run`, and raises `ValueError` if the
-  checkpoint's bot is not registered on the resuming runner (fail closed instead of widening scope).
+  tool scope, executes later `HANDOFF:` directives exactly like `run`, and raises `ResumeError` (a
+  `ValueError`) if the checkpoint's bot is not registered on the resuming runner (fail closed instead
+  of widening scope).
   A checkpoint without a bot resumes with the runner's constructor scope, never with a scope that an
   earlier `run` or `resume` on the same runner handed off to.
 - Resume still enforces `SafetyPolicy` step budgets, tool allowlists, and cancellation files.
