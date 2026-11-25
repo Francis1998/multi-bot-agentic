@@ -36,6 +36,12 @@ These commands only read the log. If the `--event-log` path does not exist, they
 `error: event log not found: <path>` and exit with code `2` instead of creating an empty log, as do `resume`,
 `history`, `trace`, and `fork`. Only `run` and `eval` create a log.
 
+`replay` and `report` read every run, or one run with `--run-id`. A `--run-id` that the log doesn't hold
+is an error in every command that takes one (`replay`, `report`, `resume`, `history`, `trace`, and
+`fork`): one `error: run <id> not found in event log data/runs.sqlite (recent runs: ...)` line on stderr
+that names the log's five most recently active runs, exit code 2, and nothing written. A
+`replay --event-type` filter that matches no events prints nothing and exits 0.
+
 ## Export A Run As A Trace
 
 ```bash

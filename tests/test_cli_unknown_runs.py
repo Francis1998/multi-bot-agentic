@@ -8,6 +8,7 @@ runs it, so a traceback would reach stderr.
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -20,7 +21,7 @@ from multi_bot_agentic.cli import build_parser, run_command
 from multi_bot_agentic.event_log import SQLiteEventLog
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.models import EventType, Observation, RunState
-from multi_bot_agentic.runner import AgentRunner, build_default_tools
+from multi_bot_agentic.runner import AgentRunner, ResumeError, RunNotFoundError, build_default_tools
 from multi_bot_agentic.safety import SafetyPolicy
 
 SRC = Path(__file__).resolve().parents[1] / "src"
@@ -169,10 +170,35 @@ def test_resume_of_a_run_it_cannot_continue_is_one_error_line_with_exit_code_2(
     assert _events(event_log) == before
 
 
+@pytest.mark.parametrize("unavailable", ["mcp-server", "provider-credentials"])
+def test_resume_reports_an_unknown_run_before_starting_mcp_servers_or_the_provider(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, unavailable: str
+) -> None:
+    """A mistyped run id is reported as such, not hidden behind an MCP server or provider setup error."""
+
+    event_log = tmp_path / "runs.sqlite"
+    _record(event_log, "demo")
+    argv = ["resume", "--run-id", UNKNOWN, "--event-log", str(event_log)]
+    if unavailable == "mcp-server":
+        config = tmp_path / "mcp.json"
+        config.write_text(
+            json.dumps({"mcpServers": {"gone": {"command": str(tmp_path / "missing-server")}}}), encoding="utf-8"
+        )
+        argv += ["--provider", "fake", "--mcp-config", str(config)]
+    else:
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        argv += ["--provider", "openai"]
+
+    result = _cli(*argv)
+
+    assert (result.returncode, result.stdout) == (2, "")
+    assert result.stderr.splitlines() == [
+        f"error: run {UNKNOWN} not found in event log {event_log} (recent runs: demo)"
+    ]
+
+
 def test_runner_resume_of_an_unknown_run_raises_run_not_found_error(tmp_path: Path) -> None:
     """Library callers get a dedicated ``ValueError`` subclass that names the run and the log."""
-
-    from multi_bot_agentic.runner import ResumeError, RunNotFoundError
 
     log = SQLiteEventLog(tmp_path / "runs.sqlite")
     try:

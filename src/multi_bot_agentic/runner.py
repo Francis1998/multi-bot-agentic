@@ -47,6 +47,17 @@ class RunResult:
     already_finished: bool = False
 
 
+class ResumeError(ValueError):
+    """Raised when ``AgentRunner.resume`` cannot continue a run; nothing is executed or appended.
+
+    It subclasses ``ValueError``, which ``resume`` raised before, so existing handlers keep working.
+    """
+
+
+class RunNotFoundError(ResumeError):
+    """Raised when the event log holds no events for the run id to resume."""
+
+
 # Event types that end a run, mapped to the terminal state they record.
 _TERMINAL_EVENT_STATES: dict[str, RunState] = {
     EventType.RUN_COMPLETED.value: RunState.SUCCEEDED,
@@ -187,7 +198,8 @@ class AgentRunner:
             Final run result after continuation, or the recorded outcome of a finished run.
 
         Raises:
-            ValueError: If an unfinished run has no usable checkpoint or the
+            RunNotFoundError: If the event log holds no events for ``run_id``.
+            ResumeError: If an unfinished run has no usable checkpoint or the
                 checkpoint's active bot is not registered on this runner.
         """
 
@@ -196,18 +208,24 @@ class AgentRunner:
             return recorded
         snapshot = load_latest_checkpoint(self.event_log, run_id)
         if snapshot is None:
-            raise ValueError(f"no checkpoint found for run_id={run_id}")
+            if not self.event_log.list_events(run_id):
+                raise RunNotFoundError(f"run {run_id} not found in event log {self.event_log.path}")
+            raise ResumeError(
+                f"cannot resume run {run_id}: it has no checkpoint (it stopped before its first step finished)"
+            )
         if not snapshot.goal.strip():
-            raise ValueError(f"checkpoint for run_id={run_id} is missing a goal")
+            raise ResumeError(f"cannot resume run {run_id}: its checkpoint is missing a goal")
         if not snapshot.observations:
-            raise ValueError(f"checkpoint for run_id={run_id} has no observations")
+            raise ResumeError(f"cannot resume run {run_id}: its checkpoint has no observations")
 
         self.safety_policy.validate_goal(snapshot.goal)
         self._restore_initial_scope()
         if snapshot.active_bot_id is not None:
             bot = self.bots.get(snapshot.active_bot_id)
             if bot is None:
-                raise ValueError(f"checkpoint active bot is not registered: {snapshot.active_bot_id}")
+                raise ResumeError(
+                    f"cannot resume run {run_id}: checkpoint active bot is not registered: {snapshot.active_bot_id}"
+                )
             self.active_bot_id = bot.bot_id
             self.safety_policy = replace(self.safety_policy, allowed_tools=bot.allowed_tools)
         return self._run_loop(

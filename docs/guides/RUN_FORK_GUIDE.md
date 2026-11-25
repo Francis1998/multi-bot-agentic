@@ -593,7 +593,7 @@ Every message below is real output:
 | `error: step 7 is beyond the last step of run demo (step 4); forkable steps: 0, 1, 2, 3` | Pick a step from `history` |
 | `error: step 3 of run crashed never recorded a result (the run was interrupted during it); forkable steps: 0, 1, 2` | Fork the step before, or `resume` the interrupted run |
 | `error: run rollback already exists in event log demo-output/fork.sqlite; choose a new --new-run-id` | Run ids are unique per log. Pick another one |
-| `error: run nope not found in event log demo-output/fork.sqlite` | Check the run id with `report` or `history`, and the `--event-log` path |
+| `error: run nope not found in event log demo-output/fork.sqlite (recent runs: notes, rollback, demo)` | Use one of the listed run ids (the five most recently active; `report` lists all of them), and check the `--event-log` path |
 | `error: event log not found: demo-output/missing.sqlite` | `fork` and `history` never create a log. Check the path |
 | `error: --bot needs --bots PATH, the registry that defines the bot's tool scope` | Pass the registry file that defines the bot |
 | `error: bot admin is not registered (registered bots: planner, writer)` | Use a bot from the registry, or add it there |
