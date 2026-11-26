@@ -1090,14 +1090,14 @@ def format_interrupt_table(records: Sequence[InterruptRecord]) -> str:
 
 
 def format_interrupt(record: InterruptRecord, output_format: str, event_log_path: Path) -> str:
-    """Format one interrupt with its (redacted) arguments and decision."""
+    """Format one interrupt with its complete, redacted arguments (no length cap) and decision."""
 
     from multi_bot_agentic.tracing.privacy import redact_value
 
     details = record.to_dict()
-    details["arguments"] = redact_value(dict(record.arguments))
+    details["arguments"] = redact_value(dict(record.arguments), limit=None)
     if record.decision is not None and record.decision.arguments is not None:
-        details["decision"]["arguments"] = redact_value(dict(record.decision.arguments))
+        details["decision"]["arguments"] = redact_value(dict(record.decision.arguments), limit=None)
     details["explanation"] = record.explanation
     if output_format == "json":
         return json.dumps(details, indent=2)

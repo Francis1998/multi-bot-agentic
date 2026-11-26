@@ -40,17 +40,20 @@ _REDACTOR = ObservationRedactor()
 _SANITIZER = ToolArgumentSanitizer()
 
 
-def redact_text(text: str, limit: int = MAX_CONTENT_CHARS) -> str:
+def redact_text(text: str, limit: int | None = MAX_CONTENT_CHARS) -> str:
     """Redact secrets and PII from ``text`` and cap its length.
 
     Args:
         text: Text to scrub.
-        limit: Maximum characters kept before the truncation marker.
+        limit: Maximum characters kept before the truncation marker; ``None`` keeps (and scans) the
+            whole text, for complete views such as ``approvals show``.
 
     Returns:
         Redacted, possibly truncated text.
     """
 
+    if limit is None:
+        return _KEY_VALUE.sub(_redact_pair, _REDACTOR.redact(text).redacted_text)
     scanned = text[: limit + _SCAN_MARGIN_CHARS]
     redacted = _KEY_VALUE.sub(_redact_pair, _REDACTOR.redact(scanned).redacted_text)
     if len(redacted) > limit or len(text) > len(scanned):
@@ -58,12 +61,12 @@ def redact_text(text: str, limit: int = MAX_CONTENT_CHARS) -> str:
     return redacted
 
 
-def redact_value(value: Any, limit: int = MAX_CONTENT_CHARS) -> Any:
+def redact_value(value: Any, limit: int | None = MAX_CONTENT_CHARS) -> Any:
     """Redact a JSON-like value: sensitive keys are replaced, strings are scrubbed.
 
     Args:
         value: JSON-like value (object, array, string, number, boolean, or null).
-        limit: Maximum characters kept per string.
+        limit: Maximum characters kept per string; ``None`` keeps every string whole.
 
     Returns:
         A redacted deep copy.
@@ -120,7 +123,7 @@ def _redact_pair(match: re.Match[str]) -> str:
     return f"{match.group('key')}{match.group('separator')}{quote}{_REDACTED}{quote}"
 
 
-def _redact(value: Any, limit: int, *, depth: int) -> Any:
+def _redact(value: Any, limit: int | None, *, depth: int) -> Any:
     """Recursive worker for :func:`redact_value`, bounded so hostile nesting cannot recurse forever."""
 
     if depth > _MAX_DEPTH:
