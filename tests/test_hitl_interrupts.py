@@ -26,7 +26,7 @@ from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.models import EventType, RunState, ToolInvocation, ToolResult
 from multi_bot_agentic.runner import AgentRunner
 from multi_bot_agentic.safety import SafetyPolicy, parse_approval_patterns
-from multi_bot_agentic.tracing import parse_run, render_mermaid
+from multi_bot_agentic.tracing import build_trace, parse_run, render_mermaid
 
 GOAL = "Create a launch checklist"
 
@@ -333,6 +333,34 @@ def test_trace_shows_the_interrupt_the_decision_and_the_resume(event_log: SQLite
     assert "H-->>O: approved" in diagram
     assert "resumed from checkpoint" in diagram
     assert parse_run(event_log.list_events("r")).final_state == "succeeded"
+
+
+def test_trace_exports_the_edited_arguments_that_actually_ran(event_log: SQLiteEventLog) -> None:
+    runner = _runner(event_log, SpyTool())
+    paused = runner.run(GOAL, run_id="r")
+    decide_interrupt(
+        event_log,
+        paused.interrupt.interrupt_id,  # type: ignore[union-attr]
+        ApprovalDecision.APPROVED,
+        decided_by="alice",
+        arguments={"text": "Edited goal"},
+    )
+    runner.resume("r")
+    events = event_log.list_events("r")
+    (decision,) = [
+        event for event in events if event.event_type == "decision" and event.payload["action"] == "call_tool"
+    ]
+
+    (span,) = [
+        span for span in build_trace(events, include_content=True).spans if span.name == "execute_tool checklist"
+    ]
+    diagram = render_mermaid(events, include_content=True)
+
+    assert span.attributes["gen_ai.tool.call.arguments"] == {"text": "Edited goal"}
+    assert span.attributes["multi_bot_agentic.decision.seq"] == decision.seq
+    assert span.attributes["multi_bot_agentic.decision.rule_id"] == "model.requested-tool"
+    assert "call_tool (model.requested-tool): Edited goal" in diagram
+    assert f"call_tool (model.requested-tool): {GOAL}" not in diagram
 
 
 def test_paused_interrupt_and_status_helpers(event_log: SQLiteEventLog) -> None:
