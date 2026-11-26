@@ -9,8 +9,25 @@ import pytest
 
 from multi_bot_agentic import cli
 from multi_bot_agentic.event_log import SQLiteEventLog
+from multi_bot_agentic.llm.fake import FakeLLMAdapter
+from multi_bot_agentic.models import ModelOutput, ModelRequest
+from multi_bot_agentic.runner import AgentRunner, build_default_tools
+from multi_bot_agentic.safety import SafetyPolicy
 
 GOAL = "Create a launch checklist"
+
+
+class _LongToolRequest(FakeLLMAdapter):
+    """Fake provider whose first answer asks for ``checklist`` with a long text."""
+
+    def __init__(self, text: str) -> None:
+        super().__init__()
+        self.text = text
+
+    def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
+        if any(observation.source.startswith("tool:") for observation in request.observations):
+            return super().complete(request, timeout_seconds)
+        return ModelOutput(provider="fake", text=f"TOOL:checklist:{self.text}", raw={})
 
 
 @pytest.fixture(autouse=True)
@@ -166,6 +183,35 @@ def test_approve_refuses_non_object_args_without_writing(
     assert f"--args must be a JSON object, got {kind}" in err
     code, out, _ = _cli(capsys, "approvals", "list", "--event-log", str(log), "--format", "json")
     assert [item["status"] for item in json.loads(out)] == ["pending"]
+
+
+def test_approvals_show_prints_both_argument_sets_complete_and_redacted(
+    capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    log = tmp_path / "runs.sqlite"
+    original = "check " * 900 + "token sk-abcdefghijklmnopqrstuv END-OF-ORIGINAL"
+    edited = "item " * 1500 + "mail alice@example.com END-OF-EDITED"
+    event_log = SQLiteEventLog(log)
+    try:
+        policy = SafetyPolicy(allowed_tools=frozenset({"checklist"}), require_approval=frozenset({"checklist"}))
+        runner = AgentRunner(_LongToolRequest(original), event_log, build_default_tools(tmp_path), policy)
+        assert runner.run(GOAL, run_id="long").interrupt is not None
+    finally:
+        event_log.close()
+    code, out, err = _cli(
+        capsys, "approve", "--run-id", "long", "--event-log", str(log), "--args", json.dumps({"text": edited})
+    )
+    assert code == 0, err
+    interrupt_id = json.loads(out)["interrupt_id"]
+
+    code, out, _ = _cli(capsys, "approvals", "show", interrupt_id, "--event-log", str(log), "--format", "json")
+    shown = json.loads(out)
+    assert code == 0
+    assert shown["arguments"]["text"] == original.replace("sk-abcdefghijklmnopqrstuv", "[TOKEN]")
+    assert shown["decision"]["arguments"]["text"] == edited.replace("alice@example.com", "[EMAIL]")
+    code, out, _ = _cli(capsys, "approvals", "show", interrupt_id, "--event-log", str(log))
+    assert code == 0 and "END-OF-ORIGINAL" in out and "END-OF-EDITED" in out
+    assert "[truncated]" not in out and "sk-abcdefghijklmnopqrstuv" not in out and "alice@example.com" not in out
 
 
 def test_reject_requires_a_reason(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
