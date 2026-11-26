@@ -1154,6 +1154,10 @@ def decide_command(args: argparse.Namespace, decision: ApprovalDecision) -> int:
         except ValueError as error:
             print(f"error: --args is not valid JSON: {error}", file=sys.stderr)
             return 2
+        if arguments is None:
+            # decide_interrupt reads None as "keep the arguments"; an explicit null is not an edit.
+            print("error: --args must be a JSON object, got null (omit --args to keep the arguments)", file=sys.stderr)
+            return 2
     try:
         event_log = SQLiteEventLog(path)
         try:
