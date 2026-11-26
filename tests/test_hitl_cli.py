@@ -153,6 +153,21 @@ def test_decision_errors_are_clean(
     assert "Traceback" not in err
 
 
+@pytest.mark.parametrize(("value", "kind"), [("null", "null"), ("[]", "array"), ('"text"', "string"), ("7", "number")])
+def test_approve_refuses_non_object_args_without_writing(
+    capsys: pytest.CaptureFixture[str], tmp_path: Path, value: str, kind: str
+) -> None:
+    log = tmp_path / "runs.sqlite"
+    _start(capsys, log, "demo", "--require-approval", "checklist")
+
+    code, _, err = _cli(capsys, "approve", "--run-id", "demo", "--event-log", str(log), "--args", value)
+
+    assert code == 2
+    assert f"--args must be a JSON object, got {kind}" in err
+    code, out, _ = _cli(capsys, "approvals", "list", "--event-log", str(log), "--format", "json")
+    assert [item["status"] for item in json.loads(out)] == ["pending"]
+
+
 def test_reject_requires_a_reason(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
     with pytest.raises(SystemExit) as raised:
         cli.main(["reject", "int-x", "--event-log", str(tmp_path / "runs.sqlite")])
