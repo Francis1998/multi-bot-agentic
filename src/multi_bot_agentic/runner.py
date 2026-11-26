@@ -58,6 +58,10 @@ class RunNotFoundError(ResumeError):
     """Raised when the event log holds no events for the run id to resume."""
 
 
+class RunExistsError(ValueError):
+    """Raised when ``AgentRunner.run`` gets a run id the event log already holds; nothing is appended."""
+
+
 # Event types that end a run, mapped to the terminal state they record.
 _TERMINAL_EVENT_STATES: dict[str, RunState] = {
     EventType.RUN_COMPLETED.value: RunState.SUCCEEDED,
@@ -159,13 +163,22 @@ class AgentRunner:
 
         Args:
             goal: User goal.
-            run_id: Optional run identifier.
+            run_id: Optional run identifier; one the event log already holds is refused, so a
+                second run is never appended to a recorded one (``resume`` continues a run).
 
         Returns:
             Final run result.
+
+        Raises:
+            RunExistsError: If the event log already holds events for ``run_id``.
         """
 
         self.safety_policy.validate_goal(goal)
+        if run_id and self.event_log.list_events(run_id):
+            raise RunExistsError(
+                f"run {run_id} already exists in event log {self.event_log.path}; "
+                "choose a new run id (resume continues an interrupted run)"
+            )
         self._restore_initial_scope()
         selected_run_id = run_id or str(uuid4())
         state_machine = RunStateMachine()

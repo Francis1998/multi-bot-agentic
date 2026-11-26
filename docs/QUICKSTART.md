@@ -23,6 +23,11 @@ multi-bot-agentic run \
   --event-log data/runs.sqlite
 ```
 
+Each `run` records a new run under a fresh id, or under the `--run-id` you pass. An id the log already holds is
+refused with one `error: run <id> already exists in event log data/runs.sqlite; choose a new --run-id (resume
+continues an interrupted run)` line and exit code 2, and nothing is written, so repeating a command never mixes a
+second run into a recorded one.
+
 ## Replay The Durable Event Log
 
 ```bash

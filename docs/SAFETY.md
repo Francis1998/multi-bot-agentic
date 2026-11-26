@@ -10,6 +10,9 @@
 - **Cancellation**: a cancellation file can stop a run before the next action.
 - **Tool allowlist**: tools must be registered and allowed by policy.
 - **Rationale traces**: every decision records matched rule IDs, inputs used, and rejected actions.
+- **One run per run id**: `run` refuses a `--run-id` the event log already holds (exit code 2, nothing written), so
+  a repeated command never mixes a second run into a recorded one that `history`, `report`, `fork`, or `resume`
+  read.
 - **Trace export (opt-in egress)**: `trace` reads the event log only and sends nothing unless `--otlp-endpoint`
   is given. Prompts, outputs, and tool payloads are excluded unless `--include-content` is passed, and everything
   exported is redacted with `ObservationRedactor` and `ToolArgumentSanitizer`. The push refuses redirects and
