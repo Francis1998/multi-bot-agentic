@@ -224,6 +224,7 @@ Error paths name the offending value: `$` is the document, `$.items[2].price` a 
 | `2` | Failed, cancelled, or refused before running (bad flags, unreadable or unsupported schema, unknown run), or `--output-file` could not be written |
 | `3` | Paused awaiting human approval ([HITL interrupts](HITL_INTERRUPTS_GUIDE.md)) |
 | `4` | `output_invalid`: no answer validated within the correction rounds or the step budget |
+| `5` | A usage limit stopped the run, for example before a correction round's model call ([Usage limits](USAGE_LIMITS_GUIDE.md)) |
 | `75` | Another process is continuing the run; nothing was written ([HITL interrupts](HITL_INTERRUPTS_GUIDE.md)) |
 
 ### `run --output-schema PATH [--output-retries N] [--output-file PATH]`
@@ -469,6 +470,9 @@ leave two steps per correction round you want to allow. See [Configuration](../C
   the steps before it are, including steps that were followed by a correction round.
 - **Human-in-the-loop interrupts.** A gated tool call pauses the run as usual (exit 3); after `approve` and
   `resume`, the final answer is still validated. The two exit codes never overlap.
+- **Usage limits.** A correction round is a model call, so it counts against `--max-requests` and the token and
+  cost limits; a limit that stops the run before the correction (exit 5) keeps the failed answer, and `resume` with a
+  higher limit continues the round ([Usage limits](USAGE_LIMITS_GUIDE.md)).
 - **Bot handoffs and MCP tools.** The contract belongs to the run, not to a bot: every bot's model calls see the same
   schema, and tool results (including MCP results) are observations the final answer can use.
 - **Trace export.** `trace` adds a `multi_bot_agentic.output.validation` span event per checked answer (`valid`,

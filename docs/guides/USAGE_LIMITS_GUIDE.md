@@ -584,6 +584,9 @@ multi-bot-agentic eval --event-log-dir demo-output/guide/eval | jq -c '{pass_rat
 - **The run lease.** Only one process continues a run at a time; a `resume` refused because another process holds
   the run (exit 75) writes nothing, so it cannot double-count usage.
 - **MCP tools.** MCP tool calls are tool calls: they consume no model tokens and are not limited here.
+- **Structured output.** A correction round after an invalid final answer is a model call: it counts against the
+  limits, and a limit can stop the run before it (exit 5); `resume` with a higher limit continues the round. Runs
+  that end validated or in `output_invalid` (exit 4) report their usage like any other run.
 
 ## Safety and limitations
 

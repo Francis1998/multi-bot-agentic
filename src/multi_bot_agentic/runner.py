@@ -1265,7 +1265,9 @@ class AgentRunner:
                 (RunState.VALIDATING, EventType.FINAL_OUTPUT, output.to_payload()),
                 (RunState.SUCCEEDED, EventType.RUN_COMPLETED, {"answer": answer, "steps": steps}),
             )
-            return RunResult(run_id=run_id, state=state_machine.state, answer=answer, steps=steps, output=output)
+            return RunResult(
+                run_id=run_id, state=state_machine.state, answer=answer, steps=steps, output=output, usage=self._usage
+            )
         self._output_failures = attempt
         rounds_left = attempt <= contract.retries
         steps_left = self.safety_policy.max_steps - steps >= 2
@@ -1323,7 +1325,12 @@ class AgentRunner:
             (RunState.OUTPUT_INVALID, EventType.RUN_FAILED, {"reason": reason, "steps": steps}),
         )
         return RunResult(
-            run_id=run_id, state=state_machine.state, answer=reason, steps=steps, output_errors=check.errors
+            run_id=run_id,
+            state=state_machine.state,
+            answer=reason,
+            steps=steps,
+            output_errors=check.errors,
+            usage=self._usage,
         )
 
     def _finish_validating(
