@@ -337,3 +337,43 @@ def test_write_output_file_is_atomic_and_sorted(tmp_path: Path) -> None:
     write_output_file(target, [1])
     assert json.loads(target.read_text(encoding="utf-8")) == [1]
     assert sorted(path.name for path in target.parent.iterdir()) == ["result.json"]
+
+
+def _doubling_chain(levels: int) -> dict[str, Any]:
+    """Each definition applies the previous one twice: small, acyclic, and 2**levels checks per value."""
+
+    definitions: dict[str, Any] = {"d0": {"type": "integer"}}
+    for level in range(1, levels + 1):
+        reference = {"$ref": f"#/$defs/d{level - 1}"}
+        definitions[f"d{level}"] = {"allOf": [reference, reference]}
+    return {"$defs": definitions, "$ref": f"#/$defs/d{levels}"}
+
+
+def test_references_that_multiply_validation_work_are_refused() -> None:
+    with pytest.raises(SchemaError) as raised:
+        OutputSchema.from_value(_doubling_chain(30))
+    assert "expand to more than" in str(raised.value)
+
+
+def test_validation_work_is_bounded_when_references_multiply_through_items() -> None:
+    schema = OutputSchema.from_value(
+        {
+            "$defs": {
+                "x": {"allOf": [{"$ref": "#/$defs/y"}, {"$ref": "#/$defs/y"}]},
+                "y": {"items": {"$ref": "#/$defs/x"}},
+            },
+            "$ref": "#/$defs/x",
+        }
+    )
+    nested: Any = 0
+    for _ in range(17):
+        nested = [nested]
+    errors = schema.validate(nested)
+    assert len(errors) == 1 and "validation stopped after" in errors[0]
+
+
+@pytest.mark.parametrize("answer", ["1e400", '{"x": [-1e400]}', '"\\ud800"', '{"\\udfff": 1}'])
+def test_answers_that_cannot_be_stored_are_invalid_answers(answer: str) -> None:
+    check = check_output(answer, OutputSchema.from_value(True))
+    assert not check.valid and not check.found
+    assert len(check.errors) == 1 and check.errors[0].startswith("$: ")

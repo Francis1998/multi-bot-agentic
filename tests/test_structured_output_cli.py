@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 
 import pytest
@@ -184,3 +185,47 @@ def test_fork_with_more_retries_rescues_an_output_invalid_run(
         "--output-file", str(tmp_path / "x.json"),
     )  # fmt: skip
     assert code == 2 and "has no output schema, so --output-file needs --output-schema PATH" in err
+
+
+def _replayable(capsys: pytest.CaptureFixture[str], log: Path, run_id: str) -> bool:
+    code, out, _ = _cli(capsys, "replay", "--event-log", str(log), "--run-id", run_id)
+    return code == 0 and bool(out.strip())
+
+
+@pytest.mark.parametrize("target", ["{log}", "{log}-wal", "{log}-shm", "{log}-journal", "{dir}/sub/../runs.sqlite"])
+def test_output_file_never_replaces_the_event_log(
+    capsys: pytest.CaptureFixture[str], tmp_path: Path, target: str
+) -> None:
+    log = tmp_path / "runs.sqlite"
+    output = target.format(log=log, dir=tmp_path)
+    (tmp_path / "sub").mkdir()
+    schema = str(_schema(tmp_path))
+    code, _, _ = _run(capsys, log, "first", "--output-schema", schema)
+    assert code == 0
+
+    code, payload, err = _run(capsys, log, "second", "--output-schema", schema, "--output-file", output)
+    assert code == 2 and payload == {} and "is the event log or one of its SQLite files" in err
+    code, _, err = _cli(capsys, "resume", "--event-log", str(log), "--run-id", "first", "--output-file", output)
+    assert code == 2 and "is the event log or one of its SQLite files" in err
+    fork = ("fork", "--event-log", str(log), "--run-id", "first", "--at-step", "1", "--new-run-id", "f")
+    code, _, err = _cli(capsys, *fork, "--output-file", output)
+    assert code == 2 and "is the event log or one of its SQLite files" in err
+    assert _replayable(capsys, log, "first") and not _replayable(capsys, log, "second")
+
+
+def test_resume_refuses_a_recorded_output_that_was_changed(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
+    log, output = tmp_path / "runs.sqlite", tmp_path / "plan.json"
+    code, _, _ = _run(capsys, log, "demo", "--output-schema", str(_schema(tmp_path)))
+    assert code == 0
+    connection = sqlite3.connect(log)
+    with connection:
+        changed = connection.execute(
+            'UPDATE events SET payload_json = replace(payload_json, \'"risk": "low"\', \'"risk": "urgent"\') '
+            "WHERE run_id = 'demo' AND event_type = 'final_output'"
+        ).rowcount
+    connection.close()
+    assert changed == 1
+
+    code, out, err = _cli(capsys, "resume", "--event-log", str(log), "--run-id", "demo", "--output-file", str(output))
+    assert code == 2 and out == "" and not output.exists()
+    assert "recorded final output" in err and "sha256" in err

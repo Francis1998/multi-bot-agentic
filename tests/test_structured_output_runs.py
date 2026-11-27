@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import sqlite3
 from collections.abc import Iterator, Sequence
 from pathlib import Path
@@ -23,6 +24,7 @@ from multi_bot_agentic.structured_output import (
     OutputContract,
     OutputSchema,
 )
+from multi_bot_agentic.tracing import build_trace
 
 TITLE_SCHEMA = {"type": "object", "required": ["title"], "properties": {"title": {"type": "string", "minLength": 2}}}
 NAME_SCHEMA = {"type": "object", "required": ["name"]}
@@ -263,3 +265,98 @@ def test_validating_and_output_invalid_transitions(path: Sequence[RunState], all
     else:
         with pytest.raises(InvalidTransitionError):
             move()
+
+
+def test_an_answer_that_cannot_be_stored_is_an_invalid_answer(log: SQLiteEventLog) -> None:
+    result = _runner(log, Scripted("DONE: 1e400")).run("Plan", run_id="r", output_contract=_contract(retries=0))
+    assert result.state is RunState.OUTPUT_INVALID
+    assert result.output_errors and result.output_errors[0].startswith("$: ")
+
+
+def _crash_after(monkeypatch: pytest.MonkeyPatch, log: SQLiteEventLog, event_type: str) -> None:
+    """Make the first write to ``log`` after an ``event_type`` event raise KeyboardInterrupt, like a crash."""
+
+    append, append_guarded = log.append, log.append_guarded
+    state = {"seen": False, "crashed": False}
+
+    def crash_if_due() -> None:
+        if state["seen"] and not state["crashed"]:
+            state["crashed"] = True
+            raise KeyboardInterrupt
+
+    def patched_append(run_id: str, run_state: RunState, kind: Any, payload: dict[str, Any]) -> EventRecord:
+        crash_if_due()
+        record = append(run_id, run_state, kind, payload)
+        state["seen"] = state["seen"] or kind.value == event_type
+        return record
+
+    def patched_guarded(run_id: str, entries: Any, guard: Any = None) -> list[EventRecord]:
+        crash_if_due()
+        records = append_guarded(run_id, entries, guard)
+        state["seen"] = state["seen"] or any(kind.value == event_type for _, kind, _ in entries)
+        return records
+
+    monkeypatch.setattr(log, "append", patched_append)
+    monkeypatch.setattr(log, "append_guarded", patched_guarded)
+
+
+def test_a_crash_after_a_failed_check_keeps_the_correction_round(
+    log: SQLiteEventLog, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _crash_after(monkeypatch, log, "output_validation_failed")
+    with contextlib.suppress(KeyboardInterrupt):
+        _runner(log, Scripted("DONE: nope")).run("Plan", run_id="r", output_contract=_contract(retries=1))
+    monkeypatch.undo()
+    provider = Scripted('DONE: {"title": "Fixed"}')
+    result = _runner(log, provider).resume("r")
+
+    assert result.state is RunState.SUCCEEDED
+    assert result.output is not None and result.output.attempt == 2
+    assert provider.requests and provider.requests[0].observations[-1].source == CORRECTION_SOURCE
+    assert len(_events(log, "r", "output_validation_failed")) == 1
+
+
+def test_a_crash_after_a_valid_check_records_one_final_output(
+    log: SQLiteEventLog, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _crash_after(monkeypatch, log, "final_output")
+    try:
+        _runner(log, Scripted('DONE: {"title": "Launch"}')).run("Plan", run_id="r", output_contract=_contract())
+    except KeyboardInterrupt:
+        monkeypatch.undo()
+        _runner(log, Scripted()).resume("r")
+    recorded = recorded_outcome(log, "r")
+    assert recorded is not None and recorded.state is RunState.SUCCEEDED
+    assert len(_events(log, "r", "final_output")) == 1
+
+
+def _new_schema_fork(log: SQLiteEventLog, *replies: str | BaseException) -> RunState | None:
+    """Fork a run that failed two answers under TITLE_SCHEMA after its correction step, with NAME_SCHEMA."""
+
+    _failed_source(log, "DONE: nope", "DONE: still nope", retries=1, run_id="old")
+    new_schema = OutputSchema.from_value(NAME_SCHEMA, source="name.json")
+    try:
+        return _runner(log, Scripted(*replies)).fork("old", 2, "fork", output_schema=new_schema).state
+    except KeyboardInterrupt:
+        return None
+
+
+def test_report_shows_only_errors_of_the_forks_own_schema(log: SQLiteEventLog) -> None:
+    assert _new_schema_fork(log, KeyboardInterrupt()) is None
+    report = output_report(log.list_events("fork"))
+    assert report is not None and (report["attempts"], report["valid"]) == (0, None)
+    assert "errors" not in report
+
+
+def test_trace_counts_only_checks_against_the_forks_own_schema(log: SQLiteEventLog) -> None:
+    assert _new_schema_fork(log, 'DONE: {"name": "n"}') is RunState.SUCCEEDED
+    root = build_trace(log.list_events("fork")).spans[0]
+    assert root.attributes["multi_bot_agentic.output.attempts"] == 1
+    assert root.attributes["multi_bot_agentic.output.valid"] is True
+    # The inherited check against the replaced schema stays visible as its own span event.
+    checks = [event.attributes for event in root.events if event.name == "multi_bot_agentic.output.validation"]
+    assert [check["multi_bot_agentic.output.valid"] for check in checks] == [False, True]
+    assert [check["multi_bot_agentic.output.schema_sha256"] for check in checks] == [
+        _contract().schema.sha256,
+        OutputSchema.from_value(NAME_SCHEMA).sha256,
+    ]
