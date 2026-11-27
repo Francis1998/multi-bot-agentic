@@ -207,6 +207,9 @@ def _step_number(value: str) -> int:
 def run_command(args: argparse.Namespace) -> int:
     """Execute the run subcommand.
 
+    A ``--run-id`` the event log already holds is refused before MCP servers or the provider
+    start, and nothing is written, so a second run never mixes into a recorded one.
+
     Args:
         args: Parsed arguments.
 
@@ -219,6 +222,13 @@ def run_command(args: argparse.Namespace) -> int:
         event_log=args.event_log,
         max_steps=args.max_steps,
     )
+    if args.run_id and config.event_log.is_file() and _run_recorded(config.event_log, args.run_id):
+        print(
+            f"error: run {args.run_id} already exists in event log {config.event_log}; "
+            "choose a new --run-id (resume continues an interrupted run)",
+            file=sys.stderr,
+        )
+        return 2
     try:
         toolset = start_mcp_toolset(args.mcp_config)
     except (McpConfigError, McpStartupError) as error:
