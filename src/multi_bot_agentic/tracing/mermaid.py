@@ -351,14 +351,18 @@ class _MermaidRenderer:
 
 
 def _usage_note(call: ModelCall) -> str:
-    """Return ``usage: <in> in / <out> out tokens, $<cost>`` for a call that recorded ``llm_usage``."""
+    """Return ``usage: <in> in / <out> out tokens, $<cost>`` for a call that recorded ``llm_usage``.
 
-    if call.usage is None:
+    A provider-reported cost without token usage reads ``usage: tokens not reported, $<cost>``.
+    """
+
+    if call.usage is None and call.cost_usd is None:
         return ""
-    input_tokens = call.usage.get("input_tokens")
-    output_tokens = call.usage.get("output_tokens")
+    counts = call.usage or {}
+    input_tokens = counts.get("input_tokens")
+    output_tokens = counts.get("output_tokens")
     if not isinstance(input_tokens, int) or not isinstance(output_tokens, int):
-        text = "usage: not reported"
+        text = "usage: tokens not reported"
     else:
         text = f"usage: {input_tokens:,} in / {output_tokens:,} out tokens"
     if call.cost_usd is not None:

@@ -786,17 +786,19 @@ def _usage(call: ModelCall) -> tuple[int | None, int | None]:
 
 
 def _usage_details(call: ModelCall) -> dict[str, Any]:
-    """Return cache, reasoning, and cost attributes of a model call that recorded ``llm_usage``."""
+    """Return cache, reasoning, and cost attributes of a model call that recorded ``llm_usage``.
+
+    A cost the provider reported is exported even when it reported no token usage.
+    """
 
     attributes: dict[str, Any] = {}
-    if call.usage is None:
-        return attributes
-    cached = _first_count([call.usage], ("cached_input_tokens",))
-    if cached is not None:
-        attributes["gen_ai.usage.cache_read.input_tokens"] = cached
-    reasoning = _first_count([call.usage], ("reasoning_tokens",))
-    if reasoning is not None:
-        attributes["gen_ai.usage.reasoning.output_tokens"] = reasoning
+    if call.usage is not None:
+        cached = _first_count([call.usage], ("cached_input_tokens",))
+        if cached is not None:
+            attributes["gen_ai.usage.cache_read.input_tokens"] = cached
+        reasoning = _first_count([call.usage], ("reasoning_tokens",))
+        if reasoning is not None:
+            attributes["gen_ai.usage.reasoning.output_tokens"] = reasoning
     if call.cost_usd is not None:
         attributes[f"{NAMESPACE}.usage.cost_usd"] = call.cost_usd
     if call.model is not None:

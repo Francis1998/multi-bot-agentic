@@ -251,8 +251,8 @@ with the `inherited` totals and the effective `limits` when either is non-empty.
 | `replay --event-type usage_limit_exceeded --format text` | Each stop: limit, value, cap, phase, and step |
 | `report` | Per run: `usage` with the run's own totals, `by_bot` and `by_model` rows, a fork's `inherited` and `running` totals, and `limit_stops`. Top level: `usage_totals`, the sum of every run's own calls, so a call a fork inherited is counted once |
 | `history` | `stopped at a usage limit after N steps` for a stopped run |
-| `trace` (OTLP/JSON) | `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.usage.cache_read.input_tokens`, `gen_ai.usage.reasoning.output_tokens`, `multi_bot_agentic.usage.cost_usd`, and `multi_bot_agentic.usage.priced_model` on each model-call span; sums and total cost on the root span; a `multi_bot_agentic.usage_limit_exceeded` span event per stop |
-| `trace --format mermaid` | A `usage: <in> in / <out> out tokens, $<cost>` note after each model call, a note per stop, and `stopped: usage limit exceeded` as the closing note |
+| `trace` (OTLP/JSON) | `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.usage.cache_read.input_tokens`, `gen_ai.usage.reasoning.output_tokens`, `multi_bot_agentic.usage.cost_usd` (also for a provider-reported cost without token usage), and `multi_bot_agentic.usage.priced_model` on each model-call span; sums and total cost on the root span; a `multi_bot_agentic.usage_limit_exceeded` span event per stop |
+| `trace --format mermaid` | A `usage: <in> in / <out> out tokens, $<cost>` note after each model call (`tokens not reported` when the provider reported only a cost, `unpriced` without a cost), a note per stop, and `stopped: usage limit exceeded` as the closing note |
 | `eval` | `usage` per scenario, `budget_checks` for scenarios with budgets, and `usage_totals` across scenarios |
 
 ### Eval budgets

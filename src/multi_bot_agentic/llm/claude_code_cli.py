@@ -84,10 +84,13 @@ class ClaudeCodeCLIAdapter:
                 text=completed.stdout.strip()[: request.max_output_chars],
                 raw=raw,
             )
+        raw["output_format"] = "json"
+        if model is not None:
+            raw["model"] = model
         return ModelOutput(
             provider=self.provider_name,
             text=str(result.get("result", "")).strip()[: request.max_output_chars],
-            raw=raw | {"output_format": "json"},
+            raw=raw,
             usage=usage,
             model=model,
             cost_usd=cost,
