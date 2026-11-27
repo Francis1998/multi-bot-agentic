@@ -40,9 +40,11 @@
   `--max-requests`, `--max-input-tokens`, `--max-output-tokens`, `--max-total-tokens`, and `--max-cost-usd`
   (`SafetyPolicy.usage_limits` in the Python API): checked before every model call and after it, a breach moves the
   run to the new resumable `usage_limit_exceeded` state, appends a `usage_limit_exceeded` event naming the limit,
-  value, and cap, checkpoints, and exits with code 5. Limits are recorded in `run_created` and checkpoints, so
-  `resume` keeps them (a flag replaces one, `--reset-usage-limits` drops them) and writes nothing while the run is
-  still over its limit; `resume` with a higher limit continues without repeating the call that crossed it. Totals are
+  value, and cap, checkpoints (one transaction, so a crash while stopping cannot lose the stop), and exits with code
+  5. A limit whose counter a call did not report (or an unpriced call, for `--max-cost-usd`) counts as breached, and
+  a call that fails after its provider reported usage (`BilledCallError`) is still recorded. Limits are recorded in `run_created` and checkpoints, so
+  `resume` keeps them (a flag replaces one, `--reset-usage-limits` drops them; a resume that changes them records
+  them before it advances) and writes nothing while the run is still over its limit; `resume` with a higher limit continues without repeating the call that crossed it. Totals are
   the sum of a run's `llm_usage` events, so `resume` continues them and a fork starts from the totals at its fork
   point. `report` adds `usage` per run (by bot and by model, a fork's inherited calls separately) and `usage_totals`;
   `replay --format text` and `history` show calls and stops; `trace` adds `gen_ai.usage.input_tokens`,
