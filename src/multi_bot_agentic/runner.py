@@ -512,21 +512,13 @@ class AgentRunner:
                 if decision.action == "finish":
                     if self._contract is None:
                         return self._succeed(run_id, state_machine, step + 1, decision)
-                    checked = self._check_final_answer(run_id, state_machine, decision, step, self._contract)
+                    checked = self._check_final_answer(
+                        run_id, state_machine, goal, observations, decision, step, self._contract
+                    )
                     if isinstance(checked, RunResult):
                         return checked
                     # Another round: the validation errors are the next observation.
-                    observations = (*observations, checked)
-                    save_checkpoint(
-                        self.event_log,
-                        run_id=run_id,
-                        goal=goal,
-                        step=step + 1,
-                        state=state_machine.state,
-                        observations=observations,
-                        active_bot_id=self.active_bot_id,
-                        require_approval=self.safety_policy.require_approval,
-                    )
+                    observations = checked
                     continue
                 if decision.action == "cancel":
                     return self._cancel(
@@ -1028,32 +1020,41 @@ class AgentRunner:
         self,
         run_id: str,
         state_machine: RunStateMachine,
+        goal: str,
+        observations: tuple[Observation, ...],
         decision: Decision,
         step: int,
         contract: OutputContract,
-    ) -> RunResult | Observation:
+    ) -> RunResult | tuple[Observation, ...]:
         """Validate a ``finish`` decision's answer against the run's output contract.
 
         The run moves to ``validating``. A valid answer is recorded as a ``final_output`` event and
-        the run succeeds. An invalid one is recorded as an ``output_validation_failed`` event; it
-        returns the correction observation when a round is left, otherwise the run ends in
-        ``output_invalid``. A round needs a correction budget and two more steps: the model's
-        corrected answer and the decision that checks it.
+        the run succeeds. An invalid one is recorded as an ``output_validation_failed`` event,
+        followed by the checkpoint that holds the correction observation when a round is left, or
+        by the end of the run in ``output_invalid``. A round needs a correction budget and two more
+        steps: the model's corrected answer and the decision that checks it.
+
+        Each outcome is written in one transaction with what follows from it, so a crash never
+        records a check without its checkpoint or end: a resume either checks the same answer
+        again, with nothing counted yet, or continues after the recorded outcome.
 
         Args:
             run_id: Run identifier.
             state_machine: Run state machine (``deciding``).
+            goal: User goal.
+            observations: Observations the ``finish`` decision used.
             decision: The ``finish`` decision.
             step: Zero-based loop step.
             contract: Output contract of the run.
 
         Returns:
-            The final result, or the observation that asks the model for a corrected answer.
+            The final result, or the observations of the next round (ending with the correction).
         """
 
         self._transition(run_id, state_machine, RunState.VALIDATING)
         check = check_output(str(decision.payload.get("answer", "")), contract.schema)
         attempt = self._output_failures + 1
+        steps = step + 1
         if check.valid:
             output = FinalOutput(
                 value=check.value,
@@ -1063,11 +1064,17 @@ class AgentRunner:
                 output_bytes=check.output_bytes,
                 schema_sha256=contract.schema.sha256,
             )
-            self.event_log.append(run_id, state_machine.state, EventType.FINAL_OUTPUT, output.to_payload())
-            return self._succeed(run_id, state_machine, step + 1, decision, output=output)
+            answer = str(decision.payload.get("answer", ""))
+            self._finish_validating(
+                run_id,
+                state_machine,
+                (RunState.VALIDATING, EventType.FINAL_OUTPUT, output.to_payload()),
+                (RunState.SUCCEEDED, EventType.RUN_COMPLETED, {"answer": answer, "steps": steps}),
+            )
+            return RunResult(run_id=run_id, state=state_machine.state, answer=answer, steps=steps, output=output)
         self._output_failures = attempt
         rounds_left = attempt <= contract.retries
-        steps_left = self.safety_policy.max_steps - (step + 1) >= 2
+        steps_left = self.safety_policy.max_steps - steps >= 2
         failure: dict[str, Any] = {
             "attempt": attempt,
             "max_attempts": contract.max_attempts,
@@ -1079,13 +1086,30 @@ class AgentRunner:
             failure["stop"] = "retries_exhausted"
         elif not steps_left:
             failure["stop"] = "step_budget"
-        self.event_log.append(run_id, state_machine.state, EventType.OUTPUT_VALIDATION_FAILED, failure)
         if rounds_left and steps_left:
-            return Observation(
+            correction = Observation(
                 source=CORRECTION_SOURCE,
                 content=correction_text(check.errors, attempt=attempt, contract=contract),
                 metadata={"attempt": attempt, "schema_sha256": contract.schema.sha256},
             )
+            next_observations = (*observations, correction)
+            checkpoint = CheckpointSnapshot(
+                run_id=run_id,
+                goal=goal,
+                step=steps,
+                state=RunState.VALIDATING,
+                observations=next_observations,
+                active_bot_id=self.active_bot_id,
+                require_approval=tuple(sorted(self.safety_policy.require_approval)),
+            )
+            self.event_log.append_guarded(
+                run_id,
+                [
+                    (RunState.VALIDATING, EventType.OUTPUT_VALIDATION_FAILED, failure),
+                    (RunState.VALIDATING, EventType.CHECKPOINT, checkpoint.to_payload()),
+                ],
+            )
+            return next_observations
         # The reason is exported in traces, so it never quotes the answer; the errors are in the event.
         if not rounds_left:
             count = len(check.errors)
@@ -1098,12 +1122,32 @@ class AgentRunner:
                 "the final answer failed output validation and no steps are left for a correction round "
                 "(raise --max-steps)"
             )
-        self._transition(run_id, state_machine, RunState.OUTPUT_INVALID)
-        steps = step + 1
-        self.event_log.append(run_id, state_machine.state, EventType.RUN_FAILED, {"reason": reason, "steps": steps})
+        self._finish_validating(
+            run_id,
+            state_machine,
+            (RunState.VALIDATING, EventType.OUTPUT_VALIDATION_FAILED, failure),
+            (RunState.OUTPUT_INVALID, EventType.RUN_FAILED, {"reason": reason, "steps": steps}),
+        )
         return RunResult(
             run_id=run_id, state=state_machine.state, answer=reason, steps=steps, output_errors=check.errors
         )
+
+    def _finish_validating(
+        self,
+        run_id: str,
+        state_machine: RunStateMachine,
+        check: tuple[RunState, EventType, dict[str, Any]],
+        end: tuple[RunState, EventType, dict[str, Any]],
+    ) -> None:
+        """End a run from ``validating`` in one transaction: the check's event, the transition, the end.
+
+        The state machine moves to the terminal state of ``end`` only after the write succeeded.
+        """
+
+        final_state = end[0]
+        transition = {"from": state_machine.state.value, "to": final_state.value}
+        self.event_log.append_guarded(run_id, [check, (final_state, EventType.STATE_TRANSITION, transition), end])
+        state_machine.transition_to(final_state)
 
     def _succeed(
         self,
@@ -1111,7 +1155,6 @@ class AgentRunner:
         state_machine: RunStateMachine,
         steps: int,
         decision: Decision,
-        output: FinalOutput | None = None,
     ) -> RunResult:
         """Mark a run as succeeded.
 
@@ -1120,7 +1163,6 @@ class AgentRunner:
             state_machine: Run state machine.
             steps: Step count.
             decision: Finish decision.
-            output: Validated final output of a run with an output contract.
 
         Returns:
             Successful run result.
@@ -1134,7 +1176,7 @@ class AgentRunner:
             EventType.RUN_COMPLETED,
             {"answer": answer, "steps": steps},
         )
-        return RunResult(run_id=run_id, state=state_machine.state, answer=answer, steps=steps, output=output)
+        return RunResult(run_id=run_id, state=state_machine.state, answer=answer, steps=steps)
 
     def _cancel(
         self,
