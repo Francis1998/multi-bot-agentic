@@ -564,7 +564,7 @@ multi-bot-agentic eval --event-log-dir demo-output/guide/eval | jq -c '{pass_rat
 ```
 
 ```json
-{"pass_rate":1.0,"usage_totals":{"requests":6,"total_tokens":555,"cost_usd":0.000566},"budget":{"passed":true,"budget_checks":[{"budget":"max_total_tokens","value":219,"cap":1000,"passed":true},{"budget":"max_cost_usd","value":0.000566,"cap":0.01,"passed":true}]}}
+{"pass_rate":1.0,"usage_totals":{"requests":9,"total_tokens":996,"cost_usd":0.000566},"budget":{"passed":true,"budget_checks":[{"budget":"max_total_tokens","value":219,"cap":1000,"passed":true},{"budget":"max_cost_usd","value":0.000566,"cap":0.01,"passed":true}]}}
 ```
 
 ## How it interacts with other features
