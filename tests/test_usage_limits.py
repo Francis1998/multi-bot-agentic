@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,7 +19,10 @@ from multi_bot_agentic.cli import build_run_report, main
 from multi_bot_agentic.eval import EvalScenario, EvaluationHarness, load_scenario
 from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
 from multi_bot_agentic.fork import build_history
+from multi_bot_agentic.llm.claude_code_cli import ClaudeCodeCLIAdapter
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
+from multi_bot_agentic.llm.gemini import GeminiAdapter
+from multi_bot_agentic.llm.openai import OpenAIAdapter
 from multi_bot_agentic.models import EventType, ModelOutput, ModelRequest, RunState, ToolInvocation, ToolResult
 from multi_bot_agentic.runner import AgentRunner
 from multi_bot_agentic.safety import SafetyPolicy
@@ -471,3 +475,59 @@ def test_a_limit_set_at_resume_survives_a_crash_before_the_next_checkpoint(event
         "max_total_tokens",
         100,
     )
+
+
+CLAUDE_ERROR = {
+    "type": "result",
+    "subtype": "error_max_turns",
+    "is_error": True,
+    "result": "",
+    "total_cost_usd": 0.02,
+    "usage": {"input_tokens": 100, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0, "output_tokens": 20},
+}
+
+
+def _billed_failure(case: str, monkeypatch: MonkeyPatch) -> object:
+    """Return a provider whose call fails after its provider reported usage (so it may be billed)."""
+
+    if case.startswith("claude"):
+        returncode = 1 if case == "claude-exit-1" else 0
+
+        def fake_run(command: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(command, returncode, stdout=json.dumps(CLAUDE_ERROR), stderr="")
+
+        monkeypatch.setattr(subprocess, "run", fake_run)
+        return ClaudeCodeCLIAdapter(command="claude -p --output-format json")
+    usage = {"prompt_tokens": 100, "completion_tokens": 20, "total_tokens": 120}
+    if case == "openai":
+        response: dict[str, Any] = {"choices": [], "usage": usage}
+    else:
+        response = {
+            "candidates": [{"finishReason": "MALFORMED_FUNCTION_CALL"}],
+            "usageMetadata": {"promptTokenCount": 100, "candidatesTokenCount": 20, "totalTokenCount": 120},
+        }
+
+    def fake_post_json(*_args: object, **_kwargs: object) -> dict[str, Any]:
+        return response
+
+    monkeypatch.setattr(f"multi_bot_agentic.llm.{case}.post_json", fake_post_json)
+    if case == "openai":
+        return OpenAIAdapter(api_key="k", model="gpt-6.2-sol", base_url="https://example.test")
+    return GeminiAdapter(api_key="k", model="gemini-4-neon")
+
+
+@pytest.mark.parametrize("case", ["claude-error-result", "claude-exit-1", "openai", "gemini"])
+def test_a_failed_call_that_reported_usage_is_still_recorded(
+    event_log: SQLiteEventLog, monkeypatch: MonkeyPatch, case: str
+) -> None:
+    """The run fails as before, but the call its provider reported usage for stays in the totals."""
+
+    result = _runner(event_log, provider=_billed_failure(case, monkeypatch)).run(GOAL, run_id="r")
+
+    assert result.state is RunState.FAILED
+    records = _of(event_log, "r", EventType.LLM_USAGE)
+    assert len(records) == 1
+    assert (records[0].payload["usage"]["input_tokens"], records[0].payload["usage"]["output_tokens"]) == (100, 20)
+    assert result.usage is not None and result.usage.requests == 1
+    if case.startswith("claude"):
+        assert records[0].payload["cost"] == {"usd": 0.02, "source": "provider", "notes": ["reported by the provider"]}
