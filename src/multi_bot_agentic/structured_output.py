@@ -46,6 +46,10 @@ DEFAULT_OUTPUT_RETRIES: Final[int] = 2
 MAX_OUTPUT_RETRIES: Final[int] = 10
 # Backstop for recursion through ``$ref``/``allOf``; cycles are already refused when loading.
 _MAX_VALIDATION_DEPTH: Final[int] = 256
+# Subschemas one value may be checked against through allOf/anyOf/oneOf/$ref (refused when loading),
+# and the validation steps one answer may take (shared references can multiply the work).
+MAX_SCHEMA_EXPANSION: Final[int] = 10_000
+MAX_VALIDATION_STEPS: Final[int] = 500_000
 
 JSON_TYPES: Final[tuple[str, ...]] = ("array", "boolean", "integer", "null", "number", "object", "string")
 ANNOTATION_KEYWORDS: Final[frozenset[str]] = frozenset(
@@ -87,6 +91,10 @@ class SchemaError(ValueError):
 
 class OutputExtractionError(ValueError):
     """Raised when no single JSON document can be read from a final answer."""
+
+
+class _WorkLimitError(Exception):
+    """Raised inside validation when an answer needs more than ``MAX_VALIDATION_STEPS`` steps."""
 
 
 def strict_json_loads(text: str) -> Any:
@@ -326,6 +334,7 @@ class _SchemaChecker:
                 )
             self.same_value.setdefault(location, []).append(target)
         self._refuse_cycles()
+        self._refuse_expansion()
 
     def walk(self, schema: Any, location: str, depth: int) -> None:
         """Check one schema and everything under it."""
@@ -445,15 +454,45 @@ class _SchemaChecker:
                     path.append(target)
                     stack.append(iter(self.same_value.get(target, ())))
 
+    def _refuse_expansion(self) -> None:
+        """Refuse schemas whose shared references make one value be checked against too many subschemas.
+
+        Each location's expansion counts itself plus, with multiplicity, everything its
+        ``allOf``/``anyOf``/``oneOf`` members and ``$ref`` targets apply to the same value; a chain of
+        definitions that each reference the previous one twice doubles it at every step.
+        """
+
+        sizes: dict[str, int] = {}
+        for start in sorted(self.same_value):
+            stack = [(start, False)]
+            while stack:
+                location, ready = stack.pop()
+                if location in sizes:
+                    continue
+                targets = self.same_value.get(location, [])
+                if not ready:
+                    stack.append((location, True))
+                    stack.extend((target, False) for target in targets if target not in sizes)
+                    continue
+                size = 1 + sum(sizes[target] for target in targets)
+                if size > MAX_SCHEMA_EXPANSION:
+                    raise SchemaError(
+                        f"schema {location}: its allOf/anyOf/oneOf/$ref references expand to more than "
+                        f"{MAX_SCHEMA_EXPANSION} subschemas for one value"
+                    )
+                sizes[location] = size
+
 
 class _Validator:
     """Collects the errors of one value against a checked schema."""
 
-    def __init__(self, root: Any, patterns: Mapping[str, re.Pattern[str]]) -> None:
+    def __init__(self, root: Any, patterns: Mapping[str, re.Pattern[str]], budget: list[int] | None = None) -> None:
         self.root = root
         self.patterns = patterns
         self.errors: list[str] = []
         self.dropped = 0
+        # Steps left for the whole answer, shared with the validators of anyOf/oneOf alternatives.
+        self.budget = budget if budget is not None else [MAX_VALIDATION_STEPS]
 
     def add(self, path: str, message: str) -> None:
         if len(self.errors) >= MAX_ERRORS:
@@ -465,11 +504,14 @@ class _Validator:
     def branch(self, schema: Any, value: Any, path: str, depth: int) -> list[str]:
         """Return the errors of ``value`` against one ``anyOf``/``oneOf`` alternative."""
 
-        validator = _Validator(self.root, self.patterns)
+        validator = _Validator(self.root, self.patterns, self.budget)
         validator.validate(schema, value, path, depth)
         return validator.errors
 
     def validate(self, schema: Any, value: Any, path: str, depth: int) -> None:
+        self.budget[0] -= 1
+        if self.budget[0] < 0:
+            raise _WorkLimitError
         if depth > _MAX_VALIDATION_DEPTH:
             self.add(path, "the schema recursion limit was reached")
             return
@@ -694,7 +736,13 @@ class OutputSchema:
         """Return the validation errors of a decoded JSON value (empty when it is valid)."""
 
         validator = _Validator(self.value, self.patterns)
-        validator.validate(self.value, value, "$", 0)
+        try:
+            validator.validate(self.value, value, "$", 0)
+        except _WorkLimitError:
+            return (
+                f"$: validation stopped after {MAX_VALIDATION_STEPS} steps: the schema's references multiply "
+                "the work for this value; simplify the schema",
+            )
         if validator.dropped:
             validator.errors.append(f"({_plural(validator.dropped, 'more error')} not shown)")
         return tuple(validator.errors)
