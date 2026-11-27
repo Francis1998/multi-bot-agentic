@@ -173,7 +173,8 @@ class RunHistory:
         goal: Goal the run worked on (a fork's own goal), if recorded.
         provider: Provider the run used (a fork's own provider), if recorded.
         final_state: ``succeeded``, ``failed``, ``cancelled``, ``awaiting_approval`` (paused at a
-            human-approval interrupt), or ``unfinished``.
+            human-approval interrupt), ``usage_limit_exceeded`` (stopped at a usage limit), or
+            ``unfinished``.
         steps: Step 0 (the start) and every step that made a decision, in order.
         lineage: Where the run was forked from, or ``None`` for an original run.
     """
@@ -912,6 +913,8 @@ def _scan(events: Sequence[EventRecord]) -> _Scan:
             pending.outcome = "interrupted"
         step = last_closed + 1
         steps[step] = _history_step(step, pending, forkable=False, lineage=lineage, event_seq=None)
+    elif final_state == "unfinished" and ordered[-1].state == RunState.USAGE_LIMIT_EXCEEDED.value:
+        final_state = RunState.USAGE_LIMIT_EXCEEDED.value
 
     if lineage is not None:
         goal = lineage.goal or goal

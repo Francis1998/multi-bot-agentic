@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
+from datetime import datetime, timezone
 from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Any
@@ -27,10 +28,11 @@ from multi_bot_agentic.decision import DeterministicDecisionEngine
 from multi_bot_agentic.event_log import EventRecord, RunLease, SQLiteEventLog
 from multi_bot_agentic.fork import ForkPlan, plan_fork
 from multi_bot_agentic.lifecycle import InvalidTransitionError, RunStateMachine
-from multi_bot_agentic.llm.base import LLMAdapter
+from multi_bot_agentic.llm.base import BilledCallError, LLMAdapter
 from multi_bot_agentic.models import (
     Decision,
     EventType,
+    ModelOutput,
     ModelRequest,
     Observation,
     RationaleTrace,
@@ -39,6 +41,7 @@ from multi_bot_agentic.models import (
     ToolResult,
     ToolSpec,
 )
+from multi_bot_agentic.pricing import PriceTable, price_call
 from multi_bot_agentic.safety import SafetyError, SafetyPolicy
 from multi_bot_agentic.structured_output import (
     CONTRACT_KEY,
@@ -57,6 +60,7 @@ from multi_bot_agentic.structured_output import (
     verified_output,
 )
 from multi_bot_agentic.tools.base import ToolAdapter
+from multi_bot_agentic.usage import AFTER_CALL, BEFORE_CALL, LimitBreach, UsageLimits, UsageTotals
 
 
 @dataclass(frozen=True)
@@ -73,6 +77,9 @@ class RunResult:
         interrupt: The interrupt the run paused at when ``state`` is ``awaiting_approval``.
         output: The validated final output of a succeeded run with an output schema.
         output_errors: Validation errors of the last answer when ``state`` is ``output_invalid``.
+        usage: Running usage totals the run's limits count (a fork's include its inherited calls).
+        usage_limit: The limit that stopped the run when ``state`` is ``usage_limit_exceeded``.
+        still_stopped: True when ``resume`` found the run still over that limit and wrote nothing.
     """
 
     run_id: str
@@ -83,6 +90,9 @@ class RunResult:
     interrupt: InterruptRecord | None = None
     output: FinalOutput | None = None
     output_errors: tuple[str, ...] = ()
+    usage: UsageTotals | None = None
+    usage_limit: LimitBreach | None = None
+    still_stopped: bool = False
 
 
 class ResumeError(ValueError):
@@ -175,6 +185,7 @@ def recorded_outcome(event_log: SQLiteEventLog, run_id: str) -> RunResult | None
         already_finished=True,
         output=output,
         output_errors=errors,
+        usage=UsageTotals.from_events(events),
     )
 
 
@@ -202,6 +213,7 @@ class AgentRunner:
         bots: dict[str, BotSpec] | None = None,
         active_bot_id: str | None = None,
         tool_specs: Sequence[ToolSpec] = (),
+        price_table: PriceTable | None = None,
     ) -> None:
         """Initialize the runner.
 
@@ -215,9 +227,11 @@ class AgentRunner:
             tool_specs: Optional tool catalog advertised to the provider (for example MCP
                 tools). Only specs for registered tools allowed by the live safety policy
                 are sent, so bot handoffs also narrow what the model sees.
+            price_table: Prices for the cost each ``llm_usage`` event records (default: built-in).
         """
 
         self.provider = provider
+        self.price_table = price_table or PriceTable()
         self.event_log = event_log
         self.tools = tools
         self.safety_policy = safety_policy
@@ -239,6 +253,8 @@ class AgentRunner:
         # The output contract of the current run (set by run, resume, and fork) and its failed answers.
         self._contract: OutputContract | None = None
         self._output_failures = 0
+        self._initial_usage_limits = self.safety_policy.usage_limits
+        self._usage = UsageTotals()
         self.decision_engine = DeterministicDecisionEngine(
             provider_name=provider.provider_name,
             bots=self.bots or None,
@@ -286,11 +302,14 @@ class AgentRunner:
             created["require_approval"] = sorted(self.safety_policy.require_approval)
         if output_contract is not None:
             created[CONTRACT_KEY] = output_contract.to_payload()
+        if self.safety_policy.usage_limits.active:
+            created["usage_limits"] = self.safety_policy.usage_limits.to_dict()
+        self._usage = UsageTotals()
         with self._sole_owner(selected_run_id):
             self.event_log.append(selected_run_id, state_machine.state, EventType.RUN_CREATED, created)
             return self._run_loop(selected_run_id, goal, observations, state_machine, start_step=0)
 
-    def resume(self, run_id: str) -> RunResult:
+    def resume(self, run_id: str, *, reset_usage_limits: bool = False) -> RunResult:
         """Resume an interrupted run from its latest checkpoint.
 
         Only a run without a terminal event (``run_completed``, ``run_failed`` or
@@ -317,8 +336,14 @@ class AgentRunner:
         or ``fork`` still executing it) is refused without writing. A lease left behind by a process
         that died is taken over, so a crashed run can still be resumed.
 
+        Usage totals continue from the run's ``llm_usage`` events. The usage limits recorded in the
+        checkpoint stay in force; each limit this runner sets replaces the recorded one, so a run
+        stopped at a usage limit continues once it is resumed with a higher limit. While the limit
+        that stopped it still holds, ``resume`` returns the stop again and writes nothing.
+
         Args:
             run_id: Existing run identifier.
+            reset_usage_limits: Drop the recorded usage limits, so only this runner's apply.
 
         Returns:
             Final run result after continuation, or the recorded outcome of a finished run.
@@ -338,9 +363,9 @@ class AgentRunner:
         if recorded is not None:
             return recorded
         with self._sole_owner(run_id):
-            return self._resume_owned(run_id)
+            return self._resume_owned(run_id, reset_usage_limits=reset_usage_limits)
 
-    def _resume_owned(self, run_id: str) -> RunResult:
+    def _resume_owned(self, run_id: str, *, reset_usage_limits: bool) -> RunResult:
         """Continue ``run_id`` while holding its lease; everything is read again under the lease."""
 
         recorded = recorded_outcome(self.event_log, run_id)
@@ -377,8 +402,28 @@ class AgentRunner:
         if snapshot.require_approval:
             recorded_policy = self.safety_policy.require_approval | frozenset(snapshot.require_approval)
             self.safety_policy = replace(self.safety_policy, require_approval=recorded_policy)
+        recorded_limits = UsageLimits() if reset_usage_limits else snapshot.usage_limits
+        limits = recorded_limits.override(self.safety_policy.usage_limits)
+        self.safety_policy = replace(self.safety_policy, usage_limits=limits)
+        events = self.event_log.list_events(run_id)
+        self._usage = UsageTotals.from_events(events)
         if snapshot.interrupt_id is not None:
             return self._resume_interrupt(run_id, snapshot)
+        state_machine = RunStateMachine()
+        if snapshot.state is RunState.USAGE_LIMIT_EXCEEDED:
+            # Still over the limit that stopped it: report the stop again and write nothing.
+            breach = limits.check(self._usage, _stop_phase(events))
+            if breach is not None and not self.safety_policy.is_cancelled():
+                return RunResult(
+                    run_id=run_id,
+                    state=RunState.USAGE_LIMIT_EXCEEDED,
+                    answer=f"stopped: {breach.message}",
+                    steps=snapshot.step,
+                    usage=self._usage,
+                    usage_limit=breach,
+                    still_stopped=True,
+                )
+            state_machine = RunStateMachine(RunState.USAGE_LIMIT_EXCEEDED)
         restated = self._with_merged_policy(snapshot)
         if restated is not None:
             self.event_log.append(run_id, restated.state, EventType.CHECKPOINT, restated.to_payload())
@@ -386,7 +431,7 @@ class AgentRunner:
             run_id,
             snapshot.goal,
             snapshot.observations,
-            RunStateMachine(),
+            state_machine,
             start_step=max(0, snapshot.step),
         )
 
@@ -400,6 +445,7 @@ class AgentRunner:
         bot_id: str | None = None,
         output_schema: OutputSchema | None = None,
         output_retries: int | None = None,
+        reset_usage_limits: bool = False,
     ) -> RunResult:
         """Branch a recorded run after ``at_step`` into a new run and continue it.
 
@@ -409,7 +455,9 @@ class AgentRunner:
         source's events up to that point, then a checkpoint of its own starting state, then its
         own steps from ``at_step`` on, with this runner's provider and step budget
         (``SafetyPolicy.max_steps`` counts the inherited steps). The source run is not modified,
-        and it does not need to be finished.
+        and it does not need to be finished. Usage totals start from the source's totals at the
+        fork point (its inherited ``llm_usage`` events); the usage limits recorded there apply,
+        each replaced by a limit this runner sets.
 
         Every check in :func:`multi_bot_agentic.fork.plan_fork` runs before anything is written.
 
@@ -422,6 +470,8 @@ class AgentRunner:
                 the first new step is a model call under that bot's scope.
             output_schema: New output schema; by default the fork keeps the source's contract.
             output_retries: New correction-round budget (inherited failed answers count).
+            reset_usage_limits: Drop the usage limits recorded at the fork point, so only this
+                runner's apply.
 
         Returns:
             Final result of the fork.
@@ -446,9 +496,9 @@ class AgentRunner:
             output_retries=output_retries,
         )
         with self._sole_owner(new_run_id):
-            return self._start_fork(new_run_id, plan)
+            return self._start_fork(new_run_id, plan, reset_usage_limits=reset_usage_limits)
 
-    def _start_fork(self, new_run_id: str, plan: ForkPlan) -> RunResult:
+    def _start_fork(self, new_run_id: str, plan: ForkPlan, *, reset_usage_limits: bool) -> RunResult:
         """Write a planned fork's first events and run it, while holding its lease."""
 
         self.event_log.append(new_run_id, RunState.CREATED, EventType.RUN_FORKED, dict(plan.lineage))
@@ -456,6 +506,7 @@ class AgentRunner:
             self.event_log.append(new_run_id, RunState(event.state), EventType(event.event_type), event.payload)
         if plan.handoff is not None:
             self.event_log.append(new_run_id, RunState.CREATED, EventType.ACTION_RESULT, dict(plan.handoff))
+        self._usage, limits = fork_usage(plan, self.safety_policy.usage_limits, reset=reset_usage_limits)
         # The fork's own starting state: a fork that dies in its first step resumes with its overrides.
         save_checkpoint(
             self.event_log,
@@ -466,10 +517,14 @@ class AgentRunner:
             observations=plan.observations,
             active_bot_id=plan.bot,
             require_approval=plan.require_approval,
+            usage_limits=limits,
         )
         self.active_bot_id = plan.bot
         self.safety_policy = replace(
-            self.safety_policy, allowed_tools=plan.allowed_tools, require_approval=frozenset(plan.require_approval)
+            self.safety_policy,
+            allowed_tools=plan.allowed_tools,
+            require_approval=frozenset(plan.require_approval),
+            usage_limits=limits,
         )
         self._contract = plan.output_contract
         self._output_failures = (
@@ -515,6 +570,11 @@ class AgentRunner:
 
                 self._transition(run_id, state_machine, RunState.DECIDING)
                 decision = self.decision_engine.decide(observations, step, self.safety_policy)
+                if decision.action == "call_llm":
+                    # Checked before the decision is recorded, so the stop leaves no half-done step behind.
+                    breach = self.safety_policy.usage_limits.check(self._usage, BEFORE_CALL)
+                    if breach is not None:
+                        return self._stop_for_usage(run_id, state_machine, goal, observations, step, breach)
                 self.event_log.append(
                     run_id,
                     state_machine.state,
@@ -559,6 +619,11 @@ class AgentRunner:
                 else:
                     new_observation = self._act(run_id, state_machine.state, goal, observations, decision)
                 observations = (*observations, new_observation)
+                if decision.action == "call_llm":
+                    breach = self.safety_policy.usage_limits.check(self._usage, AFTER_CALL)
+                    if breach is not None:
+                        # The stop's checkpoint closes this step, in the same transaction as the stop.
+                        return self._stop_for_usage(run_id, state_machine, goal, observations, step + 1, breach)
                 save_checkpoint(
                     self.event_log,
                     run_id=run_id,
@@ -568,6 +633,7 @@ class AgentRunner:
                     observations=observations,
                     active_bot_id=self.active_bot_id,
                     require_approval=self.safety_policy.require_approval,
+                    usage_limits=self.safety_policy.usage_limits,
                 )
 
         except (InvalidTransitionError, SafetyError, OSError, RuntimeError, ValueError) as error:
@@ -594,9 +660,9 @@ class AgentRunner:
     def _restore_initial_scope(self) -> None:
         """Return to the constructor's active bot and tool allowlist before a run starts or resumes.
 
-        Handoffs and ``resume`` change ``active_bot_id``, the live allowlist, and the approval
-        policy for the current run only. Only ``allowed_tools`` and ``require_approval`` are
-        reset, so other policy fields keep their current values.
+        Handoffs and ``resume`` change ``active_bot_id``, the live allowlist, the approval policy,
+        and the usage limits for the current run only. Only ``allowed_tools``, ``require_approval``,
+        and ``usage_limits`` are reset, so other policy fields keep their current values.
         """
 
         self.active_bot_id = self._initial_bot_id
@@ -604,6 +670,7 @@ class AgentRunner:
             self.safety_policy,
             allowed_tools=self._initial_allowed_tools,
             require_approval=self._initial_require_approval,
+            usage_limits=self._initial_usage_limits,
         )
 
     def _approval_patterns(self, decision: Decision) -> tuple[str, ...]:
@@ -658,6 +725,7 @@ class AgentRunner:
             active_bot_id=self.active_bot_id,
             require_approval=tuple(sorted(self.safety_policy.require_approval)),
             interrupt_id=interrupt_id,
+            usage_limits=self.safety_policy.usage_limits,
         )
         self.event_log.append_guarded(
             run_id,
@@ -679,6 +747,7 @@ class AgentRunner:
             answer=f"paused: {decision.target} needs human approval (interrupt {interrupt_id})",
             steps=step,
             interrupt=find_interrupt(self.event_log, interrupt_id, run_id=run_id),
+            usage=self._usage,
         )
 
     def _resume_interrupt(self, run_id: str, snapshot: CheckpointSnapshot) -> RunResult:
@@ -812,16 +881,18 @@ class AgentRunner:
         return self._run_loop(run_id, snapshot.goal, observations, state_machine, start_step=snapshot.step + 1)
 
     def _with_merged_policy(self, snapshot: CheckpointSnapshot) -> CheckpointSnapshot | None:
-        """Return ``snapshot`` restated with this resume's approval policy, or ``None`` if it did not grow.
+        """Return ``snapshot`` restated with this resume's approval policy and usage limits, or ``None``.
 
-        A resume records the restated checkpoint before it advances (inside the claim at an interrupt),
-        so ``require_approval`` entries it added survive a crash before its next checkpoint.
+        ``None`` means neither changed. A resume records the restated checkpoint before it advances
+        (inside the claim at an interrupt), so ``require_approval`` entries it added and usage limits it
+        set or reset survive a crash before its next checkpoint.
         """
 
         merged = tuple(sorted(self.safety_policy.require_approval))
-        if set(merged) == set(snapshot.require_approval):
+        limits = self.safety_policy.usage_limits
+        if set(merged) == set(snapshot.require_approval) and limits == snapshot.usage_limits:
             return None
-        return replace(snapshot, require_approval=merged)
+        return replace(snapshot, require_approval=merged, usage_limits=limits)
 
     def _next_checkpoint(
         self,
@@ -839,6 +910,7 @@ class AgentRunner:
             observations=observations,
             active_bot_id=self.active_bot_id,
             require_approval=tuple(sorted(self.safety_policy.require_approval)),
+            usage_limits=self.safety_policy.usage_limits,
         )
 
     def _claim(
@@ -933,7 +1005,20 @@ class AgentRunner:
             request = ModelRequest(goal=goal, observations=observations, tools=self._visible_tool_specs())
             if self._contract is not None:
                 request = replace(request, output_schema=self._contract.schema.value, max_output_chars=MAX_ANSWER_CHARS)
-            output = self.provider.complete(request, timeout_seconds=self.safety_policy.timeout_seconds)
+            try:
+                output = self.provider.complete(request, timeout_seconds=self.safety_policy.timeout_seconds)
+            except BilledCallError as error:
+                # The provider reported usage for the failed call: count it before the run fails.
+                billed = ModelOutput(
+                    provider=self.provider.provider_name,
+                    text="",
+                    usage=error.usage,
+                    model=error.model,
+                    cost_usd=error.cost_usd,
+                )
+                self._record_usage(run_id, state, billed)
+                raise
+            self._record_usage(run_id, state, output)
             observation = output.to_observation()
             self.event_log.append(
                 run_id,
@@ -947,6 +1032,102 @@ class AgentRunner:
             return self._execute_tool(run_id, state, decision)
 
         raise ValueError(f"unsupported action for _act: {decision.action}")
+
+    def _record_usage(self, run_id: str, state: RunState, output: ModelOutput) -> None:
+        """Price one model call, add it to the running totals, and record an ``llm_usage`` event.
+
+        Args:
+            run_id: Run identifier.
+            state: Current state.
+            output: The provider's output, with the usage it reported.
+        """
+
+        # The UTC day whose prices applied; payloads hold no wall-clock time, so logs stay deterministic.
+        priced_on = _utc_now().date()
+        cost = price_call(
+            output.usage,
+            model=output.model,
+            provider_cost=output.cost_usd,
+            table=self.price_table,
+            on=priced_on,
+        )
+        self._usage = self._usage.add(output.usage, cost.usd)
+        self.event_log.append(
+            run_id,
+            state,
+            EventType.LLM_USAGE,
+            {
+                "bot": self.active_bot_id,
+                "provider": output.provider,
+                "model": output.model,
+                "usage": output.usage.to_dict() if output.usage is not None else None,
+                "cost": cost.to_dict(),
+                "priced_at": priced_on.isoformat(),
+                "totals": self._usage.to_dict(),
+            },
+        )
+
+    def _stop_for_usage(
+        self,
+        run_id: str,
+        state_machine: RunStateMachine,
+        goal: str,
+        observations: tuple[Observation, ...],
+        steps: int,
+        breach: LimitBreach,
+    ) -> RunResult:
+        """Stop the run at a usage limit: record the breach and checkpoint, so ``resume`` continues.
+
+        The transition, the ``usage_limit_exceeded`` event, and the checkpoint are one transaction, so
+        a process that dies while stopping leaves none of them: ``resume`` then continues from the
+        previous checkpoint, where the before-call check stops the run again.
+
+        Args:
+            run_id: Run identifier.
+            state_machine: Run state machine (``deciding`` before a call, ``acting`` after one).
+            goal: User goal.
+            observations: Observations to resume with (they include the output of a call that
+                exceeded the limit, so it is never repeated).
+            steps: Steps completed.
+            breach: The limit that was breached.
+
+        Returns:
+            Result in state ``usage_limit_exceeded``.
+        """
+
+        previous, current = state_machine.transition_to(RunState.USAGE_LIMIT_EXCEEDED)
+        step = steps + 1 if breach.phase == BEFORE_CALL else steps
+        payload = breach.to_dict() | {
+            "step": step,
+            "limits": self.safety_policy.usage_limits.to_dict(),
+            "totals": self._usage.to_dict(),
+        }
+        checkpoint = CheckpointSnapshot(
+            run_id=run_id,
+            goal=goal,
+            step=steps,
+            state=current,
+            observations=observations,
+            active_bot_id=self.active_bot_id,
+            require_approval=tuple(sorted(self.safety_policy.require_approval)),
+            usage_limits=self.safety_policy.usage_limits,
+        )
+        self.event_log.append_guarded(
+            run_id,
+            [
+                (current, EventType.STATE_TRANSITION, {"from": previous.value, "to": current.value}),
+                (current, EventType.USAGE_LIMIT_EXCEEDED, payload),
+                (current, EventType.CHECKPOINT, checkpoint.to_payload()),
+            ],
+        )
+        return RunResult(
+            run_id=run_id,
+            state=state_machine.state,
+            answer=f"stopped: {breach.message}",
+            steps=steps,
+            usage=self._usage,
+            usage_limit=breach,
+        )
 
     def _tool_for(self, decision: Decision) -> ToolAdapter:
         """Return the registered, allowlisted tool a ``call_tool`` decision targets.
@@ -1084,7 +1265,9 @@ class AgentRunner:
                 (RunState.VALIDATING, EventType.FINAL_OUTPUT, output.to_payload()),
                 (RunState.SUCCEEDED, EventType.RUN_COMPLETED, {"answer": answer, "steps": steps}),
             )
-            return RunResult(run_id=run_id, state=state_machine.state, answer=answer, steps=steps, output=output)
+            return RunResult(
+                run_id=run_id, state=state_machine.state, answer=answer, steps=steps, output=output, usage=self._usage
+            )
         self._output_failures = attempt
         rounds_left = attempt <= contract.retries
         steps_left = self.safety_policy.max_steps - steps >= 2
@@ -1142,7 +1325,12 @@ class AgentRunner:
             (RunState.OUTPUT_INVALID, EventType.RUN_FAILED, {"reason": reason, "steps": steps}),
         )
         return RunResult(
-            run_id=run_id, state=state_machine.state, answer=reason, steps=steps, output_errors=check.errors
+            run_id=run_id,
+            state=state_machine.state,
+            answer=reason,
+            steps=steps,
+            output_errors=check.errors,
+            usage=self._usage,
         )
 
     def _finish_validating(
@@ -1189,7 +1377,7 @@ class AgentRunner:
             EventType.RUN_COMPLETED,
             {"answer": answer, "steps": steps},
         )
-        return RunResult(run_id=run_id, state=state_machine.state, answer=answer, steps=steps)
+        return RunResult(run_id=run_id, state=state_machine.state, answer=answer, steps=steps, usage=self._usage)
 
     def _cancel(
         self,
@@ -1217,7 +1405,7 @@ class AgentRunner:
             EventType.RUN_CANCELLED,
             {"reason": reason, "steps": steps},
         )
-        return RunResult(run_id=run_id, state=state_machine.state, answer=reason, steps=steps)
+        return RunResult(run_id=run_id, state=state_machine.state, answer=reason, steps=steps, usage=self._usage)
 
     def _fail(
         self,
@@ -1246,7 +1434,38 @@ class AgentRunner:
             EventType.RUN_FAILED,
             {"reason": reason, "steps": steps},
         )
-        return RunResult(run_id=run_id, state=state_machine.state, answer=reason, steps=steps)
+        return RunResult(run_id=run_id, state=state_machine.state, answer=reason, steps=steps, usage=self._usage)
+
+
+def fork_usage(plan: ForkPlan, configured: UsageLimits, *, reset: bool = False) -> tuple[UsageTotals, UsageLimits]:
+    """Return the usage totals a fork starts from and the usage limits it runs with.
+
+    Args:
+        plan: The fork plan.
+        configured: Limits set for the fork; each replaces the one recorded at the fork point.
+        reset: Drop the recorded limits, so only ``configured`` applies.
+
+    Returns:
+        The totals of the inherited ``llm_usage`` events and the effective limits.
+    """
+
+    recorded = UsageLimits() if reset else UsageLimits.from_dict(plan.point.event.payload.get("usage_limits"))
+    return UsageTotals.from_events(plan.point.prefix), recorded.override(configured)
+
+
+def _stop_phase(events: Sequence[EventRecord]) -> str:
+    """Return the phase (``before_call`` or ``after_call``) of the run's latest usage-limit stop."""
+
+    for event in reversed(events):
+        if event.event_type == EventType.USAGE_LIMIT_EXCEEDED.value:
+            return AFTER_CALL if event.payload.get("phase") == AFTER_CALL else BEFORE_CALL
+    return BEFORE_CALL
+
+
+def _utc_now() -> datetime:
+    """Return the current UTC time; its date selects effective-dated prices (``priced_at``)."""
+
+    return datetime.now(timezone.utc)
 
 
 def _rationale(value: Any) -> RationaleTrace:

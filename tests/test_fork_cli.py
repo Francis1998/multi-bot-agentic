@@ -168,8 +168,11 @@ def test_fork_continues_and_report_shows_parents_children_and_tampering(
     _, full_report, _ = _invoke(capsys, "report", "--event-log", str(event_log))
 
     assert code == 0
-    assert err == "note: forked run demo after step 1 into rollback (9 events inherited; new goal)\n"
-    assert json.loads(out) == {
+    assert err == "note: forked run demo after step 1 into rollback (10 events inherited; new goal)\n"
+    printed = json.loads(out)
+    # The fork's usage counts the call it inherited plus its own two.
+    assert printed.pop("usage")["requests"] == 3
+    assert printed == {
         "run_id": "rollback",
         "parent_run_id": "demo",
         "fork_step": 1,
@@ -183,7 +186,7 @@ def test_fork_continues_and_report_shows_parents_children_and_tampering(
         "children": [{"run_id": "rollback", "fork_step": 1, "overrides": {"goal": NEW_GOAL}}],
     }
     parent = json.loads(child_report)["runs"][0]["lineage"]["parent"]
-    assert (parent["parent_run_id"], parent["fork_step"], parent["inherited_events"]) == ("demo", 1, 9)
+    assert (parent["parent_run_id"], parent["fork_step"], parent["inherited_events"]) == ("demo", 1, 10)
     assert parent["inherited_events_verified"] is True
     assert [run.get("lineage") is not None for run in json.loads(full_report)["runs"]] == [True, True]
 
@@ -219,7 +222,7 @@ def test_replay_report_history_and_trace_of_a_fork_never_call_a_provider(
     mermaid = _invoke(capsys, "trace", *base, "--format", "mermaid")
 
     assert [result[0] for result in (replay, report, history, otlp, mermaid)] == [0, 0, 0, 0, 0]
-    assert replay[1].splitlines()[0] == "001 created    run_forked parent=demo step=1 inherited=9"
+    assert replay[1].splitlines()[0] == "001 created    run_forked parent=demo step=1 inherited=10"
     assert "forked from demo after step 1 (new goal); * = inherited" in history[1]
     root = json.loads(otlp[1])["resourceSpans"][0]["scopeSpans"][0]["spans"][0]
     assert [(link["traceId"], link["spanId"]) for link in root["links"]] == [

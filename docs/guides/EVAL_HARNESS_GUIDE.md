@@ -74,6 +74,16 @@ Structured-output fields (see the [Structured Output Guide](STRUCTURED_OUTPUT_GU
 `expected_output` (any JSON value), and `expected_output_match` (`exact`, the default, or `subset`). The packaged
 `structured_output_correction.json` scenario scripts one correction round.
 
+Optional token and cost budgets (see the [Usage Limits Guide](USAGE_LIMITS_GUIDE.md#eval-budgets)):
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `max_total_tokens` | integer >= 0 | The run's total tokens must not exceed it |
+| `max_cost_usd` | number >= 0 | The run's cost must be known and not exceed it |
+| `model` | string | Model id the offline usage is priced as (default `fake`, $0), e.g. `gpt-6.2-sol` |
+
+The packaged `usage_budget.json` scenario prices its scripted run as `gpt-6.2-sol` and sets both budgets.
+
 ## Scoring
 
 - `tool_sequence_score` is the longest common prefix of the run's tool calls (`actual_tools`) and
@@ -86,7 +96,9 @@ Structured-output fields (see the [Structured Output Guide](STRUCTURED_OUTPUT_GU
 - `output_score` is `1.0` when the scenario asserts no structured output. With `output_schema`, the run must end
   with a validated output; with `expected_output`, that output (or, without a schema, the JSON read from the
   answer) must match it exactly or as a subset. Otherwise it is `0.0`. The summary reports `mean_output_score`.
-- A scenario passes when all three scores are `1.0` and the run succeeded. `eval` exits `2` when any scenario fails.
+- A scenario passes when all three scores are `1.0`, the run succeeded, and every budget it sets holds (an unknown
+  total fails its budget). Each scenario's `details` hold its `usage` and, with budgets, `budget_checks`; the summary
+  adds `usage_totals` across scenarios. `eval` exits `2` when any scenario fails.
 
 ## Safety
 

@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from fnmatch import fnmatchcase
 from pathlib import Path
+
+from multi_bot_agentic.usage import UsageLimits
 
 
 class SafetyError(RuntimeError):
@@ -24,6 +26,8 @@ class SafetyPolicy:
         cancellation_file: Optional file whose existence cancels a run.
         require_approval: Tool names or ``fnmatch`` patterns (``mcp__*``) whose calls pause the run
             until a human approves or rejects them (human-in-the-loop interrupts).
+        usage_limits: Caps on the run's model requests, tokens, and cost, checked before and after
+            every model call; a breach stops the run in the resumable ``usage_limit_exceeded`` state.
     """
 
     max_steps: int = 6
@@ -157,6 +161,7 @@ class SafetyPolicy:
     )
     cancellation_file: Path | None = None
     require_approval: frozenset[str] = frozenset()
+    usage_limits: UsageLimits = field(default_factory=UsageLimits)
 
     def requires_approval(self, tool_name: str) -> bool:
         """Return whether a call to ``tool_name`` must pause for a human decision.

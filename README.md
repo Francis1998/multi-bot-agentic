@@ -85,6 +85,12 @@ multi-bot-agentic resume --run-id gated --event-log data/runs.sqlite
 multi-bot-agentic run --goal "Plan the agent launch" --provider fake --event-log data/runs.sqlite --run-id plan \
   --output-schema examples/structured-output/launch-plan.schema.json --output-file data/plan.json
 
+# Usage limits: stop at a token or cost budget (exit 5), see what each call used, resume with a higher limit
+multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log data/runs.sqlite --run-id budget \
+  --max-total-tokens 150
+multi-bot-agentic replay --event-log data/runs.sqlite --run-id budget --event-type llm_usage --format text
+multi-bot-agentic resume --run-id budget --event-log data/runs.sqlite --max-total-tokens 1000
+
 # Time travel: list the forkable steps, then branch the run after step 1 with a new goal
 multi-bot-agentic history --event-log data/runs.sqlite --run-id demo
 multi-bot-agentic fork --event-log data/runs.sqlite --run-id demo --at-step 1 --new-run-id demo-rollback \
@@ -123,6 +129,16 @@ document to the next pipeline step ([Structured output guide](docs/guides/STRUCT
 
 ![Structured output demo: a schema, a run that needs one correction round, the validation events, the output file, a run that exits 4, a fork that rescues it, its trace, and an eval assertion](assets/demo/structured-output.gif)
 
+**Token usage, cost, and hard usage limits:** every model call records the tokens its provider reported and what it
+cost (a dated price table for GPT-6.2 Sol and Astra, Gemini 4 Neon, Hydrogen, and Carbon, and Kimi K3.1 Pro;
+Claude Code's own cost) as an `llm_usage` event. `--max-requests`, `--max-input-tokens`, `--max-output-tokens`,
+`--max-total-tokens`, and `--max-cost-usd` stop a run before or after a model call in the resumable
+`usage_limit_exceeded` state (exit code 5), and `resume` with a higher limit continues where it stopped. `report`
+shows usage per run, bot, and model; `trace` exports `gen_ai.usage.*` attributes; `eval` fixtures assert token and
+cost budgets ([Usage limits guide](docs/guides/USAGE_LIMITS_GUIDE.md)).
+
+![Usage limits demo: a run stops at its token limit, its llm_usage events, a resume refused while still over the limit, a resume with a higher limit, a cost limit, per-run usage in report, and usage notes in the Mermaid trace](assets/demo/usage-limits.gif)
+
 ## Feature Map
 
 | Capability | What you get | Code | Docs |
@@ -135,9 +151,10 @@ document to the next pipeline step ([Structured output guide](docs/guides/STRUCT
 | Multi-bot handoffs | `HANDOFF:<bot>:<summary>` with per-bot tool allowlists | `bots.py` | [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md) |
 | **MCP tool bridge** | Tools from any MCP server, with a dual-era (2026-07-28 + legacy) stdio client and no dependencies | `mcp/` | [MCP tools](docs/guides/MCP_TOOLS_GUIDE.md) |
 | Provider adapters | GPT-6.2, Claude Code CLI, Gemini 4, Kimi K3.1, and a fake provider, all sending reasoning-safe parameters | `llm/` | [Configuration](docs/CONFIGURATION.md) |
-| Safety controls | Step budgets, timeouts, cancellation file, tool allowlists, prompt bounds | `safety.py` | [Safety](docs/SAFETY.md) |
+| Safety controls | Step budgets, timeouts, cancellation file, tool allowlists, prompt bounds, usage limits | `safety.py` | [Safety](docs/SAFETY.md) |
 | **Human-in-the-loop interrupts** | `--require-approval TOOL[,TOOL]` pauses a run durably before matching tool calls (`awaiting_approval` state, exit 3). `approvals list/show`, `approve [--args JSON]`, and `reject --reason` record who decided what and when; `resume` runs an approved call exactly once or feeds a rejection back so the model re-plans. Shown in `replay`, `report`, `history`, and `trace`. The file-backed gate remains for caller-driven flows | `approval.py`, `runner.py`, `cli.py` | [HITL interrupts](docs/guides/HITL_INTERRUPTS_GUIDE.md), [HITL gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md) |
 | **Structured output** | `--output-schema schema.json` requires a final answer that is a JSON document validating against a JSON Schema (a dependency-free subset with exact error paths; unsupported keywords are refused, never ignored). Invalid answers get correction rounds (`--output-retries`, default 2), then the run stops in `output_invalid` (exit 4). The contract is recorded, so `resume` and `fork` enforce it; `--output-file` writes the output atomically. Shown in `replay`, `report`, `history`, `trace`, and asserted by `eval` (`expected_output`, `output_schema`) | `structured_output.py`, `runner.py`, `cli.py` | [Structured output](docs/guides/STRUCTURED_OUTPUT_GUIDE.md) |
+| **Usage & cost limits** | Every model call records normalized provider usage (input, output, cached, reasoning tokens) and its cost from a dated price table (or the provider's own cost) as an `llm_usage` event. `--max-requests`, `--max-*-tokens`, and `--max-cost-usd` are checked before and after each call; a breach stops the run in `usage_limit_exceeded` (exit 5), and `resume` with a higher limit continues. `report` per run/bot/model, `gen_ai.usage.*` in `trace`, eval budgets | `usage.py`, `pricing.py`, `runner.py` | [Usage limits](docs/guides/USAGE_LIMITS_GUIDE.md) |
 | Parallel fan-out | Capped, order-preserving task batches | `fanout.py` | [Fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md) |
 | Tool-call hygiene | Rate limits, PII redaction, result truncation, per-bot permissions | `tool_runner.py`, `observation_redactor.py`, `tool_result_truncator.py`, `tool_permission.py` | [Rate limiter](docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md) |
 | Offline evaluation | Golden-path fixtures scored on tool sequence, answer, and structured output | `eval/` | [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md) |
@@ -179,6 +196,7 @@ ignore them. The OpenAI adapter also sends no reasoning effort and no native too
   [Checkpoint resume](docs/guides/CHECKPOINT_RESUME_GUIDE.md),
   [Run fork (time travel)](docs/guides/RUN_FORK_GUIDE.md),
   [Human-in-the-loop interrupts](docs/guides/HITL_INTERRUPTS_GUIDE.md),
+  [Usage & cost limits](docs/guides/USAGE_LIMITS_GUIDE.md),
   [HITL approval gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md),
   [Structured output](docs/guides/STRUCTURED_OUTPUT_GUIDE.md),
   [Parallel fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md),
@@ -238,8 +256,9 @@ scripts/check.sh
 `scripts/check.sh` runs `ruff check`, `ruff format --check`, `mypy src tests`, `pytest`, and a fake-provider
 smoke run with replay, report, and trace (OTLP/JSON and Mermaid), then lists its steps with `history`, forks it,
 and reports and traces the fork, pauses a run at a human-approval interrupt, approves it, and resumes it, and
-finally runs with an output schema (one correction round, a validated output file) and checks that a run without
-correction rounds exits 4. CI runs the same script on Python 3.10, 3.11, and 3.12. For a richer local demo, run `scripts/run_demo.sh`.
+runs with an output schema (one correction round, a validated output file) and checks that a run without
+correction rounds exits 4, and finally stops a run at a token limit (exit 5) and resumes it with a higher one. CI
+runs the same script on Python 3.10, 3.11, and 3.12. For a richer local demo, run `scripts/run_demo.sh`.
 
 ## Contributing
 

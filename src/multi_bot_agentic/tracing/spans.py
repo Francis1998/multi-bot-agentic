@@ -41,6 +41,7 @@ from multi_bot_agentic.tracing.timeline import (
     Resume,
     RunTimeline,
     ToolCall,
+    UsageLimitStop,
     nanos_between,
     parse_run,
     timestamp_to_unix_nanos,
@@ -417,6 +418,8 @@ class _TraceBuilder:
                 root.events.append(SpanEvent(f"{NAMESPACE}.run.resumed", timestamp_to_unix_nanos(step.at), {}))
             elif isinstance(step, Fork):
                 root.events.append(self._fork_event(step))
+            elif isinstance(step, UsageLimitStop):
+                root.events.append(self._usage_limit_event(step))
         if agent_span is not root:
             agent_span.end = run_end
         spans = [root.freeze()] + [
@@ -435,12 +438,16 @@ class _TraceBuilder:
         models = sorted({model for model in (_model_of(call) for call in self._model_calls()) if model})
         if len(models) == 1:
             attributes["gen_ai.request.model"] = models[0]
-        usages = [_usage(call.metadata) for call in self._model_calls() if call.output is not None]
+        calls = [call for call in self._model_calls() if call.output is not None or call.usage is not None]
+        usages = [_usage(call) for call in calls]
         if usages and all(
             input_tokens is not None and output_tokens is not None for input_tokens, output_tokens in usages
         ):
             attributes["gen_ai.usage.input_tokens"] = sum(item[0] or 0 for item in usages)
             attributes["gen_ai.usage.output_tokens"] = sum(item[1] or 0 for item in usages)
+        costs = [call.cost_usd for call in calls]
+        if costs and all(cost is not None for cost in costs):
+            attributes[f"{NAMESPACE}.usage.cost_usd"] = round(sum(cost or 0.0 for cost in costs), 10)
         attributes[f"{NAMESPACE}.run.state"] = timeline.final_state
         if timeline.outcome is not None and timeline.outcome.steps is not None:
             attributes[f"{NAMESPACE}.run.steps"] = timeline.outcome.steps
@@ -530,11 +537,12 @@ class _TraceBuilder:
         finish_reason = call.metadata.get("finish_reason")
         if isinstance(finish_reason, str) and finish_reason:
             attributes["gen_ai.response.finish_reasons"] = [finish_reason]
-        input_tokens, output_tokens = _usage(call.metadata)
+        input_tokens, output_tokens = _usage(call)
         if input_tokens is not None:
             attributes["gen_ai.usage.input_tokens"] = input_tokens
         if output_tokens is not None:
             attributes["gen_ai.usage.output_tokens"] = output_tokens
+        attributes.update(_usage_details(call))
         attributes.update(_decision_attributes(call.decision))
         if call.output is not None:
             attributes[f"{NAMESPACE}.llm.directive"] = model_directive(call.output)[0]
@@ -687,6 +695,19 @@ class _TraceBuilder:
             attributes[f"{NAMESPACE}.fork.ancestor"] = True
         return SpanEvent(f"{NAMESPACE}.run.forked", timestamp_to_unix_nanos(fork.at), attributes)
 
+    def _usage_limit_event(self, stop: UsageLimitStop) -> SpanEvent:
+        """Return the root span event for a usage limit that stopped the run."""
+
+        attributes: dict[str, Any] = {
+            f"{NAMESPACE}.usage_limit.name": stop.limit,
+            f"{NAMESPACE}.usage_limit.phase": stop.phase,
+        }
+        if stop.cap is not None:
+            attributes[f"{NAMESPACE}.usage_limit.cap"] = stop.cap
+        if stop.value is not None:
+            attributes[f"{NAMESPACE}.usage_limit.value"] = stop.value
+        return SpanEvent(f"{NAMESPACE}.usage_limit_exceeded", timestamp_to_unix_nanos(stop.at), attributes)
+
     def _checkpoint_event(self, checkpoint: Checkpoint) -> SpanEvent:
         """Return the root span event for a checkpoint."""
 
@@ -751,13 +772,38 @@ def _model_of(call: ModelCall) -> str | None:
     return model if isinstance(model, str) and model else None
 
 
-def _usage(metadata: Mapping[str, Any]) -> tuple[int | None, int | None]:
-    """Return ``(input_tokens, output_tokens)`` when the adapter recorded token usage."""
+def _usage(call: ModelCall) -> tuple[int | None, int | None]:
+    """Return ``(input_tokens, output_tokens)`` from the call's ``llm_usage`` event, else from metadata
+    an adapter recorded (older logs)."""
 
+    if call.usage is not None:
+        return _first_count([call.usage], ("input_tokens",)), _first_count([call.usage], ("output_tokens",))
+    metadata = call.metadata
     sources = [metadata, metadata.get("usage"), metadata.get("usageMetadata")]
     input_tokens = _first_count(sources, ("input_tokens", "prompt_tokens", "promptTokenCount"))
     output_tokens = _first_count(sources, ("output_tokens", "completion_tokens", "candidatesTokenCount"))
     return input_tokens, output_tokens
+
+
+def _usage_details(call: ModelCall) -> dict[str, Any]:
+    """Return cache, reasoning, and cost attributes of a model call that recorded ``llm_usage``.
+
+    A cost the provider reported is exported even when it reported no token usage.
+    """
+
+    attributes: dict[str, Any] = {}
+    if call.usage is not None:
+        cached = _first_count([call.usage], ("cached_input_tokens",))
+        if cached is not None:
+            attributes["gen_ai.usage.cache_read.input_tokens"] = cached
+        reasoning = _first_count([call.usage], ("reasoning_tokens",))
+        if reasoning is not None:
+            attributes["gen_ai.usage.reasoning.output_tokens"] = reasoning
+    if call.cost_usd is not None:
+        attributes[f"{NAMESPACE}.usage.cost_usd"] = call.cost_usd
+    if call.model is not None:
+        attributes[f"{NAMESPACE}.usage.priced_model"] = call.model
+    return attributes
 
 
 def _first_count(sources: Sequence[Any], keys: Sequence[str]) -> int | None:

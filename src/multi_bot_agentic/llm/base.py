@@ -5,7 +5,36 @@ from __future__ import annotations
 import json
 from typing import Any, Protocol
 
-from multi_bot_agentic.models import ModelOutput, ModelRequest, ToolSpec
+from multi_bot_agentic.models import ModelOutput, ModelRequest, ToolSpec, Usage
+
+
+class BilledCallError(RuntimeError):
+    """A model call that failed after its provider reported usage or cost, so it may still be billed.
+
+    The runner records the call's ``llm_usage`` before the run fails with this error's message.
+
+    Attributes:
+        usage: Usage the provider reported for the failed call, if any.
+        model: Model id the call is priced as, if known.
+        cost_usd: Cost the provider reported itself, if any.
+    """
+
+    def __init__(
+        self, message: str, *, usage: Usage | None, model: str | None = None, cost_usd: float | None = None
+    ) -> None:
+        """Create the error.
+
+        Args:
+            message: Failure reason (the run's failure reason).
+            usage: Usage the provider reported.
+            model: Model id the call is priced as.
+            cost_usd: Cost the provider reported itself.
+        """
+
+        super().__init__(message)
+        self.usage = usage
+        self.model = model
+        self.cost_usd = cost_usd
 
 
 class LLMAdapter(Protocol):

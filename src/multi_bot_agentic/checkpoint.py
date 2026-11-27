@@ -9,11 +9,12 @@ separate checkpoint store, thread IDs, or graph-node cursors.
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
 from multi_bot_agentic.models import EventType, Observation, RunState
+from multi_bot_agentic.usage import UsageLimits
 
 
 @dataclass(frozen=True)
@@ -30,6 +31,7 @@ class CheckpointSnapshot:
         require_approval: Approval policy of the run (tool names or patterns), restored on resume.
         interrupt_id: Set when the run paused awaiting a human decision on this interrupt; ``step``
             is then the paused step, whose decision is recorded but not yet acted on.
+        usage_limits: Usage limits of the run, restored on resume (a resume's own limits replace them).
     """
 
     run_id: str
@@ -40,6 +42,7 @@ class CheckpointSnapshot:
     active_bot_id: str | None = None
     require_approval: tuple[str, ...] = ()
     interrupt_id: str | None = None
+    usage_limits: UsageLimits = field(default_factory=UsageLimits)
 
     def to_payload(self) -> dict[str, Any]:
         """Return a JSON-serializable checkpoint payload.
@@ -60,6 +63,8 @@ class CheckpointSnapshot:
             payload["require_approval"] = sorted(self.require_approval)
         if self.interrupt_id is not None:
             payload["interrupt_id"] = self.interrupt_id
+        if self.usage_limits.active:
+            payload["usage_limits"] = self.usage_limits.to_dict()
         return payload
 
 
@@ -94,6 +99,7 @@ def save_checkpoint(
     active_bot_id: str | None = None,
     require_approval: Iterable[str] = (),
     interrupt_id: str | None = None,
+    usage_limits: UsageLimits | None = None,
 ) -> CheckpointSnapshot:
     """Persist a checkpoint event and return the snapshot.
 
@@ -107,6 +113,7 @@ def save_checkpoint(
         active_bot_id: Bot whose tool scope is active, restored on resume.
         require_approval: Approval policy of the run, restored on resume.
         interrupt_id: Interrupt the run is paused at, if any.
+        usage_limits: Usage limits of the run, restored on resume.
 
     Returns:
         Saved checkpoint snapshot.
@@ -121,6 +128,7 @@ def save_checkpoint(
         active_bot_id=active_bot_id,
         require_approval=tuple(sorted(set(require_approval))),
         interrupt_id=interrupt_id,
+        usage_limits=usage_limits or UsageLimits(),
     )
     event_log.append(run_id, state, EventType.CHECKPOINT, snapshot.to_payload())
     return snapshot
@@ -162,6 +170,7 @@ def _snapshot(run_id: str, payload: dict[str, Any]) -> CheckpointSnapshot:
         active_bot_id=str(active_bot_id) if active_bot_id is not None else None,
         require_approval=require_approval,
         interrupt_id=str(interrupt_id) if interrupt_id else None,
+        usage_limits=UsageLimits.from_dict(payload.get("usage_limits")),
     )
 
 

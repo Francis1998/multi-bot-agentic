@@ -5,9 +5,10 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import quote
 
-from multi_bot_agentic.llm.base import render_output_contract, render_tool_catalog
+from multi_bot_agentic.llm.base import BilledCallError, render_output_contract, render_tool_catalog
 from multi_bot_agentic.llm.http import post_json
 from multi_bot_agentic.models import ModelOutput, ModelRequest
+from multi_bot_agentic.usage import parse_gemini_usage
 
 
 class GeminiAdapter:
@@ -27,7 +28,7 @@ class GeminiAdapter:
         self.model = model
 
     def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
-        """Call Gemini and normalize text output.
+        """Call Gemini and normalize text output and token usage (``usageMetadata``).
 
         Args:
             request: Normalized model request.
@@ -35,6 +36,9 @@ class GeminiAdapter:
 
         Returns:
             Normalized model output.
+
+        Raises:
+            BilledCallError: If the response has no usable text but reported usage.
         """
 
         prompt = _render_prompt(request)
@@ -48,10 +52,19 @@ class GeminiAdapter:
             {},
             timeout_seconds,
         )
+        usage = parse_gemini_usage(decoded.get("usageMetadata"))
+        try:
+            text = _extract_gemini_text(decoded)
+        except ValueError as error:
+            if usage is None:
+                raise
+            raise BilledCallError(str(error), usage=usage, model=self.model) from error
         return ModelOutput(
             provider=self.provider_name,
-            text=_extract_gemini_text(decoded)[: request.max_output_chars],
+            text=text[: request.max_output_chars],
             raw={"model": self.model},
+            usage=usage,
+            model=self.model,
         )
 
 

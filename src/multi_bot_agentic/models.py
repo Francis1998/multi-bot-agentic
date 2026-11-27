@@ -15,6 +15,7 @@ class RunState(str, Enum):
     OBSERVING = "observing"
     DECIDING = "deciding"
     AWAITING_APPROVAL = "awaiting_approval"
+    USAGE_LIMIT_EXCEEDED = "usage_limit_exceeded"
     ACTING = "acting"
     VALIDATING = "validating"
     SUCCEEDED = "succeeded"
@@ -41,6 +42,8 @@ class EventType(str, Enum):
     APPROVAL_DECISION = "approval_decision"
     OUTPUT_VALIDATION_FAILED = "output_validation_failed"
     FINAL_OUTPUT = "final_output"
+    LLM_USAGE = "llm_usage"
+    USAGE_LIMIT_EXCEEDED = "usage_limit_exceeded"
 
 
 DecisionAction = Literal["call_llm", "call_tool", "handoff", "finish", "fail", "cancel"]
@@ -201,6 +204,63 @@ class ModelRequest:
     output_schema: dict[str, Any] | bool | None = None
 
 
+# Token counters of :class:`Usage`, in report order.
+TOKEN_FIELDS = ("input_tokens", "output_tokens", "cached_input_tokens", "reasoning_tokens", "total_tokens")
+
+
+@dataclass(frozen=True)
+class Usage:
+    """Token usage one model call reported, normalized across providers.
+
+    A counter the provider did not report stays ``None`` (unknown), never ``0``. Following the
+    OpenTelemetry GenAI conventions, ``input_tokens`` includes cached input tokens and
+    ``output_tokens`` includes reasoning (thinking) tokens.
+
+    Attributes:
+        requests: Model requests this usage covers (``1`` for one call).
+        input_tokens: All input (prompt) tokens, cached ones included.
+        output_tokens: All output tokens, reasoning tokens included.
+        cached_input_tokens: Input tokens served from a provider cache (part of ``input_tokens``).
+        reasoning_tokens: Output tokens spent on reasoning (part of ``output_tokens``).
+        total_tokens: Provider-reported total, else ``input_tokens + output_tokens``.
+    """
+
+    requests: int = 1
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    cached_input_tokens: int | None = None
+    reasoning_tokens: int | None = None
+    total_tokens: int | None = None
+
+    @property
+    def measured(self) -> bool:
+        """Return whether the provider reported both input and output tokens."""
+
+        return self.input_tokens is not None and self.output_tokens is not None
+
+    def to_dict(self) -> dict[str, int | None]:
+        """Return a JSON-serializable representation (unknown counters are ``None``)."""
+
+        return {"requests": self.requests, **{name: getattr(self, name) for name in TOKEN_FIELDS}}
+
+    @classmethod
+    def from_dict(cls, payload: Any) -> Usage:
+        """Rebuild usage recorded by :meth:`to_dict`; malformed counters become unknown."""
+
+        data = payload if isinstance(payload, dict) else {}
+        requests = _count(data.get("requests"))
+        counts = {name: _count(data.get(name)) for name in TOKEN_FIELDS}
+        return cls(requests=1 if requests is None else requests, **counts)
+
+
+def _count(value: Any) -> int | None:
+    """Return ``value`` when it is a non-negative integer token count, else ``None``."""
+
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        return None
+    return value
+
+
 @dataclass(frozen=True)
 class ModelOutput:
     """Normalized provider output consumed by the runner.
@@ -209,11 +269,17 @@ class ModelOutput:
         provider: Provider name.
         text: Model response text.
         raw: Non-secret provider metadata.
+        usage: Token usage the provider reported for the call, or ``None`` when it reported none.
+        model: Model id the call is priced as, if the adapter knows it.
+        cost_usd: Cost the provider itself reported for the call (Claude Code), if any.
     """
 
     provider: str
     text: str
     raw: dict[str, Any] = field(default_factory=dict)
+    usage: Usage | None = None
+    model: str | None = None
+    cost_usd: float | None = None
 
     def to_observation(self) -> Observation:
         """Convert model output into an observation.

@@ -1,0 +1,40 @@
+$ multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log demo-output/usage.sqlite --run-id demo --max-total-tokens 150 | jq -c "{state, steps, total_tokens: .usage.total_tokens}"; echo "exit code ${PIPESTATUS[0]}"
+note: run demo stopped at a usage limit: total_tokens=202 exceeded max_total_tokens=150
+note: continue: resume --run-id demo --event-log demo-output/usage.sqlite and raise it with --max-total-tokens <N>
+{"state":"usage_limit_exceeded","steps":3,"total_tokens":202}
+exit code 5
+$ multi-bot-agentic replay --event-log demo-output/usage.sqlite --run-id demo --event-type llm_usage --format text
+008 acting     llm_usage provider=fake model=fake tokens_in/out=54/10 cost=$0
+028 acting     llm_usage provider=fake model=fake tokens_in/out=127/11 cost=$0
+$ multi-bot-agentic resume --run-id demo --event-log demo-output/usage.sqlite | jq -c "{state, resumed}"; echo "exit code ${PIPESTATUS[0]}"
+note: run demo stopped at a usage limit: total_tokens=202 exceeded max_total_tokens=150
+note: continue: resume --run-id demo --event-log demo-output/usage.sqlite and raise it with --max-total-tokens <N>
+{"state":"usage_limit_exceeded","resumed":false}
+exit code 5
+$ multi-bot-agentic resume --run-id demo --event-log demo-output/usage.sqlite --max-total-tokens 1000 | jq -c "{state, answer, requests: .usage.requests}"
+{"state":"succeeded","answer":"synthesized plan from 3 observations","requests":2}
+$ MULTIBOT_FAKE_MODEL=gpt-6.2-sol multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log demo-output/usage.sqlite --run-id priced --max-cost-usd 0.0003 | jq -c "{state, cost_usd: .usage.cost_usd}"; echo "exit code ${PIPESTATUS[0]}"
+note: run priced stopped at a usage limit: cost_usd=0.000572 exceeded max_cost_usd=0.0003
+note: continue: resume --run-id priced --event-log demo-output/usage.sqlite and raise it with --max-cost-usd <USD>
+{"state":"usage_limit_exceeded","cost_usd":0.000572}
+exit code 5
+$ multi-bot-agentic report --event-log demo-output/usage.sqlite | jq -c ".runs[] | {run_id, requests: .usage.requests, total_tokens: .usage.total_tokens, cost_usd: .usage.cost_usd, stops: [.usage.limit_stops[]?.limit]}"
+{"run_id":"demo","requests":2,"total_tokens":202,"cost_usd":0.0,"stops":["max_total_tokens"]}
+{"run_id":"priced","requests":2,"total_tokens":202,"cost_usd":0.000572,"stops":["max_cost_usd"]}
+$ multi-bot-agentic trace --event-log demo-output/usage.sqlite --run-id priced --format mermaid
+sequenceDiagram
+    autonumber
+    participant O as Orchestrator
+    participant A1 as LLM fake
+    participant T1 as checklist
+    Note over O: run priced (provider fake)
+    O->>A1: call_llm (observe.no-model-output)
+    A1-->>O: TOOL checklist
+    Note over A1: usage: 54 in / 10 out tokens, $0.000208
+    O->>T1: call_tool (model.requested-tool)
+    T1-->>O: ok
+    O->>A1: call_llm (tool.result-needs-synthesis)
+    A1-->>O: DONE
+    Note over A1: usage: 127 in / 11 out tokens, $0.000364
+    Note over O: usage limit: cost_usd=0.000572 exceeded max_cost_usd=0.0003
+    Note over O: stopped: usage limit exceeded (resume with a higher limit)

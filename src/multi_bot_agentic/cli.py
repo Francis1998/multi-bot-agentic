@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import json
+import math
 import os
 import sqlite3
 import sys
@@ -40,12 +41,14 @@ from multi_bot_agentic.fork import (
 )
 from multi_bot_agentic.mcp import McpConfigError, McpServerStatus, McpToolset, load_mcp_config
 from multi_bot_agentic.models import ToolSpec
+from multi_bot_agentic.pricing import PriceTable, PriceTableError
 from multi_bot_agentic.runner import (
     AgentRunner,
     ResumeError,
     RunBusyError,
     RunResult,
     build_default_tools,
+    fork_usage,
     recorded_outcome,
 )
 from multi_bot_agentic.safety import SafetyPolicy, parse_approval_patterns
@@ -61,6 +64,7 @@ from multi_bot_agentic.structured_output import (
     write_output_file,
 )
 from multi_bot_agentic.tools.base import ToolAdapter
+from multi_bot_agentic.usage import UsageLimits, UsageTotals, format_number, usage_summary
 
 MCP_CONFIG_HELP = "MCP servers JSON (Claude Desktop 'mcpServers' format); tools appear as mcp__<server>__<tool>"
 BOTS_HELP = 'bot registry JSON: {"bots": {"<id>": {"allowed_tools": [...], "name": "...", "description": "..."}}}'
@@ -88,6 +92,17 @@ OUTPUT_RETRIES_HELP = (
 OUTPUT_FILE_HELP = "write the validated output to this file (atomically, as indented JSON) when the run succeeds"
 # The event log and the files SQLite keeps next to it; --output-file may name none of them.
 SQLITE_FILE_SUFFIXES = ("", "-wal", "-shm", "-journal")
+# Exit code of run, fork, and resume when a usage limit stopped the run (resume it with a higher limit).
+EXIT_USAGE_LIMIT = 5
+RESET_LIMITS_HELP = "drop the usage limits recorded {where}; only this command's --max-* flags apply"
+# Usage-limit flag -> UsageLimits field and help text.
+USAGE_LIMIT_FLAGS: dict[str, tuple[str, str]] = {
+    "--max-requests": ("max_requests", "stop before a model call beyond N calls"),
+    "--max-input-tokens": ("max_input_tokens", "stop when input tokens (cached included) exceed N"),
+    "--max-output-tokens": ("max_output_tokens", "stop when output tokens (reasoning included) exceed N"),
+    "--max-total-tokens": ("max_total_tokens", "stop when total tokens exceed N"),
+    "--max-cost-usd": ("max_cost_usd", "stop when the run's cost in USD exceeds this amount"),
+}
 
 
 class McpStartupError(RuntimeError):
@@ -155,6 +170,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--output-schema", type=Path, default=None, metavar="PATH", help=OUTPUT_SCHEMA_HELP)
     run_parser.add_argument("--output-retries", type=_retries, default=None, metavar="N", help=OUTPUT_RETRIES_HELP)
     run_parser.add_argument("--output-file", type=Path, default=None, metavar="PATH", help=OUTPUT_FILE_HELP)
+    add_usage_limit_flags(run_parser)
 
     replay_parser = subparsers.add_parser("replay", help="print durable event log")
     replay_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
@@ -184,6 +200,10 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         metavar="PATH",
         help=OUTPUT_FILE_HELP + " (the run's recorded output schema stays in force)",
+    )
+    add_usage_limit_flags(resume_parser, " (replaces the run's recorded limit)")
+    resume_parser.add_argument(
+        "--reset-usage-limits", action="store_true", help=RESET_LIMITS_HELP.format(where="in the run")
     )
     eval_parser = subparsers.add_parser("eval", help="run offline golden-path evaluation fixtures")
     eval_parser.add_argument("--fixtures", type=Path, default=None, help="fixture directory")
@@ -288,6 +308,10 @@ def build_parser() -> argparse.ArgumentParser:
         help="new correction-round budget (default: the source run's); inherited failed answers count",
     )
     fork_parser.add_argument("--output-file", type=Path, default=None, metavar="PATH", help=OUTPUT_FILE_HELP)
+    add_usage_limit_flags(fork_parser, " (counts inherited usage; replaces the inherited limit)")
+    fork_parser.add_argument(
+        "--reset-usage-limits", action="store_true", help=RESET_LIMITS_HELP.format(where="at the fork point")
+    )
 
     approvals_parser = subparsers.add_parser("approvals", help="list or show human-approval interrupts")
     approvals_sub = approvals_parser.add_subparsers(dest="approvals_command", required=True)
@@ -323,6 +347,52 @@ def build_parser() -> argparse.ArgumentParser:
                 "--reason", required=True, help="why; recorded and shown to the model so it can re-plan"
             )
     return parser
+
+
+def add_usage_limit_flags(parser: argparse.ArgumentParser, note: str = "") -> None:
+    """Add the ``--max-requests`` / ``--max-*-tokens`` / ``--max-cost-usd`` flags to ``parser``."""
+
+    for flag, (dest, text) in USAGE_LIMIT_FLAGS.items():
+        is_cost = dest == "max_cost_usd"
+        parser.add_argument(
+            flag,
+            dest=dest,
+            type=_usd if is_cost else _token_count,
+            default=None,
+            metavar="USD" if is_cost else "N",
+            help=f"{text}{note}",
+        )
+
+
+def usage_limits_from_args(args: argparse.Namespace) -> UsageLimits:
+    """Return the usage limits set by the command's flags (unset flags leave a counter unlimited)."""
+
+    values = {dest: getattr(args, dest, None) for dest, _ in USAGE_LIMIT_FLAGS.values()}
+    return UsageLimits(**{name: value for name, value in values.items() if value is not None})
+
+
+def _token_count(value: str) -> int:
+    """Parse a token or request limit: an integer >= 0."""
+
+    try:
+        number = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"must be an integer >= 0, got {value!r}") from None
+    if number < 0:
+        raise argparse.ArgumentTypeError(f"must be an integer >= 0, got {value!r}")
+    return number
+
+
+def _usd(value: str) -> float:
+    """Parse a cost limit: a finite number of USD >= 0."""
+
+    try:
+        number = float(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"must be a number of USD >= 0, got {value!r}") from None
+    if not math.isfinite(number) or number < 0:
+        raise argparse.ArgumentTypeError(f"must be a number of USD >= 0, got {value!r}")
+    return number
 
 
 def _step_number(value: str) -> int:
@@ -413,11 +483,15 @@ def run_command(args: argparse.Namespace) -> int:
         event_log=args.event_log,
         max_steps=args.max_steps,
         require_approval=approvals,
+        usage_limits=usage_limits_from_args(args),
     )
     try:
         check_output_file(args.output_file, config.event_log)
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
+        return 2
+    prices = _price_table(config)
+    if prices is None:
         return 2
     if args.run_id and config.event_log.is_file() and _run_recorded(config.event_log, args.run_id):
         print(
@@ -448,6 +522,7 @@ def run_command(args: argparse.Namespace) -> int:
             tools=tools,
             safety_policy=safety_policy,
             tool_specs=tool_specs,
+            price_table=prices,
         )
         try:
             result = runner.run(goal=args.goal, run_id=args.run_id, output_contract=contract)
@@ -504,6 +579,10 @@ def result_payload(result: RunResult, event_log_path: Path, **extra: Any) -> dic
         payload["output_attempts"] = result.output.attempt
     if result.output_errors:
         payload["output_errors"] = list(result.output_errors)
+    if result.usage is not None:
+        payload["usage"] = result.usage.to_dict()
+    if result.usage_limit is not None:
+        payload["usage_limit"] = result.usage_limit.to_dict()
     if result.interrupt is not None:
         record = result.interrupt
         payload["interrupt"] = {
@@ -553,10 +632,32 @@ def print_result(
 
 
 def announce_pause(result: RunResult, event_log_path: Path) -> None:
-    """Tell the operator how to decide a paused run (stderr)."""
+    """Tell the operator how to decide a paused run, or how to continue one a usage limit stopped (stderr)."""
 
     if result.interrupt is not None:
         print_decision_hint(result.interrupt, event_log_path)
+    breach = result.usage_limit
+    if breach is not None:
+        flag = "--" + breach.limit.replace("_", "-")
+        if breach.value is None:
+            how = f"{flag} cannot be measured for this provider; drop it with --reset-usage-limits"
+        else:
+            how = f"raise it with {flag} <{'USD' if breach.limit == 'max_cost_usd' else 'N'}>"
+        print(f"note: run {result.run_id} stopped at a usage limit: {breach.message}", file=sys.stderr)
+        print(
+            f"note: continue: resume --run-id {result.run_id} --event-log {event_log_path} and {how}",
+            file=sys.stderr,
+        )
+
+
+def _price_table(config: AppConfig) -> PriceTable | None:
+    """Load the price table (``MULTIBOT_PRICES_FILE`` on top of the built-in one); print errors."""
+
+    try:
+        return config.price_table()
+    except PriceTableError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return None
 
 
 def print_decision_hint(record: InterruptRecord, event_log_path: Path) -> None:
@@ -577,7 +678,7 @@ def print_decision_hint(record: InterruptRecord, event_log_path: Path) -> None:
 
 def exit_code_for(result: RunResult) -> int:
     """Return 0 for a succeeded run, 3 for a run paused awaiting approval, 4 for a final answer that
-    never validated against its output schema, else 2."""
+    never validated against its output schema, 5 for a usage-limit stop, else 2."""
 
     if result.state.value == "succeeded":
         return 0
@@ -585,6 +686,8 @@ def exit_code_for(result: RunResult) -> int:
         return EXIT_AWAITING_APPROVAL
     if result.state.value == "output_invalid":
         return EXIT_OUTPUT_INVALID
+    if result.state.value == "usage_limit_exceeded":
+        return EXIT_USAGE_LIMIT
     return 2
 
 
@@ -673,8 +776,9 @@ def resume_command(args: argparse.Namespace) -> int:
         args: Parsed arguments.
 
     Returns:
-        Process exit code: 0 succeeded, 3 (still) awaiting approval, 4 output invalid, 75 another process is
-        continuing the run (nothing was written), 2 otherwise (also when the run is unknown or cannot be resumed).
+        Process exit code: 0 succeeded, 3 (still) awaiting approval, 4 output invalid, 5 stopped (again)
+        at a usage limit, 75 another process is continuing the run (nothing was written), 2 otherwise
+        (also when the run is unknown or cannot be resumed).
     """
 
     try:
@@ -688,6 +792,7 @@ def resume_command(args: argparse.Namespace) -> int:
         event_log=args.event_log,
         max_steps=args.max_steps,
         require_approval=approvals,
+        usage_limits=usage_limits_from_args(args),
     )
     if _event_log_missing(config.event_log):
         return 2
@@ -706,6 +811,9 @@ def resume_command(args: argparse.Namespace) -> int:
     waiting = _undecided_interrupt(config.event_log, args.run_id)
     if waiting is not None and not config.safety.is_cancelled():
         return _refuse_undecided(waiting, config.event_log)
+    prices = _price_table(config)
+    if prices is None:
+        return 2
     try:
         toolset = start_mcp_toolset(args.mcp_config)
     except (McpConfigError, McpStartupError) as error:
@@ -728,9 +836,10 @@ def resume_command(args: argparse.Namespace) -> int:
             tools=tools,
             safety_policy=safety_policy,
             tool_specs=tool_specs,
+            price_table=prices,
         )
         try:
-            result = runner.resume(run_id=args.run_id)
+            result = runner.resume(run_id=args.run_id, reset_usage_limits=args.reset_usage_limits)
         except RunBusyError as error:
             print(f"error: {error}", file=sys.stderr)
             return EXIT_RUN_BUSY
@@ -860,7 +969,7 @@ def _print_resume_result(result: RunResult, event_log_path: Path, output_file: P
 
     Returns:
         0 when the run succeeded, 3 when it paused again awaiting approval, 4 when its final answer
-        never validated, otherwise 2.
+        never validated, 5 when a usage limit stopped it (again), otherwise 2.
     """
 
     if result.already_finished:
@@ -868,7 +977,8 @@ def _print_resume_result(result: RunResult, event_log_path: Path, output_file: P
             f"note: run {result.run_id} already finished ({result.state.value}); nothing to resume",
             file=sys.stderr,
         )
-    return print_result(result, event_log_path, output_file, resumed=not result.already_finished)
+    resumed = not (result.already_finished or result.still_stopped)
+    return print_result(result, event_log_path, output_file, resumed=resumed)
 
 
 def format_event(event: EventRecord, output_format: str) -> str:
@@ -968,7 +1078,37 @@ def format_event_text(event: EventRecord) -> str:
             f" attempt={payload.get('attempt')} source={payload.get('source')} bytes={payload.get('bytes')}"
             f" sha256={str(payload.get('output_sha256', ''))[:12]}"
         )
+    elif event.event_type == "llm_usage":
+        detail = _usage_detail(event.payload)
+    elif event.event_type == "usage_limit_exceeded":
+        payload = event.payload
+        detail = (
+            f" limit={payload.get('limit')} value={_number(payload.get('value'))} cap={_number(payload.get('cap'))}"
+            f" phase={payload.get('phase')} step={payload.get('step')}"
+        )
     return f"{event.seq:03d} {event.state:<10} {event.event_type}{detail}"
+
+
+def _usage_detail(payload: Mapping[str, Any]) -> str:
+    """Summarize an ``llm_usage`` event: provider, model, input/output tokens, and cost."""
+
+    usage = payload.get("usage")
+    counts = usage if isinstance(usage, dict) else {}
+    cost = payload.get("cost")
+    usd = cost.get("usd") if isinstance(cost, dict) else None
+    priced = f"${format_number(usd)}" if isinstance(usd, (int, float)) else "unpriced"
+    if isinstance(cost, dict) and cost.get("source") == "provider":
+        priced += " (provider)"
+    tokens = f"{_number(counts.get('input_tokens'))}/{_number(counts.get('output_tokens'))}"
+    return f" provider={payload.get('provider')} model={payload.get('model')} tokens_in/out={tokens} cost={priced}"
+
+
+def _number(value: Any) -> str:
+    """Format a recorded counter or USD amount (``unknown`` when missing)."""
+
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return "unknown"
+    return format_number(value)
 
 
 def build_run_report(events: list[EventRecord], forks: Iterable[EventRecord] = ()) -> dict[str, Any]:
@@ -976,6 +1116,9 @@ def build_run_report(events: list[EventRecord], forks: Iterable[EventRecord] = (
 
     A run that was forked, or forked from, also gets a ``lineage`` entry: its ``parent`` (with
     a check that the inherited events still match their recorded digest) and its ``children``.
+    Every run gets a ``usage`` entry (its own model calls' tokens and cost, per bot and per model;
+    a fork's inherited calls are listed separately), and ``usage_totals`` sums the runs' own calls,
+    so a call a fork inherited is counted once.
 
     Args:
         events: Event records.
@@ -1025,12 +1168,19 @@ def build_run_report(events: list[EventRecord], forks: Iterable[EventRecord] = (
             report["answer"] = event.payload.get("answer")
     for record in collect_interrupts(events):
         reports[record.run_id].setdefault("interrupts", []).append(record.to_dict())
+    own_usage = UsageTotals()
     for run_id, report in reports.items():
         run_events = events_by_run[run_id]
         output = output_report(run_events)
         if output is not None:
             report["output"] = output
         lineage = parse_lineage(min(run_events, key=lambda item: item.seq))
+        # A fork's inherited copies follow its run_forked event (seq 1); their calls belong to the parent.
+        inherited_through = 1 + lineage.inherited_events if lineage is not None else 0
+        report["usage"] = usage_summary(run_events, inherited_through_seq=inherited_through)
+        own_usage = own_usage.merge(
+            UsageTotals.from_events(event for event in run_events if event.seq > inherited_through)
+        )
         forked = children.get(run_id, [])
         if lineage is None and not forked:
             continue
@@ -1044,7 +1194,7 @@ def build_run_report(events: list[EventRecord], forks: Iterable[EventRecord] = (
                 for child in forked
             ],
         }
-    return {"runs": list(reports.values())}
+    return {"runs": list(reports.values()), "usage_totals": own_usage.to_dict()}
 
 
 def output_report(events: Sequence[EventRecord]) -> dict[str, Any] | None:
@@ -1139,6 +1289,8 @@ def format_history_text(history: RunHistory) -> str:
     status = f"{history.final_state} after {_quantity(history.last_step, 'step')}"
     if history.final_state == "awaiting_approval":
         status = f"paused in step {history.last_step}, awaiting human approval"
+    elif history.final_state == "usage_limit_exceeded":
+        status = f"stopped at a usage limit after {_quantity(history.last_step, 'step')} (resume with a higher limit)"
     lines = [f"run {history.run_id}: {status} (provider {history.provider or 'unknown'})"]
     lineage = history.lineage
     if lineage is not None:
@@ -1186,7 +1338,7 @@ def fork_command(args: argparse.Namespace) -> int:
 
     Returns:
         0 when the fork succeeded (or the dry run passed), 3 when it paused awaiting approval, 4 when
-        its final answer never validated, otherwise 2.
+        its final answer never validated, 5 when a usage limit stopped it, otherwise 2.
     """
 
     path: Path = args.event_log
@@ -1203,10 +1355,12 @@ def fork_command(args: argparse.Namespace) -> int:
             event_log=path,
             max_steps=args.max_steps,
             require_approval=approval_flag_values(args.require_approval),
+            usage_limits=usage_limits_from_args(args),
         )
         bots: dict[str, BotSpec] = load_bot_registry(args.bots) if args.bots is not None else {}
         check_output_file(args.output_file, path)
         output_schema = OutputSchema.load(args.output_schema) if args.output_schema is not None else None
+        prices = config.price_table()
     except (BotRegistryError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
@@ -1243,7 +1397,11 @@ def fork_command(args: argparse.Namespace) -> int:
             print(f"error: {error}", file=sys.stderr)
             return 2
         if args.dry_run:
-            print(json.dumps(plan.to_dict(), indent=2))
+            dry_run = plan.to_dict()
+            inherited, limits = fork_usage(plan, safety_policy.usage_limits, reset=args.reset_usage_limits)
+            if inherited.requests or limits.active:
+                dry_run["usage"] = {"inherited": inherited.to_dict(), "limits": limits.to_dict()}
+            print(json.dumps(dry_run, indent=2))
             return 0
         runner = AgentRunner(
             provider=provider,
@@ -1252,6 +1410,7 @@ def fork_command(args: argparse.Namespace) -> int:
             safety_policy=safety_policy,
             bots=bots,
             tool_specs=tool_specs,
+            price_table=prices,
         )
         try:
             result = runner.fork(
@@ -1262,6 +1421,7 @@ def fork_command(args: argparse.Namespace) -> int:
                 bot_id=args.bot,
                 output_schema=output_schema,
                 output_retries=args.output_retries,
+                reset_usage_limits=args.reset_usage_limits,
             )
         except RunBusyError as error:
             print(f"error: {error}", file=sys.stderr)
@@ -1493,6 +1653,7 @@ def eval_command(args: argparse.Namespace) -> int:
                 "mean_tool_sequence_score": report.mean_tool_sequence_score,
                 "mean_answer_score": report.mean_answer_score,
                 "mean_output_score": report.mean_output_score,
+                "usage_totals": report.usage_totals.to_dict(),
                 "scenarios": [
                     {
                         "scenario_id": item.scenario_id,

@@ -48,7 +48,7 @@ Actions are limited to provider calls, allowlisted tools, finish, fail, or cance
 
 ## Durable Event Log
 
-The sqlite event log stores every lifecycle transition, observation, decision, action request, action result, human-approval interrupt and decision, output-schema validation (`output_validation_failed`, `final_output`), and failure with a per-run sequence number. A run can be replayed without calling a provider. Its `run_leases` table holds the lease of the process currently continuing each run (see [Human-In-The-Loop Interrupts](#human-in-the-loop-interrupts)); it is operational state, not part of the replayed history.
+The sqlite event log stores every lifecycle transition, observation, decision, action request, action result, model call's usage and cost (`llm_usage`), usage-limit stop, human-approval interrupt and decision, output-schema validation (`output_validation_failed`, `final_output`), and failure with a per-run sequence number. A run can be replayed without calling a provider. Its `run_leases` table holds the lease of the process currently continuing each run (see [Human-In-The-Loop Interrupts](#human-in-the-loop-interrupts)); it is operational state, not part of the replayed history.
 
 `run` creates the log file and its directory when they are missing. Commands that read a log (`replay`, `report`, `resume`, `history`, `trace`, and `fork`) never create one: a missing `--event-log` fails with `error: event log not found: <path>` and exit code 2, so a mistyped path is not mistaken for a run that recorded nothing.
 
@@ -61,6 +61,9 @@ ModelRequest -> ModelOutput
 ```
 
 Adapters normalize GPT/OpenAI, Claude Code CLI, Gemini, Kimi/Moonshot, and the deterministic fake provider.
+`ModelOutput` also carries the call's normalized `Usage` (input, output, cached input, reasoning, and total tokens;
+unknown counters stay `null`), the model id it is priced as, and a cost the provider reported itself (see
+[Usage Accounting And Limits](#usage-accounting-and-limits)).
 
 Adapters send only parameters the current models accept. The OpenAI adapter (also used for Kimi) calls Chat
 Completions with `model`, `messages`, and `max_completion_tokens`, and sends no sampling parameters, reasoning effort,
@@ -90,6 +93,11 @@ stateDiagram-v2
     deciding --> cancelled
     awaiting_approval --> cancelled
     awaiting_approval --> failed
+    deciding --> usage_limit_exceeded: the next call_llm would exceed a usage limit
+    acting --> usage_limit_exceeded: a model call exceeded a usage limit
+    usage_limit_exceeded --> observing: resume with the limit raised
+    usage_limit_exceeded --> cancelled
+    usage_limit_exceeded --> failed
     succeeded --> [*]
     failed --> [*]
     cancelled --> [*]
@@ -98,9 +106,10 @@ stateDiagram-v2
 
 Every non-terminal state can also move to `failed` or `cancelled`. `output_invalid` is terminal (exit code 4); it
 is recorded as a `run_failed` event in state `output_invalid`, so tools that only read event types still see a
-failure. `awaiting_approval` is the only state a run
-rests in between processes: the run records an `interrupt` event and a checkpoint, exits, and a later `resume`
-continues from that state after a human decided. Invalid transitions raise `InvalidTransitionError` and are covered
+failure. `awaiting_approval` and `usage_limit_exceeded` are the states a run rests in between processes: the run
+records an `interrupt` (or `usage_limit_exceeded`) event and a checkpoint, exits (code 3, or 5), and a later `resume`
+continues from that state after a human decided (or with a higher limit). Invalid transitions raise
+`InvalidTransitionError` and are covered
 by tests.
 
 ## Replay
@@ -210,6 +219,30 @@ invalid, no more -> output_validation_failed {retry: false, stop} -> output_inva
   validated output or the last errors.
 
 See `docs/guides/STRUCTURED_OUTPUT_GUIDE.md`.
+
+## Usage Accounting And Limits
+
+```text
+call_llm -> provider -> Usage parsed from the provider's usage block -> priced (provider cost, else price table)
+         -> llm_usage event (bot, provider, model, usage, cost, priced_at, running totals) -> action_result
+limits   -> before each call_llm (deciding):  totals already at a limit  -> usage_limit_exceeded, nothing recorded for the call
+         -> after each call_llm (acting):     totals beyond a limit      -> usage_limit_exceeded, its checkpoint closes the step
+stop     -> state_transition + usage_limit_exceeded event (limit, value, cap, phase, step) + checkpoint, one transaction -> exit 5
+resume   -> totals = sum of the run's llm_usage events; limits = recorded limits, each replaced by a --max-* flag
+```
+
+- `usage.py` parses provider usage (OpenAI-compatible `usage`, Gemini `usageMetadata`, Claude Code's JSON result),
+  sums `llm_usage` events into `UsageTotals`, and checks `UsageLimits`; `pricing.py` holds the dated USD price table
+  (effective-dated rates, long-context surcharges, `MULTIBOT_PRICES_FILE` overrides).
+- Totals live only in `llm_usage` events, so they cannot drift: `resume` rebuilds them, and a fork, whose inherited
+  events include the source's `llm_usage` events, starts from the totals at its fork point.
+- Limits are recorded in `run_created` and every checkpoint (`usage_limits`), so they survive a resume; a resume
+  that is still over its limit writes nothing. A limit the totals cannot measure (no tokens reported, unpriced model)
+  counts as breached.
+- `report` adds `usage` per run (by bot and by model; a fork's inherited calls separately) and `usage_totals`;
+  `trace` adds `gen_ai.usage.*` and `multi_bot_agentic.usage.cost_usd` to model-call spans and usage notes to Mermaid.
+
+See `docs/guides/USAGE_LIMITS_GUIDE.md`.
 
 ## HITL Approval Gate
 
