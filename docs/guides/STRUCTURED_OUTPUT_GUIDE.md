@@ -123,11 +123,13 @@ observation). The rules, in order, are deterministic:
 2. Otherwise, exactly one fenced block whose info string is `json` (in any case), with the fences on their own
    lines, holds the document. Source `json_block`. Prose around the block is ignored; other fenced blocks (for
    example `python`) are ignored too. **Two or more `json` blocks are an error**, never a guess.
-3. Otherwise there is no document. An answer that starts with `{` or `[` reports its JSON syntax error (with line
-   and column); any other answer reports `no JSON document found`.
+3. Otherwise there is no document. An answer that starts as JSON but is not valid (a syntax error after its first
+   character, with line and column, an out-of-range number such as `1e400`, `NaN`, or a duplicate key) reports
+   that error; any other answer reports `no JSON document found`.
 
-JSON is parsed strictly: `NaN`, `Infinity`, and duplicate object keys are errors. The document must also fit 64 KiB
-of compact JSON and 64 levels of nesting before it is validated.
+JSON is parsed strictly: `NaN`, `Infinity`, numbers out of the float range (`1e400`), and duplicate object keys are
+errors, and so are unpaired `\uD800`-`\uDFFF` escapes. The document must also fit 64 KiB of compact JSON and 64
+levels of nesting before it is validated.
 
 **A correction round** is one model call plus the check of its answer, so it needs two steps of `--max-steps`.
 The model sees an `output:validation` observation that lists the errors (never the schema again; the schema is

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -98,21 +99,29 @@ class _WorkLimitError(Exception):
 
 
 def strict_json_loads(text: str) -> Any:
-    """Parse JSON text, refusing ``NaN``/``Infinity`` and duplicate object keys.
+    """Parse JSON text, refusing ``NaN``/``Infinity``, out-of-range numbers, and duplicate object keys.
 
-    Python's ``json`` accepts both by default; neither is valid JSON, and a duplicate key would
-    make the recorded document differ from what the model wrote.
+    Python's ``json`` accepts all of them by default (``1e400`` becomes infinity); none can be
+    recorded as JSON, and a duplicate key would make the recorded document differ from what the
+    model wrote.
 
     Raises:
         ValueError: If the text is not strict JSON (``json.JSONDecodeError`` for syntax errors).
         RecursionError: If the document nests too deeply for the parser.
     """
 
-    return json.loads(text, parse_constant=_refuse_constant, object_pairs_hook=_unique_keys)
+    return json.loads(text, parse_constant=_refuse_constant, parse_float=_finite_float, object_pairs_hook=_unique_keys)
 
 
 def _refuse_constant(name: str) -> Any:
     raise ValueError(f"{name} is not valid JSON")
+
+
+def _finite_float(text: str) -> float:
+    value = float(text)
+    if not math.isfinite(value):
+        raise ValueError(f"the number {text[:40]} is out of range")
+    return value
 
 
 def _unique_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -694,9 +703,9 @@ class OutputSchema:
 
         try:
             text = canonical_json(value)
+            size = len(text.encode("utf-8"))
         except (TypeError, ValueError) as error:
             raise SchemaError(f"the output schema is not JSON: {error}") from error
-        size = len(text.encode("utf-8"))
         if size > MAX_SCHEMA_BYTES:
             raise SchemaError(f"the output schema is {size} bytes in compact form; the limit is {MAX_SCHEMA_BYTES}")
         checker = _SchemaChecker(value)
@@ -758,8 +767,9 @@ def extract_json(answer: str) -> tuple[Any, str]:
     2. Otherwise exactly one fenced block whose info string is ``json`` (```` ```json ````, any case,
        fences on their own lines) holds the output (source ``json_block``). Two or more such blocks
        are an error, never a guess.
-    3. Otherwise there is no output: an answer starting with ``{`` or ``[`` reports the JSON syntax
-       error, any other answer reports that no JSON document was found.
+    3. Otherwise there is no output. An answer that starts as JSON but is not valid (a syntax error
+       after its first character, an out-of-range number, ``NaN``, a duplicate key) reports that
+       error; any other answer reports that no JSON document was found.
 
     JSON is parsed strictly (:func:`strict_json_loads`).
 
@@ -782,6 +792,8 @@ def extract_json(answer: str) -> tuple[Any, str]:
         raise OutputExtractionError("the JSON document nests too deeply to parse") from None
     except ValueError as error:
         whole_error = str(error)
+        # A syntax error at the first character means the answer is not JSON at all.
+        starts_as_json = not isinstance(error, json.JSONDecodeError) or error.pos > 0
     blocks = _json_blocks(text)
     if len(blocks) > 1:
         raise OutputExtractionError(f"the answer has {len(blocks)} ```json blocks; return exactly one JSON document")
@@ -795,7 +807,7 @@ def extract_json(answer: str) -> tuple[Any, str]:
             raise OutputExtractionError("the JSON document nests too deeply to parse") from None
         except ValueError as error:
             raise OutputExtractionError(f"the ```json block is not valid JSON: {error}") from None
-    if text[0] in "{[":
+    if starts_as_json:
         raise OutputExtractionError(f"the answer is not valid JSON: {whole_error}")
     raise OutputExtractionError(
         "no JSON document found; reply with only the JSON document, or put it in one ```json fenced block"
@@ -870,7 +882,13 @@ def check_output(answer: str, schema: OutputSchema) -> OutputCheck:
         return OutputCheck(errors=(f"$: {error}",))
     if json_depth(value) > MAX_OUTPUT_DEPTH:
         return OutputCheck(errors=(f"$: the JSON document nests deeper than {MAX_OUTPUT_DEPTH} levels",), source=source)
-    size = len(canonical_json(value).encode("utf-8"))
+    try:
+        size = len(canonical_json(value).encode("utf-8"))
+    except UnicodeEncodeError:
+        return OutputCheck(
+            errors=("$: the JSON document is not valid Unicode (it has an unpaired \\uD800-\\uDFFF escape)",),
+            source=source,
+        )
     if size > MAX_OUTPUT_BYTES:
         return OutputCheck(
             errors=(f"$: the JSON document is {size} bytes in compact form; the limit is {MAX_OUTPUT_BYTES}",),
