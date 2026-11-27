@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LaunchPlan",
+  "description": "A machine-readable launch plan: what a pipeline step downstream of the agent consumes.",
+  "type": "object",
+  "required": ["title", "steps", "risk", "owner_count"],
+  "additionalProperties": false,
+  "properties": {
+    "title": {"type": "string", "minLength": 3, "maxLength": 80},
+    "steps": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/step"},
+      "minItems": 3,
+      "maxItems": 10,
+      "uniqueItems": true
+    },
+    "risk": {"enum": ["low", "medium", "high"]},
+    "owner_count": {"type": "integer", "minimum": 1}
+  },
+  "$defs": {
+    "step": {"type": "string", "minLength": 5, "maxLength": 120}
+  }
+}

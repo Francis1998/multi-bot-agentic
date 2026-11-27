@@ -37,6 +37,15 @@ from multi_bot_agentic.decision import DeterministicDecisionEngine
 from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
 from multi_bot_agentic.models import Decision, EventType, Observation, RunState
 from multi_bot_agentic.safety import SafetyError, SafetyPolicy
+from multi_bot_agentic.structured_output import (
+    CONTRACT_KEY,
+    DEFAULT_OUTPUT_RETRIES,
+    OUTPUT_VALIDATION_FAILED,
+    OutputContract,
+    OutputSchema,
+    SchemaError,
+    recorded_contract,
+)
 
 RUN_FORKED: Final[str] = EventType.RUN_FORKED.value
 # Rule id recorded for the handoff a fork performs when ``bot_id`` switches bots.
@@ -47,6 +56,8 @@ _TERMINAL_STATES: Final[Mapping[str, str]] = {
     EventType.RUN_FAILED.value: RunState.FAILED.value,
     EventType.RUN_CANCELLED.value: RunState.CANCELLED.value,
 }
+# Outcomes of a step that ended its run (a run_failed event in state output_invalid included).
+_TERMINAL_OUTCOMES: Final[frozenset[str]] = frozenset({*_TERMINAL_STATES.values(), RunState.OUTPUT_INVALID.value})
 _EVENT_TYPES: Final[frozenset[str]] = frozenset(item.value for item in EventType)
 _RUN_STATES: Final[frozenset[str]] = frozenset(item.value for item in RunState)
 _DIRECTIVES: Final[tuple[str, ...]] = ("TOOL", "HANDOFF", "DONE")
@@ -74,7 +85,8 @@ class ForkLineage:
         provider: Provider the fork continued with.
         bot: Bot whose tool scope the fork continued with, if any.
         max_steps: Step budget of the fork, inherited steps included.
-        overrides: Settings that differ from the parent at the fork point (``goal``, ``bot``, ``provider``).
+        overrides: Settings that differ from the parent at the fork point (``goal``, ``bot``, ``provider``,
+            ``output_schema``, ``output_retries``).
     """
 
     run_id: str
@@ -246,6 +258,7 @@ class ForkPlan:
         next_decision: Decision the fork's first own step makes (the engine is deterministic).
         require_approval: Approval policy of the fork: the source's at the fork point plus
             ``policy.require_approval`` (a fork never drops an approval requirement).
+        output_contract: Output contract of the fork: the source's, or the overridden schema/retries.
     """
 
     source_run_id: str
@@ -262,6 +275,7 @@ class ForkPlan:
     lineage: Mapping[str, Any]
     next_decision: Decision
     require_approval: tuple[str, ...] = ()
+    output_contract: OutputContract | None = None
 
     @property
     def at_step(self) -> int:
@@ -304,6 +318,8 @@ class ForkPlan:
             ],
             "next_decision": next_decision,
         }
+        if self.output_contract is not None:
+            payload["output_contract"] = self.output_contract.summary()
         if self.require_approval:
             payload["require_approval"] = list(self.require_approval)
             next_decision["needs_approval"] = (
@@ -490,6 +506,8 @@ def plan_fork(
     bots: Mapping[str, BotSpec] | None = None,
     goal: str | None = None,
     bot_id: str | None = None,
+    output_schema: OutputSchema | None = None,
+    output_retries: int | None = None,
 ) -> ForkPlan:
     """Validate a fork and compute what it will write and run, without writing anything.
 
@@ -508,6 +526,9 @@ def plan_fork(
     * The approval policy recorded at the fork point stays in force; ``policy.require_approval``
       can only add to it. A step paused at an approval interrupt is not forkable until it is
       resumed; earlier steps are.
+    * The output contract recorded by the source stays in force unless ``output_schema`` or
+      ``output_retries`` replace it; failed answers inherited from the source count against the
+      fork's correction rounds when the schema is unchanged.
 
     Args:
         event_log: Event log holding the source run; the fork is written to the same log.
@@ -519,6 +540,8 @@ def plan_fork(
         bots: Registered bots.
         goal: New goal, or ``None`` to keep the source's goal.
         bot_id: Bot to continue as, or ``None`` to keep the bot active at the fork point.
+        output_schema: New output schema, or ``None`` to keep the source's.
+        output_retries: New correction-round budget, or ``None`` to keep the source's.
 
     Returns:
         The fork plan.
@@ -568,6 +591,7 @@ def plan_fork(
     except SafetyError as error:
         raise ForkError(f"goal rejected: {error}") from error
     goal_changed = effective_goal != point.goal
+    source_contract, contract = _fork_contract(events, source_run_id, output_schema, output_retries)
 
     observations = point.observations
     if goal_changed and at_step == 0:
@@ -608,7 +632,12 @@ def plan_fork(
         overrides["bot"] = bot
     if provider != scan.history.provider:
         overrides["provider"] = provider
-    lineage = {
+    source_sha = source_contract.schema.sha256 if source_contract is not None else None
+    if contract is not None and contract.schema.sha256 != source_sha:
+        overrides["output_schema"] = {"schema_sha256": contract.schema.sha256, "source": contract.schema.source}
+    if contract is not None and source_contract is not None and contract.retries != source_contract.retries:
+        overrides["output_retries"] = contract.retries
+    lineage: dict[str, Any] = {
         "parent_run_id": source_run_id,
         "fork_step": at_step,
         "parent_event": {
@@ -624,6 +653,8 @@ def plan_fork(
         "max_steps": policy.max_steps,
         "overrides": overrides,
     }
+    if contract is not None:
+        lineage[CONTRACT_KEY] = contract.to_payload()
     engine = DeterministicDecisionEngine(provider_name=provider, bots=registry or None)
     next_decision = engine.decide(observations, at_step, replace(policy, allowed_tools=allowed_tools))
     return ForkPlan(
@@ -641,7 +672,35 @@ def plan_fork(
         lineage=lineage,
         next_decision=next_decision,
         require_approval=tuple(sorted(set(point.require_approval) | policy.require_approval)),
+        output_contract=contract,
     )
+
+
+def _fork_contract(
+    events: Sequence[EventRecord],
+    source_run_id: str,
+    output_schema: OutputSchema | None,
+    output_retries: int | None,
+) -> tuple[OutputContract | None, OutputContract | None]:
+    """Return the source run's output contract and the fork's (the source's unless overridden)."""
+
+    try:
+        source = recorded_contract(events)
+    except SchemaError as error:
+        raise ForkError(f"run {source_run_id} recorded an unusable output contract: {error}") from error
+    if output_schema is None and output_retries is None:
+        return source, source
+    schema = output_schema if output_schema is not None else source.schema if source is not None else None
+    if schema is None:
+        raise ForkError(f"run {source_run_id} has no output schema; give the fork one (CLI: --output-schema PATH)")
+    if output_retries is not None:
+        retries = output_retries
+    else:
+        retries = source.retries if source is not None else DEFAULT_OUTPUT_RETRIES
+    try:
+        return source, OutputContract(schema=schema, retries=retries)
+    except ValueError as error:
+        raise ForkError(str(error)) from error
 
 
 @dataclass
@@ -678,7 +737,7 @@ class _Scan:
             )
         record = next((item for item in history.steps if item.step == step), None)
         if record is None or not record.forkable:
-            if record is not None and record.outcome in _TERMINAL_STATES.values():
+            if record is not None and record.outcome in _TERMINAL_OUTCOMES:
                 reason = f"step {step} ended run {run_id} ({record.action} -> {record.outcome})"
             elif history.final_state == RunState.AWAITING_APPROVAL.value and step == history.last_step:
                 reason = (
@@ -815,6 +874,9 @@ def _scan(events: Sequence[EventRecord]) -> _Scan:
                 active_bot = _optional_str(payload.get("to_bot"))
             if pending is not None:
                 pending.outcome = _outcome(payload, used_names)
+        elif kind == OUTPUT_VALIDATION_FAILED:
+            if pending is not None:
+                pending.outcome = "output invalid"
         elif kind == EventType.CHECKPOINT.value:
             step = _count(payload.get("step"))
             if step is None:
@@ -832,7 +894,11 @@ def _scan(events: Sequence[EventRecord]) -> _Scan:
             last_closed = step
             pending = None
         elif kind in _TERMINAL_STATES:
-            final_state = _TERMINAL_STATES[kind]
+            final_state = (
+                RunState.OUTPUT_INVALID.value
+                if event.state == RunState.OUTPUT_INVALID.value
+                else _TERMINAL_STATES[kind]
+            )
             if pending is not None:
                 pending.outcome = final_state
                 steps[last_closed + 1] = _history_step(

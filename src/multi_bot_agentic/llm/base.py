@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Protocol
+import json
+from typing import Any, Protocol
 
 from multi_bot_agentic.models import ModelOutput, ModelRequest, ToolSpec
 
@@ -50,3 +51,23 @@ def render_tool_catalog(tools: tuple[ToolSpec, ...]) -> str:
             line += f" Arguments: {signature}."
         lines.append(line)
     return "\n".join(lines)
+
+
+def render_output_contract(schema: dict[str, Any] | bool | None) -> str:
+    """Render a run's output schema as a prompt section.
+
+    Args:
+        schema: ``ModelRequest.output_schema``.
+
+    Returns:
+        A section starting with a blank line that asks for a JSON final answer and holds the
+        compact schema, or an empty string without a schema so existing prompts stay unchanged.
+    """
+
+    if schema is None:
+        return ""
+    compact = json.dumps(schema, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return (
+        "\n\nFinal answer contract: when finished, reply DONE: followed by only a JSON document "
+        "(or exactly one ```json fenced block) that validates against this JSON Schema:\n" + compact
+    )

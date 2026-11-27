@@ -5,7 +5,7 @@ from __future__ import annotations
 import shlex
 import subprocess
 
-from multi_bot_agentic.llm.base import render_tool_catalog
+from multi_bot_agentic.llm.base import render_output_contract, render_tool_catalog
 from multi_bot_agentic.models import ModelOutput, ModelRequest
 
 # Print mode (-p) is Claude Code's non-interactive mode: it reads the prompt from stdin,
@@ -79,5 +79,6 @@ def _render_prompt(request: ModelRequest) -> str:
     return (
         "Return concise text. Use TOOL:echo:<text> when a safe echo tool is useful. "
         "Use DONE:<answer> when finished.\n\n"
-        f"Goal: {request.goal}\n\nObservations:\n{observations}{render_tool_catalog(request.tools)}\n"
+        f"Goal: {request.goal}\n\nObservations:\n{observations}{render_tool_catalog(request.tools)}"
+        f"{render_output_contract(request.output_schema)}\n"
     )

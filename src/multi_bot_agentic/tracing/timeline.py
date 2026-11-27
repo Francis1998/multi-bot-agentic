@@ -181,6 +181,30 @@ class Approval:
 
 
 @dataclass(frozen=True)
+class OutputValidation:
+    """A final answer checked against the run's output schema: an ``output_validation_failed`` or
+    ``final_output`` event.
+
+    Attributes:
+        seq: Sequence number of the event.
+        at: Event timestamp.
+        valid: True for ``final_output``.
+        attempt: Which answer of the run was checked (``1`` is the first).
+        errors: Validation errors of an invalid answer (content: they can quote the answer).
+        retry: For an invalid answer, whether the model got another round.
+        output_bytes: Size of a valid output's compact JSON.
+    """
+
+    seq: int
+    at: str
+    valid: bool
+    attempt: int | None
+    errors: tuple[str, ...]
+    retry: bool | None
+    output_bytes: int | None
+
+
+@dataclass(frozen=True)
 class FinalDecision:
     """A ``finish``, ``fail``, or ``cancel`` decision that ends the run.
 
@@ -247,7 +271,9 @@ class Fork:
     own: bool
 
 
-Step: TypeAlias = ModelCall | ToolCall | Handoff | Approval | FinalDecision | Checkpoint | Resume | Fork
+Step: TypeAlias = (
+    ModelCall | ToolCall | Handoff | Approval | OutputValidation | FinalDecision | Checkpoint | Resume | Fork
+)
 
 
 @dataclass(frozen=True)
@@ -257,7 +283,8 @@ class Outcome:
     Attributes:
         seq: Sequence number of the terminal event.
         at: Event timestamp.
-        state: ``succeeded``, ``failed``, or ``cancelled``.
+        state: ``succeeded``, ``failed``, ``cancelled``, or ``output_invalid`` (a ``run_failed`` event
+            recorded in that state when the final answer never validated).
         answer: Final answer (content) for succeeded runs.
         reason: Failure or cancellation reason.
         steps: Loop steps the run took.
@@ -291,6 +318,7 @@ class RunTimeline:
         fork: Where this run was forked from, or ``None`` for an original run.
         inherited_through_seq: Sequence number of the last event copied from the parent (0 if not a fork).
         awaiting_approval: True when the run is paused at a human-approval interrupt.
+        output_schema_sha256: Digest of the run's output schema, when it has one.
     """
 
     run_id: str
@@ -307,6 +335,7 @@ class RunTimeline:
     fork: Fork | None = None
     inherited_through_seq: int = 0
     awaiting_approval: bool = False
+    output_schema_sha256: str | None = None
 
     @property
     def final_state(self) -> str:
@@ -453,6 +482,7 @@ class _TimelineBuilder:
             fork=own,
             inherited_through_seq=own.seq if own is not None else 0,
             awaiting_approval=self.outcome is None and last.state == "awaiting_approval",
+            output_schema_sha256=_output_schema_sha256(first),
         )
 
     def _consume(self, event: EventRecord) -> None:
@@ -500,6 +530,8 @@ class _TimelineBuilder:
                 )
             )
             self._apply_edited_arguments(event)
+        elif event.event_type in {"output_validation_failed", "final_output"}:
+            self.steps.append(_output_validation(event))
         elif event.event_type in TERMINAL_EVENT_STATES:
             self._on_terminal(event)
 
@@ -653,7 +685,7 @@ class _TimelineBuilder:
         """Record the outcome and close anything the failure interrupted."""
 
         payload = event.payload
-        state = TERMINAL_EVENT_STATES[event.event_type]
+        state = "output_invalid" if event.state == "output_invalid" else TERMINAL_EVENT_STATES[event.event_type]
         reason = _optional_str(payload.get("reason"))
         if self.open_action is not None:
             ended_at = self.open_action.next_at or event.timestamp
@@ -723,6 +755,32 @@ class _TimelineBuilder:
                     interrupted=interrupted,
                 )
             )
+
+
+def _output_validation(event: EventRecord) -> OutputValidation:
+    """Read an ``output_validation_failed`` or ``final_output`` event."""
+
+    payload = event.payload
+    attempt, size = payload.get("attempt"), payload.get("bytes")
+    retry = payload.get("retry")
+    return OutputValidation(
+        seq=event.seq,
+        at=event.timestamp,
+        valid=event.event_type == "final_output",
+        attempt=attempt if _is_count(attempt) else None,
+        errors=_strings(payload.get("errors")),
+        retry=retry if isinstance(retry, bool) else None,
+        output_bytes=size if _is_count(size) else None,
+    )
+
+
+def _output_schema_sha256(first: EventRecord) -> str | None:
+    """Return the output schema digest a run recorded in its first event."""
+
+    if first.event_type not in {"run_created", "run_forked"}:
+        return None
+    contract = _mapping(first.payload.get("output_contract"))
+    return _optional_str(contract.get("schema_sha256"))
 
 
 def _initial_bot(events: Sequence[EventRecord]) -> str | None:

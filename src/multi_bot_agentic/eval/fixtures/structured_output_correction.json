@@ -1,0 +1,23 @@
+{
+  "scenario_id": "structured_output_correction",
+  "goal": "Summarize the agent launch checklist as JSON",
+  "scripted_responses": [
+    "TOOL:checklist:agent launch",
+    "DONE: the launch checklist has 5 items",
+    "DONE: {\"title\": \"Agent launch\", \"item_count\": 5, \"ready\": true}"
+  ],
+  "expected_tools": ["checklist"],
+  "output_schema": {
+    "type": "object",
+    "required": ["title", "item_count", "ready"],
+    "additionalProperties": false,
+    "properties": {
+      "title": {"type": "string", "minLength": 3},
+      "item_count": {"type": "integer", "minimum": 1},
+      "ready": {"type": "boolean"}
+    }
+  },
+  "expected_output": {"item_count": 5, "ready": true},
+  "expected_output_match": "subset",
+  "max_steps": 6
+}

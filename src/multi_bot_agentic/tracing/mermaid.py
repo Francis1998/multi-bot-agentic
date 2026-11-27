@@ -34,6 +34,7 @@ from multi_bot_agentic.tracing.timeline import (
     Fork,
     Handoff,
     ModelCall,
+    OutputValidation,
     Resume,
     RunTimeline,
     ToolCall,
@@ -156,6 +157,8 @@ class _MermaidRenderer:
                 lines.append(self._handoff(step))
             elif isinstance(step, Approval):
                 lines.extend(self._approval(step))
+            elif isinstance(step, OutputValidation):
+                lines.append(self._note(self._output_label(step)))
             elif isinstance(step, FinalDecision):
                 decision = step.decision
                 lines.append(self._note(f"{decision.action} ({decision.rule_id})"))
@@ -301,6 +304,18 @@ class _MermaidRenderer:
         if outcome.state == "cancelled" and outcome.reason:
             text += f": {redact_text(outcome.reason, SNIPPET_CHARS)}"
         return self._note(text)
+
+    def _output_label(self, check: OutputValidation) -> str:
+        """Return the note for one final answer checked against the output schema."""
+
+        attempt = f"attempt {check.attempt}" if check.attempt is not None else "attempt ?"
+        if check.valid:
+            return f"output valid ({attempt})"
+        count = len(check.errors)
+        label = f"output invalid ({attempt}, {count} error{'' if count == 1 else 's'})"
+        if self.include_content and check.errors:
+            label += f": {self._snippet(check.errors[0])}"
+        return label
 
     def _error_label(self, error_type: str, message: str | None, *, prefix: str = "error") -> str:
         """Return ``<prefix> (<type>)`` plus a short redacted message."""

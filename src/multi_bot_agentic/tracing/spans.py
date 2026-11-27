@@ -7,7 +7,8 @@ Span shapes follow the OpenTelemetry GenAI semantic conventions (Development sta
 * an ``invoke_agent {bot}`` child span for each stretch of the run a registered bot was active;
 * a ``chat {model}`` (``generate_content`` for Gemini) span for every provider call;
 * an ``execute_tool {tool}`` span for every built-in or MCP tool call;
-* span events for handoffs, approvals, checkpoints, resumes, fork points, and the terminal decision;
+* span events for handoffs, approvals, checkpoints, resumes, fork points, output-schema
+  validations, and the terminal decision;
 * for a forked run, a span link from the root span to the parent run's root span.
 
 Timestamps come from the event log. An action span starts at its ``action_requested`` event
@@ -36,6 +37,7 @@ from multi_bot_agentic.tracing.timeline import (
     Handoff,
     ModelCall,
     ObservationRef,
+    OutputValidation,
     Resume,
     RunTimeline,
     ToolCall,
@@ -320,10 +322,13 @@ def run_error_type(timeline: RunTimeline) -> str | None:
         timeline: Run timeline.
 
     Returns:
-        The failing rule id for ``fail`` decisions, otherwise :func:`classify_failure` of the reason.
+        ``output_invalid`` when the final answer never validated, the failing rule id for ``fail``
+        decisions, otherwise :func:`classify_failure` of the reason.
     """
 
     outcome = timeline.outcome
+    if outcome is not None and outcome.state == "output_invalid":
+        return "output_invalid"
     if outcome is None or outcome.state != "failed":
         return None
     final = timeline.final_decision
@@ -402,6 +407,8 @@ class _TraceBuilder:
                 agent_span = self._handoff(step, agent_span, root)
             elif isinstance(step, Approval):
                 agent_span.events.append(self._approval_event(step))
+            elif isinstance(step, OutputValidation):
+                root.events.append(self._output_event(step))
             elif isinstance(step, FinalDecision):
                 root.events.append(self._decision_event(step.decision))
             elif isinstance(step, Checkpoint):
@@ -443,6 +450,11 @@ class _TraceBuilder:
         resumes = sum(1 for step in timeline.steps if isinstance(step, Resume))
         if resumes:
             attributes[f"{NAMESPACE}.run.resume_count"] = resumes
+        if timeline.output_schema_sha256 is not None:
+            checks = [step for step in timeline.steps if isinstance(step, OutputValidation)]
+            attributes[f"{NAMESPACE}.output.schema_sha256"] = timeline.output_schema_sha256
+            attributes[f"{NAMESPACE}.output.attempts"] = len(checks)
+            attributes[f"{NAMESPACE}.output.valid"] = any(step.valid for step in checks)
         fork = timeline.fork
         if fork is not None:
             attributes[f"{NAMESPACE}.fork.parent_run_id"] = fork.parent_run_id
@@ -629,6 +641,25 @@ class _TraceBuilder:
         if approval.request_id is not None:
             attributes[f"{NAMESPACE}.approval.request_id"] = approval.request_id
         return SpanEvent(f"{NAMESPACE}.approval", timestamp_to_unix_nanos(approval.at), attributes)
+
+    def _output_event(self, check: OutputValidation) -> SpanEvent:
+        """Return the root span event for one final answer checked against the output schema."""
+
+        attributes: dict[str, Any] = {f"{NAMESPACE}.output.valid": check.valid}
+        if check.attempt is not None:
+            attributes[f"{NAMESPACE}.output.attempt"] = check.attempt
+        if check.valid:
+            if check.output_bytes is not None:
+                attributes[f"{NAMESPACE}.output.bytes"] = check.output_bytes
+        else:
+            attributes[f"{NAMESPACE}.output.error_count"] = len(check.errors)
+            if check.retry is not None:
+                attributes[f"{NAMESPACE}.output.retry"] = check.retry
+            if self.include_content and check.errors:
+                attributes[f"{NAMESPACE}.output.errors"] = [
+                    redact_text(error, MAX_ERROR_CHARS) for error in check.errors
+                ]
+        return SpanEvent(f"{NAMESPACE}.output.validation", timestamp_to_unix_nanos(check.at), attributes)
 
     def _decision_event(self, decision: DecisionRef) -> SpanEvent:
         """Return the root span event for a ``finish``/``fail``/``cancel`` decision."""

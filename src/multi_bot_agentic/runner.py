@@ -40,6 +40,21 @@ from multi_bot_agentic.models import (
     ToolSpec,
 )
 from multi_bot_agentic.safety import SafetyError, SafetyPolicy
+from multi_bot_agentic.structured_output import (
+    CONTRACT_KEY,
+    CORRECTION_SOURCE,
+    MAX_ANSWER_CHARS,
+    FinalOutput,
+    OutputContract,
+    OutputSchema,
+    SchemaError,
+    check_output,
+    correction_text,
+    failed_attempts,
+    recorded_contract,
+    recorded_output,
+    sha256_of,
+)
 from multi_bot_agentic.tools.base import ToolAdapter
 
 
@@ -55,6 +70,8 @@ class RunResult:
         already_finished: True when ``resume`` found the run already finished and returned
             its recorded outcome without executing anything.
         interrupt: The interrupt the run paused at when ``state`` is ``awaiting_approval``.
+        output: The validated final output of a succeeded run with an output schema.
+        output_errors: Validation errors of the last answer when ``state`` is ``output_invalid``.
     """
 
     run_id: str
@@ -63,6 +80,8 @@ class RunResult:
     steps: int
     already_finished: bool = False
     interrupt: InterruptRecord | None = None
+    output: FinalOutput | None = None
+    output_errors: tuple[str, ...] = ()
 
 
 class ResumeError(ValueError):
@@ -124,22 +143,38 @@ def recorded_outcome(event_log: SQLiteEventLog, run_id: str) -> RunResult | None
         or ``None`` when the run has not finished.
     """
 
+    events = event_log.list_events(run_id)
     terminal: EventRecord | None = None
-    for event in event_log.list_events(run_id):
+    for event in events:
         if event.event_type in _TERMINAL_EVENT_STATES:
             terminal = event
     if terminal is None:
         return None
-    state = _TERMINAL_EVENT_STATES[terminal.event_type]
+    state = terminal_state(terminal)
     answer = terminal.payload.get("answer" if state is RunState.SUCCEEDED else "reason", "")
     steps = terminal.payload.get("steps")
+    output, errors = recorded_output(events)
     return RunResult(
         run_id=run_id,
         state=state,
         answer=str(answer),
         steps=steps if isinstance(steps, int) else 0,
         already_finished=True,
+        output=output if state is RunState.SUCCEEDED else None,
+        output_errors=errors if state is RunState.OUTPUT_INVALID else (),
     )
+
+
+def terminal_state(event: EventRecord) -> RunState:
+    """Return the state a terminal event recorded.
+
+    A run whose final answer never validated ends with a ``run_failed`` event in state
+    ``output_invalid``; every other terminal event type maps to one state.
+    """
+
+    if event.state == RunState.OUTPUT_INVALID.value:
+        return RunState.OUTPUT_INVALID
+    return _TERMINAL_EVENT_STATES[event.event_type]
 
 
 class AgentRunner:
@@ -188,22 +223,31 @@ class AgentRunner:
         self._initial_bot_id = self.active_bot_id
         self._initial_allowed_tools = self.safety_policy.allowed_tools
         self._initial_require_approval = self.safety_policy.require_approval
+        # The output contract of the current run (set by run, resume, and fork) and its failed answers.
+        self._contract: OutputContract | None = None
+        self._output_failures = 0
         self.decision_engine = DeterministicDecisionEngine(
             provider_name=provider.provider_name,
             bots=self.bots or None,
         )
 
-    def run(self, goal: str, run_id: str | None = None) -> RunResult:
+    def run(self, goal: str, run_id: str | None = None, *, output_contract: OutputContract | None = None) -> RunResult:
         """Execute one bounded agent run.
 
         Every run starts with the constructor's ``active_bot_id`` and tool scope. A
         handoff lasts only for the run that made it, so a reused runner never starts a
         run with the scope an earlier ``run`` or ``resume`` left behind.
 
+        With an ``output_contract`` the final answer must be a JSON document that validates
+        against its schema. The contract is recorded in the ``run_created`` event, and every
+        invalid answer is fed back to the model for another round, up to ``retries`` rounds;
+        then the run ends in state ``output_invalid``.
+
         Args:
             goal: User goal.
             run_id: Optional run identifier; one the event log already holds is refused, so a
                 second run is never appended to a recorded one (``resume`` continues a run).
+            output_contract: Optional output schema and correction-round budget.
 
         Returns:
             Final run result.
@@ -220,12 +264,15 @@ class AgentRunner:
                 "choose a new run id (resume continues an interrupted run)"
             )
         self._restore_initial_scope()
+        self._contract, self._output_failures = output_contract, 0
         selected_run_id = run_id or str(uuid4())
         state_machine = RunStateMachine()
         observations: tuple[Observation, ...] = (Observation(source="user", content=goal),)
         created: dict[str, Any] = {"goal": goal, "provider": self.provider.provider_name}
         if self.safety_policy.require_approval:
             created["require_approval"] = sorted(self.safety_policy.require_approval)
+        if output_contract is not None:
+            created[CONTRACT_KEY] = output_contract.to_payload()
         with self._sole_owner(selected_run_id):
             self.event_log.append(selected_run_id, state_machine.state, EventType.RUN_CREATED, created)
             return self._run_loop(selected_run_id, goal, observations, state_machine, start_step=0)
@@ -244,7 +291,8 @@ class AgentRunner:
         left behind by an earlier run on this runner. The approval policy recorded in the
         checkpoint stays in force (this runner's ``require_approval`` can only add to it); a resume
         that adds entries records the merged policy in a checkpoint before it advances, so a crash
-        never drops them.
+        never drops them. The output contract recorded when the run started stays in force too,
+        with the correction rounds the run already used.
 
         A run paused at a human-approval interrupt continues exactly where it stopped: an
         approved call runs once, with the approver's edited arguments if any, and a rejected
@@ -268,8 +316,9 @@ class AgentRunner:
             AwaitingApprovalError: If the run is paused at an interrupt nobody decided yet.
             ApprovalError: If an earlier resume claimed the approved call but recorded no result, or the
                 approved tool is not registered or allowed in this resume. Nothing was written.
-            ResumeError: If an unfinished run has no usable checkpoint or the
-                checkpoint's active bot is not registered on this runner.
+            ResumeError: If an unfinished run has no usable checkpoint, the
+                checkpoint's active bot is not registered on this runner, or the run's recorded
+                output contract is unusable.
         """
 
         recorded = recorded_outcome(self.event_log, run_id)
@@ -298,6 +347,12 @@ class AgentRunner:
 
         self.safety_policy.validate_goal(snapshot.goal)
         self._restore_initial_scope()
+        events = self.event_log.list_events(run_id)
+        try:
+            self._contract = recorded_contract(events)
+        except SchemaError as error:
+            raise ResumeError(f"cannot resume run {run_id}: {error}") from error
+        self._output_failures = failed_attempts(events, self._contract.schema.sha256) if self._contract else 0
         if snapshot.active_bot_id is not None:
             bot = self.bots.get(snapshot.active_bot_id)
             if bot is None:
@@ -330,6 +385,8 @@ class AgentRunner:
         *,
         goal: str | None = None,
         bot_id: str | None = None,
+        output_schema: OutputSchema | None = None,
+        output_retries: int | None = None,
     ) -> RunResult:
         """Branch a recorded run after ``at_step`` into a new run and continue it.
 
@@ -350,6 +407,8 @@ class AgentRunner:
             goal: New goal; the provider answers it before acting on earlier directives.
             bot_id: Registered bot to continue as. The switch is recorded as a handoff, so
                 the first new step is a model call under that bot's scope.
+            output_schema: New output schema; by default the fork keeps the source's contract.
+            output_retries: New correction-round budget (inherited failed answers count).
 
         Returns:
             Final result of the fork.
@@ -370,6 +429,8 @@ class AgentRunner:
             bots=self.bots,
             goal=goal,
             bot_id=bot_id,
+            output_schema=output_schema,
+            output_retries=output_retries,
         )
         with self._sole_owner(new_run_id):
             return self._start_fork(new_run_id, plan)
@@ -396,6 +457,10 @@ class AgentRunner:
         self.active_bot_id = plan.bot
         self.safety_policy = replace(
             self.safety_policy, allowed_tools=plan.allowed_tools, require_approval=frozenset(plan.require_approval)
+        )
+        self._contract = plan.output_contract
+        self._output_failures = (
+            failed_attempts(plan.point.prefix, self._contract.schema.sha256) if self._contract else 0
         )
         return self._run_loop(new_run_id, plan.goal, plan.observations, RunStateMachine(), start_step=plan.at_step)
 
@@ -445,7 +510,24 @@ class AgentRunner:
                 )
 
                 if decision.action == "finish":
-                    return self._succeed(run_id, state_machine, step + 1, decision)
+                    if self._contract is None:
+                        return self._succeed(run_id, state_machine, step + 1, decision)
+                    checked = self._check_final_answer(run_id, state_machine, decision, step, self._contract)
+                    if isinstance(checked, RunResult):
+                        return checked
+                    # Another round: the validation errors are the next observation.
+                    observations = (*observations, checked)
+                    save_checkpoint(
+                        self.event_log,
+                        run_id=run_id,
+                        goal=goal,
+                        step=step + 1,
+                        state=state_machine.state,
+                        observations=observations,
+                        active_bot_id=self.active_bot_id,
+                        require_approval=self.safety_policy.require_approval,
+                    )
+                    continue
                 if decision.action == "cancel":
                     return self._cancel(
                         run_id,
@@ -843,10 +925,10 @@ class AgentRunner:
 
         self.event_log.append(run_id, state, EventType.ACTION_REQUESTED, decision.to_dict())
         if decision.action == "call_llm":
-            output = self.provider.complete(
-                ModelRequest(goal=goal, observations=observations, tools=self._visible_tool_specs()),
-                timeout_seconds=self.safety_policy.timeout_seconds,
-            )
+            request = ModelRequest(goal=goal, observations=observations, tools=self._visible_tool_specs())
+            if self._contract is not None:
+                request = replace(request, output_schema=self._contract.schema.value, max_output_chars=MAX_ANSWER_CHARS)
+            output = self.provider.complete(request, timeout_seconds=self.safety_policy.timeout_seconds)
             observation = output.to_observation()
             self.event_log.append(
                 run_id,
@@ -942,12 +1024,94 @@ class AgentRunner:
             {"from": previous_state.value, "to": current_state.value},
         )
 
+    def _check_final_answer(
+        self,
+        run_id: str,
+        state_machine: RunStateMachine,
+        decision: Decision,
+        step: int,
+        contract: OutputContract,
+    ) -> RunResult | Observation:
+        """Validate a ``finish`` decision's answer against the run's output contract.
+
+        The run moves to ``validating``. A valid answer is recorded as a ``final_output`` event and
+        the run succeeds. An invalid one is recorded as an ``output_validation_failed`` event; it
+        returns the correction observation when a round is left, otherwise the run ends in
+        ``output_invalid``. A round needs a correction budget and two more steps: the model's
+        corrected answer and the decision that checks it.
+
+        Args:
+            run_id: Run identifier.
+            state_machine: Run state machine (``deciding``).
+            decision: The ``finish`` decision.
+            step: Zero-based loop step.
+            contract: Output contract of the run.
+
+        Returns:
+            The final result, or the observation that asks the model for a corrected answer.
+        """
+
+        self._transition(run_id, state_machine, RunState.VALIDATING)
+        check = check_output(str(decision.payload.get("answer", "")), contract.schema)
+        attempt = self._output_failures + 1
+        if check.valid:
+            output = FinalOutput(
+                value=check.value,
+                attempt=attempt,
+                source=check.source or "answer",
+                output_sha256=sha256_of(check.value),
+                output_bytes=check.output_bytes,
+                schema_sha256=contract.schema.sha256,
+            )
+            self.event_log.append(run_id, state_machine.state, EventType.FINAL_OUTPUT, output.to_payload())
+            return self._succeed(run_id, state_machine, step + 1, decision, output=output)
+        self._output_failures = attempt
+        rounds_left = attempt <= contract.retries
+        steps_left = self.safety_policy.max_steps - (step + 1) >= 2
+        failure: dict[str, Any] = {
+            "attempt": attempt,
+            "max_attempts": contract.max_attempts,
+            "errors": list(check.errors),
+            "schema_sha256": contract.schema.sha256,
+            "retry": rounds_left and steps_left,
+        }
+        if not rounds_left:
+            failure["stop"] = "retries_exhausted"
+        elif not steps_left:
+            failure["stop"] = "step_budget"
+        self.event_log.append(run_id, state_machine.state, EventType.OUTPUT_VALIDATION_FAILED, failure)
+        if rounds_left and steps_left:
+            return Observation(
+                source=CORRECTION_SOURCE,
+                content=correction_text(check.errors, attempt=attempt, contract=contract),
+                metadata={"attempt": attempt, "schema_sha256": contract.schema.sha256},
+            )
+        # The reason is exported in traces, so it never quotes the answer; the errors are in the event.
+        if not rounds_left:
+            count = len(check.errors)
+            reason = (
+                f"the final answer failed output validation after {attempt} attempt{'' if attempt == 1 else 's'} "
+                f"({count} error{'' if count == 1 else 's'} in the last answer)"
+            )
+        else:
+            reason = (
+                "the final answer failed output validation and no steps are left for a correction round "
+                "(raise --max-steps)"
+            )
+        self._transition(run_id, state_machine, RunState.OUTPUT_INVALID)
+        steps = step + 1
+        self.event_log.append(run_id, state_machine.state, EventType.RUN_FAILED, {"reason": reason, "steps": steps})
+        return RunResult(
+            run_id=run_id, state=state_machine.state, answer=reason, steps=steps, output_errors=check.errors
+        )
+
     def _succeed(
         self,
         run_id: str,
         state_machine: RunStateMachine,
         steps: int,
         decision: Decision,
+        output: FinalOutput | None = None,
     ) -> RunResult:
         """Mark a run as succeeded.
 
@@ -956,6 +1120,7 @@ class AgentRunner:
             state_machine: Run state machine.
             steps: Step count.
             decision: Finish decision.
+            output: Validated final output of a run with an output contract.
 
         Returns:
             Successful run result.
@@ -969,7 +1134,7 @@ class AgentRunner:
             EventType.RUN_COMPLETED,
             {"answer": answer, "steps": steps},
         )
-        return RunResult(run_id=run_id, state=state_machine.state, answer=answer, steps=steps)
+        return RunResult(run_id=run_id, state=state_machine.state, answer=answer, steps=steps, output=output)
 
     def _cancel(
         self,

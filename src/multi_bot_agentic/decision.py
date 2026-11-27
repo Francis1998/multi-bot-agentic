@@ -100,6 +100,22 @@ class DeterministicDecisionEngine:
                 ),
             )
 
+        if latest_observation.source.startswith("output:"):
+            return Decision(
+                action="call_llm",
+                target=self.provider_name,
+                payload={"reason": "the final answer failed output-schema validation"},
+                rationale=RationaleTrace(
+                    rule_id="output.invalid-needs-correction",
+                    observations_used=(latest_observation.observation_id,),
+                    rejected_actions=("call_tool", "finish", "handoff"),
+                    explanation=(
+                        "The final answer did not validate against the run's output schema, so the "
+                        "provider must correct it from the validation errors."
+                    ),
+                ),
+            )
+
         latest_model_output = _latest_observation_by_prefix(observations, "llm:")
         if latest_model_output is None:
             return Decision(

@@ -48,6 +48,17 @@ from multi_bot_agentic.runner import (
     recorded_outcome,
 )
 from multi_bot_agentic.safety import SafetyPolicy, parse_approval_patterns
+from multi_bot_agentic.structured_output import (
+    DEFAULT_OUTPUT_RETRIES,
+    MAX_OUTPUT_RETRIES,
+    OutputContract,
+    OutputSchema,
+    SchemaError,
+    failed_attempts,
+    recorded_contract,
+    recorded_output,
+    write_output_file,
+)
 from multi_bot_agentic.tools.base import ToolAdapter
 
 MCP_CONFIG_HELP = "MCP servers JSON (Claude Desktop 'mcpServers' format); tools appear as mcp__<server>__<tool>"
@@ -64,6 +75,16 @@ EXIT_AWAITING_APPROVAL = 3
 # Exit code of run, fork, and resume when another live process is continuing the run (sysexits
 # EX_TEMPFAIL: nothing was written; try again once that process has finished).
 EXIT_RUN_BUSY = 75
+# Exit code of run, fork, and resume when the final answer never validated against --output-schema.
+EXIT_OUTPUT_INVALID = 4
+OUTPUT_SCHEMA_HELP = (
+    "JSON Schema (a documented subset) the final answer must validate against; the answer must be a JSON "
+    "document, and invalid answers get correction rounds"
+)
+OUTPUT_RETRIES_HELP = (
+    f"correction rounds after an invalid final answer (0-{MAX_OUTPUT_RETRIES}, default {DEFAULT_OUTPUT_RETRIES})"
+)
+OUTPUT_FILE_HELP = "write the validated output to this file (atomically, as indented JSON) when the run succeeds"
 
 
 class McpStartupError(RuntimeError):
@@ -128,6 +149,9 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--run-id", default=None, help="optional run id")
     run_parser.add_argument("--mcp-config", type=Path, default=None, help=MCP_CONFIG_HELP)
     run_parser.add_argument("--require-approval", action="append", metavar="TOOL[,TOOL]", help=REQUIRE_APPROVAL_HELP)
+    run_parser.add_argument("--output-schema", type=Path, default=None, metavar="PATH", help=OUTPUT_SCHEMA_HELP)
+    run_parser.add_argument("--output-retries", type=_retries, default=None, metavar="N", help=OUTPUT_RETRIES_HELP)
+    run_parser.add_argument("--output-file", type=Path, default=None, metavar="PATH", help=OUTPUT_FILE_HELP)
 
     replay_parser = subparsers.add_parser("replay", help="print durable event log")
     replay_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
@@ -150,6 +174,13 @@ def build_parser() -> argparse.ArgumentParser:
         action="append",
         metavar="TOOL[,TOOL]",
         help="more tools that need approval; the run's recorded approval policy always stays in force",
+    )
+    resume_parser.add_argument(
+        "--output-file",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=OUTPUT_FILE_HELP + " (the run's recorded output schema stays in force)",
     )
     eval_parser = subparsers.add_parser("eval", help="run offline golden-path evaluation fixtures")
     eval_parser.add_argument("--fixtures", type=Path, default=None, help="fixture directory")
@@ -239,6 +270,21 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="TOOL[,TOOL]",
         help="more tools that need approval; the source run's approval policy is inherited",
     )
+    fork_parser.add_argument(
+        "--output-schema",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="new output schema for the fork (default: the source run's, if any)",
+    )
+    fork_parser.add_argument(
+        "--output-retries",
+        type=_retries,
+        default=None,
+        metavar="N",
+        help="new correction-round budget (default: the source run's); inherited failed answers count",
+    )
+    fork_parser.add_argument("--output-file", type=Path, default=None, metavar="PATH", help=OUTPUT_FILE_HELP)
 
     approvals_parser = subparsers.add_parser("approvals", help="list or show human-approval interrupts")
     approvals_sub = approvals_parser.add_subparsers(dest="approvals_command", required=True)
@@ -288,6 +334,47 @@ def _step_number(value: str) -> int:
     return number
 
 
+def _retries(value: str) -> int:
+    """Parse an ``--output-retries`` value: an integer from 0 to ``MAX_OUTPUT_RETRIES``."""
+
+    try:
+        number = int(value)
+    except ValueError:
+        number = -1
+    if not 0 <= number <= MAX_OUTPUT_RETRIES:
+        raise argparse.ArgumentTypeError(f"must be an integer from 0 to {MAX_OUTPUT_RETRIES}, got {value!r}")
+    return number
+
+
+def check_output_file(path: Path | None) -> None:
+    """Refuse an ``--output-file`` that names a directory before anything runs.
+
+    Raises:
+        ValueError: If ``path`` is an existing directory.
+    """
+
+    if path is not None and path.is_dir():
+        raise ValueError(f"--output-file {path} is a directory; name a file")
+
+
+def output_contract_from_args(args: argparse.Namespace) -> OutputContract | None:
+    """Load ``--output-schema`` with ``--output-retries`` for ``run``, or return ``None`` without a schema.
+
+    Raises:
+        SchemaError: If the schema file cannot be read or the schema is refused.
+        ValueError: If ``--output-retries`` or ``--output-file`` is given without ``--output-schema``.
+    """
+
+    check_output_file(args.output_file)
+    if args.output_schema is None:
+        for flag, value in (("--output-retries", args.output_retries), ("--output-file", args.output_file)):
+            if value is not None:
+                raise ValueError(f"{flag} needs --output-schema PATH")
+        return None
+    retries = DEFAULT_OUTPUT_RETRIES if args.output_retries is None else args.output_retries
+    return OutputContract(schema=OutputSchema.load(args.output_schema), retries=retries)
+
+
 def run_command(args: argparse.Namespace) -> int:
     """Execute the run subcommand.
 
@@ -303,6 +390,7 @@ def run_command(args: argparse.Namespace) -> int:
 
     try:
         approvals = approval_flag_values(args.require_approval)
+        contract = output_contract_from_args(args)
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
@@ -343,13 +431,11 @@ def run_command(args: argparse.Namespace) -> int:
             tool_specs=tool_specs,
         )
         try:
-            result = runner.run(goal=args.goal, run_id=args.run_id)
+            result = runner.run(goal=args.goal, run_id=args.run_id, output_contract=contract)
         except RunBusyError as error:
             print(f"error: {error}", file=sys.stderr)
             return EXIT_RUN_BUSY
-        print(json.dumps(result_payload(result, config.event_log), indent=2))
-        announce_pause(result, config.event_log)
-        return exit_code_for(result)
+        return print_result(result, config.event_log, args.output_file)
 
 
 def approval_flag_values(values: Sequence[str] | None) -> list[str] | None:
@@ -394,6 +480,11 @@ def result_payload(result: RunResult, event_log_path: Path, **extra: Any) -> dic
         "steps": result.steps,
         "event_log": str(event_log_path),
     }
+    if result.output is not None:
+        payload["output"] = result.output.value
+        payload["output_attempts"] = result.output.attempt
+    if result.output_errors:
+        payload["output_errors"] = list(result.output_errors)
     if result.interrupt is not None:
         record = result.interrupt
         payload["interrupt"] = {
@@ -404,6 +495,42 @@ def result_payload(result: RunResult, event_log_path: Path, **extra: Any) -> dic
             "arguments_preview": record.arguments_preview,
         }
     return payload
+
+
+def print_result(
+    result: RunResult,
+    event_log_path: Path,
+    output_file: Path | None,
+    *,
+    resumed: bool | None = None,
+    **extra: Any,
+) -> int:
+    """Write ``--output-file``, print the result JSON and any pause hint, and return the exit code.
+
+    The output file is written only for a validated output; a write error makes the exit code 2
+    (the run itself stays recorded as it ended).
+    """
+
+    payload = result_payload(result, event_log_path, **extra)
+    if resumed is not None:
+        payload["resumed"] = resumed
+    status = exit_code_for(result)
+    if output_file is not None and result.output is not None:
+        try:
+            write_output_file(output_file, result.output.value)
+            payload["output_file"] = str(output_file)
+        except OSError as error:
+            print(f"error: cannot write output file {output_file}: {error.strerror or error}", file=sys.stderr)
+            status = 2
+    print(json.dumps(payload, indent=2))
+    announce_pause(result, event_log_path)
+    if result.state.value == "output_invalid":
+        print(
+            f"note: run {result.run_id} ended in output_invalid; its answers and validation errors: replay "
+            f"--event-log {event_log_path} --run-id {result.run_id} --event-type output_validation_failed",
+            file=sys.stderr,
+        )
+    return status
 
 
 def announce_pause(result: RunResult, event_log_path: Path) -> None:
@@ -430,12 +557,15 @@ def print_decision_hint(record: InterruptRecord, event_log_path: Path) -> None:
 
 
 def exit_code_for(result: RunResult) -> int:
-    """Return 0 for a succeeded run, 3 for a run paused awaiting approval, else 2."""
+    """Return 0 for a succeeded run, 3 for a run paused awaiting approval, 4 for a final answer that
+    never validated against its output schema, else 2."""
 
     if result.state.value == "succeeded":
         return 0
     if result.state.value == "awaiting_approval":
         return EXIT_AWAITING_APPROVAL
+    if result.state.value == "output_invalid":
+        return EXIT_OUTPUT_INVALID
     return 2
 
 
@@ -524,12 +654,13 @@ def resume_command(args: argparse.Namespace) -> int:
         args: Parsed arguments.
 
     Returns:
-        Process exit code: 0 succeeded, 3 (still) awaiting approval, 75 another process is continuing the
-        run (nothing was written), 2 otherwise (also when the run is unknown or cannot be resumed).
+        Process exit code: 0 succeeded, 3 (still) awaiting approval, 4 output invalid, 75 another process is
+        continuing the run (nothing was written), 2 otherwise (also when the run is unknown or cannot be resumed).
     """
 
     try:
         approvals = approval_flag_values(args.require_approval)
+        check_output_file(args.output_file)
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
@@ -543,9 +674,12 @@ def resume_command(args: argparse.Namespace) -> int:
         return 2
     if not _run_recorded(config.event_log, args.run_id):
         return _report_unknown_run(config.event_log, args.run_id)
+    if args.output_file is not None and not _has_output_contract(config.event_log, args.run_id):
+        print(f"error: run {args.run_id} has no output schema, so --output-file has nothing to write", file=sys.stderr)
+        return 2
     finished = _finished_run_outcome(config.event_log, args.run_id)
     if finished is not None:
-        return _print_resume_result(finished, config.event_log)
+        return _print_resume_result(finished, config.event_log, args.output_file)
     waiting = _undecided_interrupt(config.event_log, args.run_id)
     if waiting is not None and not config.safety.is_cancelled():
         return _refuse_undecided(waiting, config.event_log)
@@ -582,7 +716,19 @@ def resume_command(args: argparse.Namespace) -> int:
         except (ApprovalError, ResumeError) as error:
             print(f"error: {error}", file=sys.stderr)
             return 2
-        return _print_resume_result(result, config.event_log)
+        return _print_resume_result(result, config.event_log, args.output_file)
+
+
+def _has_output_contract(path: Path, run_id: str) -> bool:
+    """Return whether the run recorded an output contract (an unreadable one counts: resume reports it)."""
+
+    event_log = SQLiteEventLog(path)
+    try:
+        return recorded_contract(event_log.list_events(run_id)) is not None
+    except SchemaError:
+        return True
+    finally:
+        event_log.close()
 
 
 def _undecided_interrupt(path: Path, run_id: str) -> InterruptRecord | None:
@@ -681,15 +827,17 @@ def _report_unknown_run(path: Path, run_id: str) -> int:
     return 2
 
 
-def _print_resume_result(result: RunResult, event_log_path: Path) -> int:
+def _print_resume_result(result: RunResult, event_log_path: Path, output_file: Path | None = None) -> int:
     """Print a resume result as JSON and return the process exit code.
 
     Args:
         result: Result of ``AgentRunner.resume`` or a finished run's recorded outcome.
         event_log_path: Event log path echoed in the output.
+        output_file: ``--output-file``; a finished run's recorded output is written too.
 
     Returns:
-        0 when the run succeeded, 3 when it paused again awaiting approval, otherwise 2.
+        0 when the run succeeded, 3 when it paused again awaiting approval, 4 when its final answer
+        never validated, otherwise 2.
     """
 
     if result.already_finished:
@@ -697,11 +845,7 @@ def _print_resume_result(result: RunResult, event_log_path: Path) -> int:
             f"note: run {result.run_id} already finished ({result.state.value}); nothing to resume",
             file=sys.stderr,
         )
-    payload = result_payload(result, event_log_path)
-    payload["resumed"] = not result.already_finished
-    print(json.dumps(payload, indent=2))
-    announce_pause(result, event_log_path)
-    return exit_code_for(result)
+    return print_result(result, event_log_path, output_file, resumed=not result.already_finished)
 
 
 def format_event(event: EventRecord, output_format: str) -> str:
@@ -785,6 +929,22 @@ def format_event_text(event: EventRecord) -> str:
             f" id={payload.get('interrupt_id')} decision={payload.get('decision')} by={payload.get('decided_by')}"
             f" args_edited={str(payload.get('args_edited') is True).lower()}"
         )
+    elif event.event_type == "output_validation_failed":
+        payload = event.payload
+        errors = payload.get("errors")
+        errors = errors if isinstance(errors, list) else []
+        detail = (
+            f" attempt={payload.get('attempt')}/{payload.get('max_attempts')} errors={len(errors)}"
+            f" retry={str(payload.get('retry') is True).lower()}"
+        )
+        if errors:
+            detail += f" first={json.dumps(_clip(str(errors[0]), 100), ensure_ascii=False)}"
+    elif event.event_type == "final_output":
+        payload = event.payload
+        detail = (
+            f" attempt={payload.get('attempt')} source={payload.get('source')} bytes={payload.get('bytes')}"
+            f" sha256={str(payload.get('output_sha256', ''))[:12]}"
+        )
     return f"{event.seq:03d} {event.state:<10} {event.event_type}{detail}"
 
 
@@ -844,6 +1004,9 @@ def build_run_report(events: list[EventRecord], forks: Iterable[EventRecord] = (
         reports[record.run_id].setdefault("interrupts", []).append(record.to_dict())
     for run_id, report in reports.items():
         run_events = events_by_run[run_id]
+        output = output_report(run_events)
+        if output is not None:
+            report["output"] = output
         lineage = parse_lineage(min(run_events, key=lambda item: item.seq))
         forked = children.get(run_id, [])
         if lineage is None and not forked:
@@ -859,6 +1022,43 @@ def build_run_report(events: list[EventRecord], forks: Iterable[EventRecord] = (
             ],
         }
     return {"runs": list(reports.values())}
+
+
+def output_report(events: Sequence[EventRecord]) -> dict[str, Any] | None:
+    """Summarize a run's output contract and its validated output or last validation errors.
+
+    Args:
+        events: Events of one run.
+
+    Returns:
+        ``None`` for a run without an output schema; otherwise its schema digest and source, the
+        correction-round budget, the answers checked against that schema (inherited ones included),
+        ``valid`` (``null`` before the first check), and the output or the errors of the last
+        invalid answer.
+    """
+
+    try:
+        contract = recorded_contract(events)
+    except SchemaError as error:
+        return {"error": str(error)}
+    if contract is None:
+        return None
+    output, errors = recorded_output(events)
+    # A fork's inherited failures under another schema are not answers to this contract.
+    failures = failed_attempts(events, contract.schema.sha256)
+    report: dict[str, Any] = {
+        "schema_sha256": contract.schema.sha256,
+        "schema_source": contract.schema.source,
+        "retries": contract.retries,
+        "attempts": failures + (1 if output is not None else 0),
+        "valid": True if output is not None else (False if failures else None),
+    }
+    if output is not None:
+        report["value"] = output.value
+        report["output_sha256"] = output.output_sha256
+    elif errors:
+        report["errors"] = list(errors)
+    return report
 
 
 def history_command(args: argparse.Namespace) -> int:
@@ -962,7 +1162,8 @@ def fork_command(args: argparse.Namespace) -> int:
         args: Parsed arguments.
 
     Returns:
-        0 when the fork succeeded (or the dry run passed), otherwise 2.
+        0 when the fork succeeded (or the dry run passed), 3 when it paused awaiting approval, 4 when
+        its final answer never validated, otherwise 2.
     """
 
     path: Path = args.event_log
@@ -981,6 +1182,8 @@ def fork_command(args: argparse.Namespace) -> int:
             require_approval=approval_flag_values(args.require_approval),
         )
         bots: dict[str, BotSpec] = load_bot_registry(args.bots) if args.bots is not None else {}
+        check_output_file(args.output_file)
+        output_schema = OutputSchema.load(args.output_schema) if args.output_schema is not None else None
     except (BotRegistryError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
@@ -1007,7 +1210,11 @@ def fork_command(args: argparse.Namespace) -> int:
                 bots=bots,
                 goal=args.goal,
                 bot_id=args.bot,
+                output_schema=output_schema,
+                output_retries=args.output_retries,
             )
+            if args.output_file is not None and plan.output_contract is None:
+                raise ValueError(f"run {args.run_id} has no output schema, so --output-file needs --output-schema PATH")
             provider = build_llm_adapter(config.provider)
         except (ForkError, ValueError) as error:
             print(f"error: {error}", file=sys.stderr)
@@ -1024,7 +1231,15 @@ def fork_command(args: argparse.Namespace) -> int:
             tool_specs=tool_specs,
         )
         try:
-            result = runner.fork(args.run_id, args.at_step, args.new_run_id, goal=args.goal, bot_id=args.bot)
+            result = runner.fork(
+                args.run_id,
+                args.at_step,
+                args.new_run_id,
+                goal=args.goal,
+                bot_id=args.bot,
+                output_schema=output_schema,
+                output_retries=args.output_retries,
+            )
         except RunBusyError as error:
             print(f"error: {error}", file=sys.stderr)
             return EXIT_RUN_BUSY
@@ -1035,10 +1250,7 @@ def fork_command(args: argparse.Namespace) -> int:
             f"({_quantity(len(plan.point.prefix), 'event')} inherited{changed})",
             file=sys.stderr,
         )
-        payload = result_payload(result, path, parent_run_id=args.run_id, fork_step=args.at_step)
-        print(json.dumps(payload, indent=2))
-        announce_pause(result, path)
-        return exit_code_for(result)
+        return print_result(result, path, args.output_file, parent_run_id=args.run_id, fork_step=args.at_step)
 
 
 def approvals_command(args: argparse.Namespace) -> int:
@@ -1245,7 +1457,11 @@ def eval_command(args: argparse.Namespace) -> int:
     from multi_bot_agentic.eval import EvaluationHarness, default_fixture_dir, load_scenarios
 
     fixture_dir = args.fixtures or default_fixture_dir()
-    scenarios = load_scenarios(fixture_dir)
+    try:
+        scenarios = load_scenarios(fixture_dir)
+    except ValueError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
     report = EvaluationHarness(scenarios).run(root=Path.cwd(), event_log_dir=args.event_log_dir)
     print(
         json.dumps(
@@ -1253,14 +1469,17 @@ def eval_command(args: argparse.Namespace) -> int:
                 "pass_rate": report.pass_rate,
                 "mean_tool_sequence_score": report.mean_tool_sequence_score,
                 "mean_answer_score": report.mean_answer_score,
+                "mean_output_score": report.mean_output_score,
                 "scenarios": [
                     {
                         "scenario_id": item.scenario_id,
                         "passed": item.passed,
                         "tool_sequence_score": item.tool_sequence_score,
                         "answer_score": item.answer_score,
+                        "output_score": item.output_score,
                         "actual_tools": list(item.actual_tools),
                         "actual_answer": item.actual_answer,
+                        **({"actual_output": item.actual_output} if item.actual_output is not None else {}),
                         "details": item.details,
                     }
                     for item in report.scenarios
