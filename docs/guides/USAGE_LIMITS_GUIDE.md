@@ -145,10 +145,13 @@ stateDiagram-v2
 
 - **Before the call** the stop happens before the `decision` event is recorded, so the stopped step stays a clean
   fork point and `resume` decides it again.
-- **After the call** the call's `llm_usage`, `action_result`, and step checkpoint are written first, so `resume`
-  continues with that output and the call is never repeated.
+- **After the call** the call's `llm_usage` and `action_result` are already written, and the stop's checkpoint,
+  which holds the call's output, closes the step, so `resume` continues with that output and the call is never
+  repeated.
 - Either way the runner writes a `state_transition` to `usage_limit_exceeded`, a `usage_limit_exceeded` event that
-  names the limit, its value, and its cap, and a checkpoint in that state. The command exits with code 5.
+  names the limit, its value, and its cap, and a checkpoint in that state, in one transaction: a process that dies
+  while stopping leaves none of them, and `resume` continues from the previous checkpoint, where the before-call
+  check stops the run again. The command exits with code 5.
 
 ### Resume and fork
 

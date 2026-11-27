@@ -226,8 +226,8 @@ See `docs/guides/STRUCTURED_OUTPUT_GUIDE.md`.
 call_llm -> provider -> Usage parsed from the provider's usage block -> priced (provider cost, else price table)
          -> llm_usage event (bot, provider, model, usage, cost, priced_at, running totals) -> action_result
 limits   -> before each call_llm (deciding):  totals already at a limit  -> usage_limit_exceeded, nothing recorded for the call
-         -> after each call_llm (acting):     totals beyond a limit      -> step checkpoint first, then usage_limit_exceeded
-stop     -> state_transition + usage_limit_exceeded event (limit, value, cap, phase, step) + checkpoint -> exit 5
+         -> after each call_llm (acting):     totals beyond a limit      -> usage_limit_exceeded, its checkpoint closes the step
+stop     -> state_transition + usage_limit_exceeded event (limit, value, cap, phase, step) + checkpoint, one transaction -> exit 5
 resume   -> totals = sum of the run's llm_usage events; limits = recorded limits, each replaced by a --max-* flag
 ```
 

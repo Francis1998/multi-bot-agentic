@@ -619,6 +619,11 @@ class AgentRunner:
                 else:
                     new_observation = self._act(run_id, state_machine.state, goal, observations, decision)
                 observations = (*observations, new_observation)
+                if decision.action == "call_llm":
+                    breach = self.safety_policy.usage_limits.check(self._usage, AFTER_CALL)
+                    if breach is not None:
+                        # The stop's checkpoint closes this step, in the same transaction as the stop.
+                        return self._stop_for_usage(run_id, state_machine, goal, observations, step + 1, breach)
                 save_checkpoint(
                     self.event_log,
                     run_id=run_id,
@@ -630,10 +635,6 @@ class AgentRunner:
                     require_approval=self.safety_policy.require_approval,
                     usage_limits=self.safety_policy.usage_limits,
                 )
-                if decision.action == "call_llm":
-                    breach = self.safety_policy.usage_limits.check(self._usage, AFTER_CALL)
-                    if breach is not None:
-                        return self._stop_for_usage(run_id, state_machine, goal, observations, step + 1, breach)
 
         except (InvalidTransitionError, SafetyError, OSError, RuntimeError, ValueError) as error:
             return self._fail(run_id, state_machine, self.safety_policy.max_steps, str(error))
@@ -1063,6 +1064,10 @@ class AgentRunner:
     ) -> RunResult:
         """Stop the run at a usage limit: record the breach and checkpoint, so ``resume`` continues.
 
+        The transition, the ``usage_limit_exceeded`` event, and the checkpoint are one transaction, so
+        a process that dies while stopping leaves none of them: ``resume`` then continues from the
+        previous checkpoint, where the before-call check stops the run again.
+
         Args:
             run_id: Run identifier.
             state_machine: Run state machine (``deciding`` before a call, ``acting`` after one).
@@ -1076,24 +1081,30 @@ class AgentRunner:
             Result in state ``usage_limit_exceeded``.
         """
 
-        self._transition(run_id, state_machine, RunState.USAGE_LIMIT_EXCEEDED)
+        previous, current = state_machine.transition_to(RunState.USAGE_LIMIT_EXCEEDED)
         step = steps + 1 if breach.phase == BEFORE_CALL else steps
         payload = breach.to_dict() | {
             "step": step,
             "limits": self.safety_policy.usage_limits.to_dict(),
             "totals": self._usage.to_dict(),
         }
-        self.event_log.append(run_id, state_machine.state, EventType.USAGE_LIMIT_EXCEEDED, payload)
-        save_checkpoint(
-            self.event_log,
+        checkpoint = CheckpointSnapshot(
             run_id=run_id,
             goal=goal,
             step=steps,
-            state=state_machine.state,
+            state=current,
             observations=observations,
             active_bot_id=self.active_bot_id,
-            require_approval=self.safety_policy.require_approval,
+            require_approval=tuple(sorted(self.safety_policy.require_approval)),
             usage_limits=self.safety_policy.usage_limits,
+        )
+        self.event_log.append_guarded(
+            run_id,
+            [
+                (current, EventType.STATE_TRANSITION, {"from": previous.value, "to": current.value}),
+                (current, EventType.USAGE_LIMIT_EXCEEDED, payload),
+                (current, EventType.CHECKPOINT, checkpoint.to_payload()),
+            ],
         )
         return RunResult(
             run_id=run_id,
