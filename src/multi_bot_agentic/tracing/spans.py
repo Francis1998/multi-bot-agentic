@@ -451,7 +451,12 @@ class _TraceBuilder:
         if resumes:
             attributes[f"{NAMESPACE}.run.resume_count"] = resumes
         if timeline.output_schema_sha256 is not None:
-            checks = [step for step in timeline.steps if isinstance(step, OutputValidation)]
+            # Inherited checks against a schema a fork replaced keep their span events but do not count.
+            checks = [
+                step
+                for step in timeline.steps
+                if isinstance(step, OutputValidation) and step.schema_sha256 == timeline.output_schema_sha256
+            ]
             attributes[f"{NAMESPACE}.output.schema_sha256"] = timeline.output_schema_sha256
             attributes[f"{NAMESPACE}.output.attempts"] = len(checks)
             attributes[f"{NAMESPACE}.output.valid"] = any(step.valid for step in checks)
@@ -648,6 +653,8 @@ class _TraceBuilder:
         attributes: dict[str, Any] = {f"{NAMESPACE}.output.valid": check.valid}
         if check.attempt is not None:
             attributes[f"{NAMESPACE}.output.attempt"] = check.attempt
+        if check.schema_sha256 is not None:
+            attributes[f"{NAMESPACE}.output.schema_sha256"] = check.schema_sha256
         if check.valid:
             if check.output_bytes is not None:
                 attributes[f"{NAMESPACE}.output.bytes"] = check.output_bytes

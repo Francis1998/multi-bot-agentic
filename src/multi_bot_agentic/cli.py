@@ -1066,8 +1066,8 @@ def output_report(events: Sequence[EventRecord]) -> dict[str, Any] | None:
         return {"error": str(error)}
     if contract is None:
         return None
-    output, errors = recorded_output(events)
-    # A fork's inherited failures under another schema are not answers to this contract.
+    # A fork's inherited checks against a schema it replaced are not answers to this contract.
+    output, errors = recorded_output(events, schema_sha256=contract.schema.sha256)
     failures = failed_attempts(events, contract.schema.sha256)
     report: dict[str, Any] = {
         "schema_sha256": contract.schema.sha256,

@@ -193,6 +193,8 @@ class OutputValidation:
         errors: Validation errors of an invalid answer (content: they can quote the answer).
         retry: For an invalid answer, whether the model got another round.
         output_bytes: Size of a valid output's compact JSON.
+        schema_sha256: Digest of the schema the answer was checked against (a fork's inherited checks
+            can be against a schema the fork replaced).
     """
 
     seq: int
@@ -202,6 +204,7 @@ class OutputValidation:
     errors: tuple[str, ...]
     retry: bool | None
     output_bytes: int | None
+    schema_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -771,6 +774,7 @@ def _output_validation(event: EventRecord) -> OutputValidation:
         errors=_strings(payload.get("errors")),
         retry=retry if isinstance(retry, bool) else None,
         output_bytes=size if _is_count(size) else None,
+        schema_sha256=_optional_str(payload.get("schema_sha256")),
     )
 
 
