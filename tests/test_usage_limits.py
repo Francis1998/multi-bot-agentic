@@ -67,6 +67,18 @@ class CrashingProvider:
         return self.inner.complete(request, timeout_seconds)
 
 
+class CostOnlyProvider:
+    """Provider that reports its own cost but no token usage."""
+
+    provider_name = "claude_code"
+
+    def __init__(self) -> None:
+        self.replies = iter(["TOOL:checklist:ship", "DONE: shipped"])
+
+    def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
+        return ModelOutput(provider=self.provider_name, text=next(self.replies), cost_usd=0.25)
+
+
 class UnmeteredProvider:
     """Provider that reports no usage, like Claude Code's plain-text output."""
 
@@ -531,3 +543,35 @@ def test_a_failed_call_that_reported_usage_is_still_recorded(
     assert result.usage is not None and result.usage.requests == 1
     if case.startswith("claude"):
         assert records[0].payload["cost"] == {"usd": 0.02, "source": "provider", "notes": ["reported by the provider"]}
+
+
+def test_trace_names_the_model_claude_code_reported(event_log: SQLiteEventLog, monkeypatch: MonkeyPatch) -> None:
+    result = {
+        "type": "result",
+        "is_error": False,
+        "result": "DONE: shipped",
+        "total_cost_usd": 0.01,
+        "modelUsage": {"claude-opus-5-5": {"inputTokens": 10, "outputTokens": 5}},
+    }
+
+    def fake_run(command: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(command, 0, stdout=json.dumps(result), stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    _runner(event_log, provider=ClaudeCodeCLIAdapter(command="claude -p --output-format json")).run(GOAL, run_id="r")
+
+    trace = build_trace(event_log.list_events("r"))
+    model_span = next(span for span in trace.spans if span.attributes.get("gen_ai.operation.name") == "chat")
+    assert model_span.name == "chat claude-opus-5-5"
+    assert model_span.attributes["gen_ai.request.model"] == "claude-opus-5-5"
+    assert trace.root.attributes["gen_ai.request.model"] == "claude-opus-5-5"
+
+
+def test_trace_and_mermaid_keep_a_provider_reported_cost_without_token_usage(event_log: SQLiteEventLog) -> None:
+    _runner(event_log, provider=CostOnlyProvider()).run(GOAL, run_id="r")
+    events = event_log.list_events("r")
+
+    spans = [span for span in build_trace(events).spans if span.attributes.get("gen_ai.operation.name") == "chat"]
+    assert [span.attributes.get("multi_bot_agentic.usage.cost_usd") for span in spans] == [0.25, 0.25]
+    assert all("gen_ai.usage.input_tokens" not in span.attributes for span in spans)
+    assert render_mermaid(events).count("    Note over A1: usage: tokens not reported, $0.25") == 2
