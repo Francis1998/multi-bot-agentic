@@ -28,7 +28,7 @@ from multi_bot_agentic.decision import DeterministicDecisionEngine
 from multi_bot_agentic.event_log import EventRecord, RunLease, SQLiteEventLog
 from multi_bot_agentic.fork import ForkPlan, plan_fork
 from multi_bot_agentic.lifecycle import InvalidTransitionError, RunStateMachine
-from multi_bot_agentic.llm.base import LLMAdapter
+from multi_bot_agentic.llm.base import BilledCallError, LLMAdapter
 from multi_bot_agentic.models import (
     Decision,
     EventType,
@@ -1005,7 +1005,19 @@ class AgentRunner:
             request = ModelRequest(goal=goal, observations=observations, tools=self._visible_tool_specs())
             if self._contract is not None:
                 request = replace(request, output_schema=self._contract.schema.value, max_output_chars=MAX_ANSWER_CHARS)
-            output = self.provider.complete(request, timeout_seconds=self.safety_policy.timeout_seconds)
+            try:
+                output = self.provider.complete(request, timeout_seconds=self.safety_policy.timeout_seconds)
+            except BilledCallError as error:
+                # The provider reported usage for the failed call: count it before the run fails.
+                billed = ModelOutput(
+                    provider=self.provider.provider_name,
+                    text="",
+                    usage=error.usage,
+                    model=error.model,
+                    cost_usd=error.cost_usd,
+                )
+                self._record_usage(run_id, state, billed)
+                raise
             self._record_usage(run_id, state, output)
             observation = output.to_observation()
             self.event_log.append(

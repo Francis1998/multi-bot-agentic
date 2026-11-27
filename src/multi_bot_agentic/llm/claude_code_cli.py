@@ -7,7 +7,7 @@ import shlex
 import subprocess
 from typing import Any
 
-from multi_bot_agentic.llm.base import render_output_contract, render_tool_catalog
+from multi_bot_agentic.llm.base import BilledCallError, render_output_contract, render_tool_catalog
 from multi_bot_agentic.models import ModelOutput, ModelRequest, Usage
 from multi_bot_agentic.usage import parse_anthropic_usage
 
@@ -45,6 +45,10 @@ class ClaudeCodeCLIAdapter:
 
         Returns:
             Normalized model output.
+
+        Raises:
+            BilledCallError: If Claude Code failed (nonzero exit or an error result) but reported usage or cost.
+            RuntimeError: If Claude Code timed out or failed without reporting usage.
         """
 
         command = shlex.split(self.command)
@@ -61,28 +65,32 @@ class ClaudeCodeCLIAdapter:
             )
         except subprocess.TimeoutExpired as error:
             raise RuntimeError(f"Claude Code timed out after {timeout_seconds}s: {command[0]}") from error
-        if completed.returncode != 0:
-            raise RuntimeError(f"Claude Code exited with {completed.returncode}: {completed.stderr.strip()}")
-        raw: dict[str, Any] = {"command": command[0], "returncode": completed.returncode}
         result = _json_result(completed.stdout)
+        usage, model, cost = _accounting(result) if result is not None else (None, None, None)
+        failure: str | None = None
+        if completed.returncode != 0:
+            failure = f"Claude Code exited with {completed.returncode}: {completed.stderr.strip()}"
+        elif result is not None and result.get("is_error") is True:
+            failure = f"Claude Code reported an error result: {result.get('subtype') or 'error'}"
+        if failure is not None:
+            # Error results still carry the usage and cost of what ran, so the call may be billed.
+            if usage is not None or cost is not None:
+                raise BilledCallError(failure, usage=usage, model=model, cost_usd=cost)
+            raise RuntimeError(failure)
+        raw: dict[str, Any] = {"command": command[0], "returncode": completed.returncode}
         if result is None:
             return ModelOutput(
                 provider=self.provider_name,
                 text=completed.stdout.strip()[: request.max_output_chars],
                 raw=raw,
             )
-        if result.get("is_error") is True:
-            raise RuntimeError(f"Claude Code reported an error result: {result.get('subtype') or 'error'}")
-        models = result.get("modelUsage")
-        model_names = sorted(name for name in models if isinstance(name, str)) if isinstance(models, dict) else []
-        cost = result.get("total_cost_usd")
         return ModelOutput(
             provider=self.provider_name,
             text=str(result.get("result", "")).strip()[: request.max_output_chars],
             raw=raw | {"output_format": "json"},
-            usage=_model_usage(models) or parse_anthropic_usage(result.get("usage")),
-            model=model_names[0] if len(model_names) == 1 else None,
-            cost_usd=float(cost) if isinstance(cost, (int, float)) and not isinstance(cost, bool) else None,
+            usage=usage,
+            model=model,
+            cost_usd=cost,
         )
 
 
@@ -99,6 +107,19 @@ def _json_result(stdout: str) -> dict[str, Any] | None:
     if not isinstance(payload, dict) or payload.get("type") != "result":
         return None
     return payload
+
+
+def _accounting(result: dict[str, Any]) -> tuple[Usage | None, str | None, float | None]:
+    """Return the usage, the model (when exactly one ran), and the cost a JSON result reports."""
+
+    models = result.get("modelUsage")
+    model_names = sorted(name for name in models if isinstance(name, str)) if isinstance(models, dict) else []
+    cost = result.get("total_cost_usd")
+    return (
+        _model_usage(models) or parse_anthropic_usage(result.get("usage")),
+        model_names[0] if len(model_names) == 1 else None,
+        float(cost) if isinstance(cost, (int, float)) and not isinstance(cost, bool) else None,
+    )
 
 
 def _model_usage(models: Any) -> Usage | None:

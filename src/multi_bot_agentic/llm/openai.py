@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from multi_bot_agentic.llm.base import render_output_contract, render_tool_catalog
+from multi_bot_agentic.llm.base import BilledCallError, render_output_contract, render_tool_catalog
 from multi_bot_agentic.llm.http import post_json
 from multi_bot_agentic.models import ModelOutput, ModelRequest
 from multi_bot_agentic.usage import parse_openai_usage
@@ -49,6 +49,9 @@ class OpenAIAdapter:
 
         Returns:
             Normalized model output.
+
+        Raises:
+            BilledCallError: If the response has no usable text but reported usage.
         """
 
         payload: dict[str, Any] = {
@@ -73,12 +76,18 @@ class OpenAIAdapter:
             {"authorization": f"Bearer {self.api_key}"},
             timeout_seconds,
         )
-        text = _extract_openai_text(decoded)
+        usage = parse_openai_usage(decoded.get("usage"))
+        try:
+            text = _extract_openai_text(decoded)
+        except ValueError as error:
+            if usage is None:
+                raise
+            raise BilledCallError(str(error), usage=usage, model=self.model) from error
         return ModelOutput(
             provider=self.provider_name,
             text=text[: request.max_output_chars],
             raw={"model": self.model, "finish_reason": _finish_reason(decoded)},
-            usage=parse_openai_usage(decoded.get("usage")),
+            usage=usage,
             model=self.model,
         )
 

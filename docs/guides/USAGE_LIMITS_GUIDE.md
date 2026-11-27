@@ -109,6 +109,9 @@ note: continue: resume --run-id demo --event-log demo-output/usage.sqlite and ra
 3. The runner appends an `llm_usage` event (bot, provider, model, usage, cost, `priced_at`, and the run's running
    totals) right before the call's `action_result`, so a call that was paid for is recorded even if the process
    dies before its result is.
+4. A call that fails after its provider reported usage is recorded too, before the run fails: Claude Code error
+   results and nonzero exits that print a JSON result, or an OpenAI, Kimi, or Gemini response with a usage block but
+   no usable text (for example Gemini's `MALFORMED_FUNCTION_CALL`). Adapters signal it with `BilledCallError`.
 
 The run's totals are always the sum of its `llm_usage` events. Nothing else stores them, so they cannot disagree
 with the log: `resume` rebuilds them from the run's events, and a fork, whose inherited events include the
