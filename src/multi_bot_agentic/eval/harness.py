@@ -494,8 +494,9 @@ def _actual_output(scenario: EvalScenario, validated: Any, answer: str) -> tuple
 def _budget_checks(scenario: EvalScenario, usage: UsageTotals) -> list[dict[str, Any]]:
     """Compare the run's usage with the scenario's budgets; an unknown total fails its budget."""
 
+    total_known = not usage.unreported.get("total_tokens")
     budgets = (
-        ("max_total_tokens", scenario.max_total_tokens, None if usage.unmeasured_requests else usage.total_tokens or 0),
+        ("max_total_tokens", scenario.max_total_tokens, (usage.total_tokens or 0) if total_known else None),
         ("max_cost_usd", scenario.max_cost_usd, None if usage.unpriced_requests else usage.cost_usd or 0.0),
     )
     return [

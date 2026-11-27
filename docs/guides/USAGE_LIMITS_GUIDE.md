@@ -131,9 +131,9 @@ Limits cap five running totals:
 
 Before a call the totals can only grow, so reaching a limit already blocks the next call; reaching it exactly with
 a call is allowed. Limits gate model calls only: tool calls, handoffs, and the final answer never consume model
-tokens. A limit is *unmeasurable* when a call reported no tokens (for token limits) or has no cost (for
-`--max-cost-usd`); an unmeasurable limit counts as breached, with `value: null`, so it never silently stops
-working.
+tokens. A limit is *unmeasurable* when a call did not report the counter it caps (for token limits; a call that
+reports only a total can still satisfy `--max-total-tokens`) or has no cost (for `--max-cost-usd`); an unmeasurable
+limit counts as breached, with `value: null`, so it never silently stops working.
 
 A breach stops the run:
 
@@ -216,7 +216,8 @@ rejected by the argument parser (exit code 2) before anything is written.
     "total_tokens": 202,
     "cost_usd": 0.0,
     "unmeasured_requests": 0,
-    "unpriced_requests": 0
+    "unpriced_requests": 0,
+    "unreported": {}
   },
   "usage_limit": {
     "limit": "max_total_tokens",
@@ -236,6 +237,7 @@ rejected by the argument parser (exit code 2) before anything is written.
 | `usage.cost_usd` | Sum over the priced calls; `null` until one is priced |
 | `usage.unmeasured_requests` | Calls that reported no input or output tokens (the token sums are then partial) |
 | `usage.unpriced_requests` | Calls without a cost (the cost sum is then partial) |
+| `usage.unreported` | Calls that did not report `input_tokens`, `output_tokens`, or `total_tokens`, per counter; a limit on such a counter cannot be enforced |
 | `usage_limit.phase` | `before_call` (the next call would exceed the limit) or `after_call` (a call exceeded it) |
 | `usage_limit.value` | The total when the run stopped; `null` when the limit could not be measured |
 
@@ -305,7 +307,8 @@ prints it as JSON (keys sorted):
       "requests": 1,
       "total_tokens": 64,
       "unmeasured_requests": 0,
-      "unpriced_requests": 0
+      "unpriced_requests": 0,
+      "unreported": {}
     },
     "usage": {
       "cached_input_tokens": 0,
@@ -338,7 +341,7 @@ prints it as JSON (keys sorted):
 ### `usage_limit_exceeded`
 
 ```json
-{"cap":150,"counter":"total_tokens","limit":"max_total_tokens","limits":{"max_total_tokens":150},"message":"total_tokens=202 exceeded max_total_tokens=150","phase":"after_call","step":3,"totals":{"cached_input_tokens":0,"cost_usd":0.0,"input_tokens":181,"output_tokens":21,"reasoning_tokens":0,"requests":2,"total_tokens":202,"unmeasured_requests":0,"unpriced_requests":0},"value":202}
+{"cap":150,"counter":"total_tokens","limit":"max_total_tokens","limits":{"max_total_tokens":150},"message":"total_tokens=202 exceeded max_total_tokens=150","phase":"after_call","step":3,"totals":{"cached_input_tokens":0,"cost_usd":0.0,"input_tokens":181,"output_tokens":21,"reasoning_tokens":0,"requests":2,"total_tokens":202,"unmeasured_requests":0,"unpriced_requests":0,"unreported":{}},"value":202}
 ```
 
 `step` is the 1-based step of the model call that was blocked (`before_call`) or that exceeded the limit
@@ -515,7 +518,7 @@ multi-bot-agentic fork --event-log demo-output/guide/runs.sqlite --run-id demo -
 ```
 
 ```json
-{"next_decision":{"action":"call_tool","target":"checklist","rule_id":"model.requested-tool"},"usage":{"inherited":{"requests":1,"input_tokens":54,"output_tokens":10,"cached_input_tokens":0,"reasoning_tokens":0,"total_tokens":64,"cost_usd":0.0,"unmeasured_requests":0,"unpriced_requests":0},"limits":{"max_requests":1,"max_total_tokens":150}}}
+{"next_decision":{"action":"call_tool","target":"checklist","rule_id":"model.requested-tool"},"usage":{"inherited":{"requests":1,"input_tokens":54,"output_tokens":10,"cached_input_tokens":0,"reasoning_tokens":0,"total_tokens":64,"cost_usd":0.0,"unmeasured_requests":0,"unpriced_requests":0,"unreported":{}},"limits":{"max_requests":1,"max_total_tokens":150}}}
 ```
 
 Without `--dry-run` (and without `--max-requests`), the fork stops at the inherited limit, and `report` separates
@@ -609,7 +612,7 @@ Limitations and roadmap (not in this release):
 | --- | --- | --- |
 | `resume` exits 5 again with `"resumed": false` | The limit that stopped the run still holds; nothing was written | Raise that limit (`--max-total-tokens <higher>`), or drop recorded limits with `--reset-usage-limits` |
 | `max_cost_usd=... cannot be enforced: 1 model call(s) reported no cost (unpriced model)` | The model is not in the price table | Add it to `MULTIBOT_PRICES_FILE`, or use a token limit, then `resume` |
-| `max_total_tokens=... cannot be enforced: ... reported no token usage` | The provider reported no usage (Claude Code text mode) | Use `claude -p --output-format json`, or `resume --reset-usage-limits` |
+| `max_total_tokens=... cannot be enforced: ... reported no total tokens` | The provider reported no usage (Claude Code text mode) | Use `claude -p --output-format json`, or `resume --reset-usage-limits` |
 | A fork stops immediately | It inherited the source's usage and limits at the fork point | Raise the limit on `fork`, or pass `--reset-usage-limits` |
 | `cost_usd` is `0.0` | The fake provider is free | `MULTIBOT_FAKE_MODEL=gpt-6.2-sol` prices its usage as GPT-6.2 Sol |
 | `error: price file ...: <model>.input must be a number >= 0` (exit 2) | Invalid `MULTIBOT_PRICES_FILE` entry | Fix the file; nothing was written |

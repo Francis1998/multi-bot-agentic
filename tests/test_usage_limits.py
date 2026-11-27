@@ -259,7 +259,7 @@ def test_unmeasured_usage_cannot_satisfy_a_limit_until_it_is_reset(event_log: SQ
 
     assert stopped.usage_limit is not None and stopped.usage_limit.value is None
     assert stopped.answer == (
-        "stopped: max_total_tokens=1000 cannot be enforced: 1 model call(s) reported no token usage"
+        "stopped: max_total_tokens=1000 cannot be enforced: 1 model call(s) reported no total tokens"
     )
     record = _of(event_log, "r", EventType.LLM_USAGE)[0].payload
     assert record["usage"] is None and record["cost"]["usd"] is None
@@ -267,6 +267,7 @@ def test_unmeasured_usage_cannot_satisfy_a_limit_until_it_is_reset(event_log: SQ
     resumed = _runner(event_log, provider=provider).resume("r", reset_usage_limits=True)
     assert resumed.state is RunState.SUCCEEDED
     assert resumed.usage is not None and (resumed.usage.unmeasured_requests, resumed.usage.total_tokens) == (2, None)
+    assert resumed.usage.unreported == {"input_tokens": 2, "output_tokens": 2, "total_tokens": 2}
 
 
 def test_resume_continues_the_totals_from_the_log(event_log: SQLiteEventLog) -> None:

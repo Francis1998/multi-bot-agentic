@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from typing import Any, Final
 
 from multi_bot_agentic.event_log import EventRecord
@@ -27,6 +27,8 @@ FAKE_CHARS_PER_TOKEN: Final[int] = 4
 FAKE_PROMPT_OVERHEAD_TOKENS: Final[int] = 40
 BEFORE_CALL: Final[str] = "before_call"
 AFTER_CALL: Final[str] = "after_call"
+# Token counters a limit can cap.
+CAPPED_TOKEN_COUNTERS: Final[tuple[str, ...]] = ("input_tokens", "output_tokens", "total_tokens")
 # Limit name -> the running total it caps.
 LIMIT_COUNTERS: Final[Mapping[str, str]] = {
     "max_requests": "requests",
@@ -222,8 +224,10 @@ class UsageTotals:
     """Usage summed over model calls.
 
     A token counter (or ``cost_usd``) is ``None`` until a call reports it; it then sums the calls
-    that did. ``unmeasured_requests`` counts calls that reported no input or output tokens and
-    ``unpriced_requests`` calls without a cost, so a partial total is never mistaken for a full one.
+    that did. ``unmeasured_requests`` counts calls that reported no input or output tokens,
+    ``unreported`` the calls that did not report each capped counter (``input_tokens``,
+    ``output_tokens``, ``total_tokens``), and ``unpriced_requests`` calls without a cost, so a partial
+    total is never mistaken for a full one.
     """
 
     requests: int = 0
@@ -235,6 +239,7 @@ class UsageTotals:
     cost_usd: float | None = None
     unmeasured_requests: int = 0
     unpriced_requests: int = 0
+    unreported: Mapping[str, int] = field(default_factory=dict)
 
     def add(self, usage: Usage | None, cost_usd: float | None) -> UsageTotals:
         """Return the totals with one more model call added.
@@ -246,6 +251,8 @@ class UsageTotals:
 
         call = usage or Usage()
         total = _total(call.input_tokens, call.output_tokens, call.total_tokens)
+        reported = {"input_tokens": call.input_tokens, "output_tokens": call.output_tokens, "total_tokens": total}
+        missing = {name: call.requests for name, value in reported.items() if value is None}
         return UsageTotals(
             requests=self.requests + call.requests,
             input_tokens=_plus(self.input_tokens, call.input_tokens),
@@ -256,6 +263,7 @@ class UsageTotals:
             cost_usd=_plus_usd(self.cost_usd, cost_usd),
             unmeasured_requests=self.unmeasured_requests + (0 if call.measured else call.requests),
             unpriced_requests=self.unpriced_requests + (call.requests if cost_usd is None else 0),
+            unreported=_plus_counts(self.unreported, missing),
         )
 
     def add_record(self, payload: Mapping[str, Any]) -> UsageTotals:
@@ -275,6 +283,7 @@ class UsageTotals:
             cost_usd=_plus_usd(self.cost_usd, other.cost_usd),
             unmeasured_requests=self.unmeasured_requests + other.unmeasured_requests,
             unpriced_requests=self.unpriced_requests + other.unpriced_requests,
+            unreported=_plus_counts(self.unreported, other.unreported),
         )
 
     def value(self, counter: str) -> int | float | None:
@@ -286,7 +295,11 @@ class UsageTotals:
     def to_dict(self) -> dict[str, Any]:
         """Return a JSON-serializable representation."""
 
-        return {item.name: getattr(self, item.name) for item in fields(self)}
+        payload = {item.name: getattr(self, item.name) for item in fields(self)}
+        payload["unreported"] = {
+            name: self.unreported[name] for name in CAPPED_TOKEN_COUNTERS if name in self.unreported
+        }
+        return payload
 
     @classmethod
     def from_events(cls, events: Iterable[EventRecord]) -> UsageTotals:
@@ -297,6 +310,15 @@ class UsageTotals:
             if event.event_type == EventType.LLM_USAGE.value:
                 totals = totals.add_record(event.payload)
         return totals
+
+
+def _plus_counts(left: Mapping[str, int], right: Mapping[str, int]) -> dict[str, int]:
+    """Add two per-counter call counts."""
+
+    merged = dict(left)
+    for name, count in right.items():
+        merged[name] = merged.get(name, 0) + count
+    return merged
 
 
 def format_number(value: int | float | None) -> str:
@@ -320,7 +342,7 @@ class LimitBreach:
         value: The total when the run stopped; ``None`` when it cannot be measured.
         cap: The limit.
         phase: ``before_call`` (the next call would exceed it) or ``after_call`` (a call exceeded it).
-        unknown_calls: Calls whose tokens or cost are unknown, when ``value`` is ``None``.
+        unknown_calls: Calls that did not report the capped counter (or a cost), when ``value`` is ``None``.
     """
 
     limit: str
@@ -336,7 +358,7 @@ class LimitBreach:
 
         cap = format_number(self.cap)
         if self.value is None:
-            missing = "cost (unpriced model)" if self.counter == "cost_usd" else "token usage"
+            missing = "cost (unpriced model)" if self.counter == "cost_usd" else self.counter.replace("_", " ")
             return f"{self.limit}={cap} cannot be enforced: {self.unknown_calls} model call(s) reported no {missing}"
         value = format_number(self.value)
         if self.phase == BEFORE_CALL:
@@ -442,7 +464,7 @@ class UsageLimits:
             if cap is None:
                 continue
             if counter != "requests":
-                unknown = totals.unpriced_requests if counter == "cost_usd" else totals.unmeasured_requests
+                unknown = totals.unpriced_requests if counter == "cost_usd" else totals.unreported.get(counter, 0)
                 if unknown:
                     return LimitBreach(name, counter, None, cap, phase, unknown_calls=unknown)
             value = totals.value(counter) or 0
