@@ -45,6 +45,30 @@ class SpyTool:
         return ToolResult(tool_name="checklist", ok=True, content=f"ran: {invocation.arguments['text']}")
 
 
+class _ProcessDied(BaseException):
+    """Stands in for the process dying (SIGKILL): not an ``Exception``, so no terminal event is recorded."""
+
+
+class _DyingTool(SpyTool):
+    """Checklist stand-in whose process dies as the call starts (the call never happens)."""
+
+    def execute(self, invocation: ToolInvocation) -> ToolResult:
+        raise _ProcessDied
+
+
+class _DyingLog(SQLiteEventLog):
+    """Event log of a process that dies just before it writes a pause's checkpoint (or a non-pause one)."""
+
+    def __init__(self, path: Path, *, pause_checkpoint: bool) -> None:
+        super().__init__(path)
+        self.pause_checkpoint = pause_checkpoint
+
+    def _insert(self, run_id: str, state: RunState, event_type: EventType, payload: dict[str, object]) -> EventRecord:
+        if event_type is EventType.CHECKPOINT and bool(payload.get("interrupt_id")) is self.pause_checkpoint:
+            raise _ProcessDied
+        return super()._insert(run_id, state, event_type, payload)
+
+
 @pytest.fixture()
 def event_log(tmp_path: Path) -> Iterator[SQLiteEventLog]:
     log = SQLiteEventLog(tmp_path / "runs.sqlite")
@@ -290,6 +314,53 @@ def test_claim_is_atomic(event_log: SQLiteEventLog) -> None:
     assert event_log.list_events("r") == []
     (record,) = event_log.append_guarded("r", [(RunState.ACTING, EventType.ACTION_REQUESTED, {})], lambda events: None)
     assert record.seq == 1
+
+
+def test_a_gate_added_at_resume_survives_a_crash_while_pausing(tmp_path: Path) -> None:
+    path = tmp_path / "runs.sqlite"
+    log = SQLiteEventLog(path)
+    ungated = SafetyPolicy(allowed_tools=frozenset({"checklist"}))
+    with pytest.raises(_ProcessDied):
+        AgentRunner(FakeLLMAdapter(), log, {"checklist": _DyingTool()}, ungated).run(GOAL, run_id="r")
+    # Resumed with a new approval requirement, the process dies while it records the pause.
+    dying = _DyingLog(path, pause_checkpoint=True)
+    with pytest.raises(_ProcessDied):
+        _runner(dying, SpyTool()).resume("r")
+    dying.close()
+
+    spy = SpyTool()
+    result = _runner(log, spy, require_approval=frozenset()).resume("r")
+
+    assert spy.calls == []
+    assert result.state is RunState.AWAITING_APPROVAL
+    assert result.interrupt is not None and result.interrupt.policy == ("checklist",)
+    history = build_history(log.list_events("r"))
+    assert [(step.step, step.action, step.target) for step in history.steps[:2]] == [
+        (0, None, None),
+        (1, "call_llm", "fake"),
+    ]
+    log.close()
+
+
+def test_recovery_keeps_a_gate_that_the_crashed_resume_added(tmp_path: Path) -> None:
+    path = tmp_path / "runs.sqlite"
+    log = SQLiteEventLog(path)
+    spy = SpyTool()
+    paused = _runner(log, spy).run(GOAL, run_id="r")
+    decide_interrupt(log, paused.interrupt.interrupt_id, ApprovalDecision.APPROVED, decided_by="a")  # type: ignore[union-attr]
+    # Resumed with one more gate, the approved call runs and the process dies before the step's checkpoint.
+    dying = _DyingLog(path, pause_checkpoint=False)
+    with pytest.raises(_ProcessDied):
+        _runner(dying, spy, require_approval=frozenset({"checklist", "deploy_*"})).resume("r")
+    dying.close()
+
+    result = _runner(log, spy).resume("r")
+
+    assert result.state is RunState.SUCCEEDED
+    assert len(spy.calls) == 1
+    checkpoint = load_latest_checkpoint(log, "r")
+    assert checkpoint is not None and checkpoint.require_approval == ("checklist", "deploy_*")
+    log.close()
 
 
 def test_recorded_policy_survives_resume_and_is_inherited_by_forks(event_log: SQLiteEventLog) -> None:
