@@ -83,18 +83,20 @@ class SQLiteEventLog:
         self,
         run_id: str,
         entries: Sequence[tuple[RunState, EventType, dict[str, Any]]],
-        guard: Callable[[list[EventRecord]], None],
+        guard: Callable[[list[EventRecord]], None] | None = None,
     ) -> list[EventRecord]:
         """Atomically check a run's events and append events, or append nothing.
 
         The check and the inserts run in one ``BEGIN IMMEDIATE`` transaction, which holds
         SQLite's write lock, so two processes cannot both pass the same check (for example two
-        decisions on one interrupt, or two resumes executing one approved tool call).
+        decisions on one interrupt, or two resumes executing one approved tool call). Without a
+        guard the events are still all-or-nothing: a process that dies midway leaves none of them.
 
         Args:
             run_id: Run identifier.
             entries: ``(state, event_type, payload)`` of each event to append, in order.
-            guard: Called with the run's events; raises to abort without appending.
+            guard: Called with the run's events; raises to abort without appending. ``None`` skips
+                the check.
 
         Returns:
             The persisted records.
@@ -104,7 +106,8 @@ class SQLiteEventLog:
             self._connection.commit()
         self._connection.execute("BEGIN IMMEDIATE")
         try:
-            guard(self.list_events(run_id))
+            if guard is not None:
+                guard(self.list_events(run_id))
             records = [self._insert(run_id, state, event_type, payload) for state, event_type, payload in entries]
         except BaseException:
             self._connection.rollback()

@@ -821,8 +821,10 @@ def _scan(events: Sequence[EventRecord]) -> _Scan:
                 continue
             active_bot = _optional_str(payload.get("active_bot_id"))
             checkpoints[step] = index
-            if pending is None and step in steps:
-                # A checkpoint with no new decision (a fork's starting state) replaces the state after that step.
+            if step in steps and (pending is None or step <= last_closed):
+                # A checkpoint with no new step (a fork's starting state, or a resume restating the state
+                # with a stricter approval policy) replaces the state after that step; a decision the run
+                # made before it died is dropped, as the resumed step decides again.
                 steps[step] = replace(steps[step], forkable=True, event_seq=event.seq)
             else:
                 closed = pending or _PendingStep(bot=None, action=None, target=None, rule_id=None, outcome="checkpoint")

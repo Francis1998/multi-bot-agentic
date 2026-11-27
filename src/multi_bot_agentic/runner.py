@@ -219,7 +219,9 @@ class AgentRunner:
         resumed run keeps that bot's tool scope instead of the constructor's. A
         checkpoint without a bot resumes with the constructor's scope, never with one
         left behind by an earlier run on this runner. The approval policy recorded in the
-        checkpoint stays in force (this runner's ``require_approval`` can only add to it).
+        checkpoint stays in force (this runner's ``require_approval`` can only add to it); a resume
+        that adds entries records the merged policy in a checkpoint before it advances, so a crash
+        never drops them.
 
         A run paused at a human-approval interrupt continues exactly where it stopped: an
         approved call runs once, with the approver's edited arguments if any, and a rejected
@@ -271,6 +273,9 @@ class AgentRunner:
             self.safety_policy = replace(self.safety_policy, require_approval=recorded_policy)
         if snapshot.interrupt_id is not None:
             return self._resume_interrupt(run_id, snapshot)
+        restated = self._with_merged_policy(snapshot)
+        if restated is not None:
+            self.event_log.append(run_id, restated.state, EventType.CHECKPOINT, restated.to_payload())
         return self._run_loop(
             run_id,
             snapshot.goal,
@@ -476,7 +481,9 @@ class AgentRunner:
 
         The tool is checked against the allowlist and registry first, so a human is never asked
         to approve a call that could not run. Nothing is executed: the run moves to
-        ``awaiting_approval``, records an ``interrupt`` event, and checkpoints the paused step.
+        ``awaiting_approval``, records an ``interrupt`` event, and checkpoints the paused step, all in
+        one transaction, so a process that dies while pausing never leaves an interrupt without the
+        checkpoint (and approval policy) that resume restores.
 
         Args:
             run_id: Run identifier.
@@ -492,26 +499,31 @@ class AgentRunner:
         """
 
         self._tool_for(decision)
-        self._transition(run_id, state_machine, RunState.AWAITING_APPROVAL)
+        previous, current = state_machine.transition_to(RunState.AWAITING_APPROVAL)
         interrupt_id = new_interrupt_id()
-        self.event_log.append(
-            run_id,
-            state_machine.state,
-            EventType.INTERRUPT,
-            interrupt_payload(
-                decision, interrupt_id=interrupt_id, step=step + 1, bot=self.active_bot_id, policy=matched
-            ),
-        )
-        save_checkpoint(
-            self.event_log,
+        checkpoint = CheckpointSnapshot(
             run_id=run_id,
             goal=goal,
             step=step,
-            state=state_machine.state,
+            state=current,
             observations=observations,
             active_bot_id=self.active_bot_id,
-            require_approval=self.safety_policy.require_approval,
+            require_approval=tuple(sorted(self.safety_policy.require_approval)),
             interrupt_id=interrupt_id,
+        )
+        self.event_log.append_guarded(
+            run_id,
+            [
+                (current, EventType.STATE_TRANSITION, {"from": previous.value, "to": current.value}),
+                (
+                    current,
+                    EventType.INTERRUPT,
+                    interrupt_payload(
+                        decision, interrupt_id=interrupt_id, step=step + 1, bot=self.active_bot_id, policy=matched
+                    ),
+                ),
+                (current, EventType.CHECKPOINT, checkpoint.to_payload()),
+            ],
         )
         return RunResult(
             run_id=run_id,
@@ -579,10 +591,13 @@ class AgentRunner:
             ) from error
         previous, current = state_machine.transition_to(RunState.ACTING)
         requested = decision.to_dict() | {"interrupt_id": record.interrupt_id}
+        restated = self._with_merged_policy(snapshot)
+        policy = [] if restated is None else [(restated.state, EventType.CHECKPOINT, restated.to_payload())]
         self._claim(
             run_id,
             record,
             [
+                *policy,
                 (current, EventType.STATE_TRANSITION, {"from": previous.value, "to": current.value}),
                 (current, EventType.ACTION_REQUESTED, requested),
             ],
@@ -646,6 +661,18 @@ class AgentRunner:
             self._next_checkpoint(snapshot, state_machine.state, observations).to_payload(),
         )
         return self._run_loop(run_id, snapshot.goal, observations, state_machine, start_step=snapshot.step + 1)
+
+    def _with_merged_policy(self, snapshot: CheckpointSnapshot) -> CheckpointSnapshot | None:
+        """Return ``snapshot`` restated with this resume's approval policy, or ``None`` if it did not grow.
+
+        A resume records the restated checkpoint before it advances (inside the claim at an interrupt),
+        so ``require_approval`` entries it added survive a crash before its next checkpoint.
+        """
+
+        merged = tuple(sorted(self.safety_policy.require_approval))
+        if set(merged) == set(snapshot.require_approval):
+            return None
+        return replace(snapshot, require_approval=merged)
 
     def _next_checkpoint(
         self,
