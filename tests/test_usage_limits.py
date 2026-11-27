@@ -23,7 +23,7 @@ from multi_bot_agentic.llm.claude_code_cli import ClaudeCodeCLIAdapter
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.llm.gemini import GeminiAdapter
 from multi_bot_agentic.llm.openai import OpenAIAdapter
-from multi_bot_agentic.models import EventType, ModelOutput, ModelRequest, RunState, ToolInvocation, ToolResult
+from multi_bot_agentic.models import EventType, ModelOutput, ModelRequest, RunState, ToolInvocation, ToolResult, Usage
 from multi_bot_agentic.runner import AgentRunner
 from multi_bot_agentic.safety import SafetyPolicy
 from multi_bot_agentic.tracing import build_trace, render_mermaid
@@ -77,6 +77,19 @@ class CostOnlyProvider:
 
     def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
         return ModelOutput(provider=self.provider_name, text=next(self.replies), cost_usd=0.25)
+
+
+class PartialUsageProvider:
+    """Provider that reports some token counters but not others."""
+
+    provider_name = "fake"
+
+    def __init__(self, usage: Usage) -> None:
+        self.usage = usage
+        self.replies = iter(["TOOL:checklist:ship", "DONE: shipped"])
+
+    def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
+        return ModelOutput(provider=self.provider_name, text=next(self.replies), usage=self.usage, model="fake")
 
 
 class UnmeteredProvider:
@@ -575,3 +588,25 @@ def test_trace_and_mermaid_keep_a_provider_reported_cost_without_token_usage(eve
     assert [span.attributes.get("multi_bot_agentic.usage.cost_usd") for span in spans] == [0.25, 0.25]
     assert all("gen_ai.usage.input_tokens" not in span.attributes for span in spans)
     assert render_mermaid(events).count("    Note over A1: usage: tokens not reported, $0.25") == 2
+
+
+@pytest.mark.parametrize(
+    ("usage", "limits", "stopped_by"),
+    [
+        (Usage(input_tokens=7), UsageLimits(max_input_tokens=100), None),
+        (Usage(input_tokens=7), UsageLimits(max_output_tokens=100), "max_output_tokens"),
+        (Usage(total_tokens=9), UsageLimits(max_total_tokens=100), None),
+        (Usage(total_tokens=9), UsageLimits(max_input_tokens=100), "max_input_tokens"),
+    ],
+)
+def test_a_limit_is_unmeasurable_only_when_its_own_counter_is_unreported(
+    event_log: SQLiteEventLog, usage: Usage, limits: UsageLimits, stopped_by: str | None
+) -> None:
+    result = _runner(event_log, limits=limits, provider=PartialUsageProvider(usage)).run(GOAL, run_id="r")
+
+    if stopped_by is None:
+        assert result.state is RunState.SUCCEEDED
+    else:
+        assert result.state is RunState.USAGE_LIMIT_EXCEEDED
+        assert result.usage_limit is not None
+        assert (result.usage_limit.limit, result.usage_limit.value) == (stopped_by, None)
