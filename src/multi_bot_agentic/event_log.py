@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
+import os
+import socket
 import sqlite3
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from multi_bot_agentic.models import EventType, RunState
 
@@ -24,6 +28,14 @@ CREATE TABLE IF NOT EXISTS events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_events_run_id_seq ON events (run_id, seq);
+
+CREATE TABLE IF NOT EXISTS run_leases (
+  run_id TEXT PRIMARY KEY,
+  token TEXT NOT NULL,
+  pid INTEGER NOT NULL,
+  host TEXT NOT NULL,
+  acquired_at TEXT NOT NULL
+);
 """
 
 
@@ -37,6 +49,46 @@ class EventRecord:
     event_type: str
     state: str
     payload: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class RunLease:
+    """A process's exclusive claim on continuing a run: only the holder appends the run's next steps.
+
+    Attributes:
+        run_id: Run identifier.
+        token: Random identifier of this claim; only its holder releases it.
+        pid: Process id of the holder.
+        host: Host name of the holder.
+        acquired_at: When the claim was taken (UTC, ISO 8601).
+    """
+
+    run_id: str
+    token: str
+    pid: int
+    host: str
+    acquired_at: str
+
+    def holder_alive(self) -> bool:
+        """Return ``False`` only when the holder is known to have exited.
+
+        A holder on this host is probed by its pid. This process (another thread or runner) and a holder
+        on another host count as alive, so a lease is never taken from an owner that may still be running.
+        """
+
+        if self.host != socket.gethostname() or self.pid == os.getpid():
+            return True
+        if os.name == "nt":
+            # os.kill(pid, 0) would terminate the process on Windows.
+            return True
+        try:
+            os.kill(self.pid, 0)
+        except ProcessLookupError:
+            return False
+        except OSError:
+            # For example PermissionError: the pid exists but belongs to another user.
+            return True
+        return True
 
 
 class SQLiteEventLog:
@@ -114,6 +166,65 @@ class SQLiteEventLog:
             raise
         self._connection.commit()
         return records
+
+    def acquire_lease(self, run_id: str) -> tuple[RunLease, bool]:
+        """Atomically make this process the only one continuing ``run_id``.
+
+        The check and the claim run in one ``BEGIN IMMEDIATE`` transaction, so two processes cannot
+        both take a run's lease. A lease whose holder has exited (it died without releasing it) is taken
+        over, so a crashed run can still be resumed.
+
+        Args:
+            run_id: Run identifier.
+
+        Returns:
+            ``(lease, True)`` when this process now holds the run, or ``(holder, False)`` with the lease
+            of the live process that does (then nothing was written).
+        """
+
+        if self._connection.in_transaction:
+            self._connection.commit()
+        self._connection.execute("BEGIN IMMEDIATE")
+        try:
+            row = self._connection.execute(
+                "SELECT token, pid, host, acquired_at FROM run_leases WHERE run_id = ?", (run_id,)
+            ).fetchone()
+            if row is not None:
+                holder = RunLease(run_id, str(row[0]), int(row[1]), str(row[2]), str(row[3]))
+                if holder.holder_alive():
+                    self._connection.rollback()
+                    return holder, False
+            lease = RunLease(
+                run_id=run_id,
+                token=uuid4().hex,
+                pid=os.getpid(),
+                host=socket.gethostname(),
+                acquired_at=datetime.now(timezone.utc).isoformat(),
+            )
+            self._connection.execute(
+                "INSERT OR REPLACE INTO run_leases (run_id, token, pid, host, acquired_at) VALUES (?, ?, ?, ?, ?)",
+                (lease.run_id, lease.token, lease.pid, lease.host, lease.acquired_at),
+            )
+        except BaseException:
+            self._connection.rollback()
+            raise
+        self._connection.commit()
+        return lease, True
+
+    def release_lease(self, lease: RunLease) -> None:
+        """Give up a lease taken with :meth:`acquire_lease`.
+
+        Best effort: a lease that cannot be deleted here is taken over once this process has exited.
+
+        Args:
+            lease: The lease to release.
+        """
+
+        with contextlib.suppress(sqlite3.Error):
+            self._connection.execute(
+                "DELETE FROM run_leases WHERE run_id = ? AND token = ?", (lease.run_id, lease.token)
+            )
+            self._connection.commit()
 
     def _insert(self, run_id: str, state: RunState, event_type: EventType, payload: dict[str, Any]) -> EventRecord:
         """Insert one event without committing."""

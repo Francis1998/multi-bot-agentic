@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from fnmatch import fnmatchcase
 from pathlib import Path
@@ -23,8 +24,8 @@ from multi_bot_agentic.approval import (
 from multi_bot_agentic.bots import BotSpec
 from multi_bot_agentic.checkpoint import CheckpointSnapshot, load_latest_checkpoint, save_checkpoint
 from multi_bot_agentic.decision import DeterministicDecisionEngine
-from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
-from multi_bot_agentic.fork import plan_fork
+from multi_bot_agentic.event_log import EventRecord, RunLease, SQLiteEventLog
+from multi_bot_agentic.fork import ForkPlan, plan_fork
 from multi_bot_agentic.lifecycle import InvalidTransitionError, RunStateMachine
 from multi_bot_agentic.llm.base import LLMAdapter
 from multi_bot_agentic.models import (
@@ -73,6 +74,26 @@ class ResumeError(ValueError):
 
 class RunNotFoundError(ResumeError):
     """Raised when the event log holds no events for the run id to resume."""
+
+
+class RunBusyError(ResumeError):
+    """Raised when another live process is continuing the run; nothing is written.
+
+    ``run``, ``resume`` and ``fork`` hold the run's lease in the event log while they continue it, so
+    two processes never both append a run's next steps (duplicating provider calls or tool side effects).
+
+    Attributes:
+        holder: Lease of the process that is continuing the run.
+    """
+
+    def __init__(self, run_id: str, holder: RunLease) -> None:
+        super().__init__(
+            f"run {run_id} is being continued by process {holder.pid} on {holder.host} "
+            f"(since {holder.acquired_at}); nothing was written. Resume again after it finishes; if that "
+            "process is gone but still holds the run (for example it ran on another host), fork the run "
+            "to continue it under a new id"
+        )
+        self.holder = holder
 
 
 class RunExistsError(ValueError):
@@ -189,6 +210,7 @@ class AgentRunner:
 
         Raises:
             RunExistsError: If the event log already holds events for ``run_id``.
+            RunBusyError: If another live process holds ``run_id``'s lease; nothing was written.
         """
 
         self.safety_policy.validate_goal(goal)
@@ -204,8 +226,9 @@ class AgentRunner:
         created: dict[str, Any] = {"goal": goal, "provider": self.provider.provider_name}
         if self.safety_policy.require_approval:
             created["require_approval"] = sorted(self.safety_policy.require_approval)
-        self.event_log.append(selected_run_id, state_machine.state, EventType.RUN_CREATED, created)
-        return self._run_loop(selected_run_id, goal, observations, state_machine, start_step=0)
+        with self._sole_owner(selected_run_id):
+            self.event_log.append(selected_run_id, state_machine.state, EventType.RUN_CREATED, created)
+            return self._run_loop(selected_run_id, goal, observations, state_machine, start_step=0)
 
     def resume(self, run_id: str) -> RunResult:
         """Resume an interrupted run from its latest checkpoint.
@@ -228,6 +251,11 @@ class AgentRunner:
         call is fed back to the model as an ``approval:<tool>`` observation so it re-plans.
         With the cancellation file present, the paused run is cancelled instead.
 
+        Only one process continues a run at a time: ``resume`` holds the run's lease in the event
+        log while it reads and continues the run, and a second ``resume`` (or one racing the ``run``
+        or ``fork`` still executing it) is refused without writing. A lease left behind by a process
+        that died is taken over, so a crashed run can still be resumed.
+
         Args:
             run_id: Existing run identifier.
 
@@ -236,12 +264,22 @@ class AgentRunner:
 
         Raises:
             RunNotFoundError: If the event log holds no events for ``run_id``.
+            RunBusyError: If another live process is continuing the run. Nothing was written.
             AwaitingApprovalError: If the run is paused at an interrupt nobody decided yet.
-            ApprovalError: If the interrupt was already resumed by another process, or the
+            ApprovalError: If an earlier resume claimed the approved call but recorded no result, or the
                 approved tool is not registered or allowed in this resume. Nothing was written.
             ResumeError: If an unfinished run has no usable checkpoint or the
                 checkpoint's active bot is not registered on this runner.
         """
+
+        recorded = recorded_outcome(self.event_log, run_id)
+        if recorded is not None:
+            return recorded
+        with self._sole_owner(run_id):
+            return self._resume_owned(run_id)
+
+    def _resume_owned(self, run_id: str) -> RunResult:
+        """Continue ``run_id`` while holding its lease; everything is read again under the lease."""
 
         recorded = recorded_outcome(self.event_log, run_id)
         if recorded is not None:
@@ -318,6 +356,7 @@ class AgentRunner:
 
         Raises:
             ForkError: If the fork is not allowed; nothing has been written.
+            RunBusyError: If another live process holds ``new_run_id``'s lease; nothing has been written.
         """
 
         self._restore_initial_scope()
@@ -332,6 +371,12 @@ class AgentRunner:
             goal=goal,
             bot_id=bot_id,
         )
+        with self._sole_owner(new_run_id):
+            return self._start_fork(new_run_id, plan)
+
+    def _start_fork(self, new_run_id: str, plan: ForkPlan) -> RunResult:
+        """Write a planned fork's first events and run it, while holding its lease."""
+
         self.event_log.append(new_run_id, RunState.CREATED, EventType.RUN_FORKED, dict(plan.lineage))
         for event in plan.point.prefix:
             self.event_log.append(new_run_id, RunState(event.state), EventType(event.event_type), event.payload)
@@ -443,6 +488,22 @@ class AgentRunner:
 
         return self._fail(run_id, state_machine, self.safety_policy.max_steps, "step budget exhausted")
 
+    @contextmanager
+    def _sole_owner(self, run_id: str) -> Iterator[None]:
+        """Hold ``run_id``'s lease while continuing it, so no other process continues it at the same time.
+
+        Raises:
+            RunBusyError: If a live process holds the lease; nothing was written.
+        """
+
+        lease, acquired = self.event_log.acquire_lease(run_id)
+        if not acquired:
+            raise RunBusyError(run_id, lease)
+        try:
+            yield
+        finally:
+            self.event_log.release_lease(lease)
+
     def _restore_initial_scope(self) -> None:
         """Return to the constructor's active bot and tool allowlist before a run starts or resumes.
 
@@ -536,10 +597,10 @@ class AgentRunner:
     def _resume_interrupt(self, run_id: str, snapshot: CheckpointSnapshot) -> RunResult:
         """Continue a run from the interrupt its latest checkpoint paused at.
 
-        The first write is an atomic claim (it fails if anything happened since the pause), so
-        two concurrent resumes can never both run the approved call. A resume that finds an
-        earlier claim never executes the call again: it continues from the recorded tool result,
-        or refuses when no result was recorded.
+        The caller holds the run's lease, and the first write is also an atomic claim (it fails if
+        anything happened since the pause), so the approved call never runs twice. A resume that finds
+        an earlier claim (by a resume that has since stopped) never executes the call again: it
+        continues from the recorded tool result, or refuses when no result was recorded.
 
         Args:
             run_id: Run identifier.
@@ -624,9 +685,10 @@ class AgentRunner:
     ) -> RunResult:
         """Continue after an earlier resume of this interrupt stopped before its next checkpoint.
 
-        An approved call whose result was recorded is never executed again: the recorded result
-        becomes the observation. Anything else (the call started but recorded no result, or
-        another resume is still running) is refused without writing.
+        Only the lease holder gets here, so that resume is known to have ended (it died or failed)
+        rather than to be still running. An approved call whose result was recorded is never executed
+        again: the recorded result becomes the observation. Anything else (the call started but
+        recorded no result, so its outcome is unknown) is refused without writing.
         """
 
         result = next(

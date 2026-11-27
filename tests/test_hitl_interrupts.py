@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import socket
+import sqlite3
 import threading
 from collections.abc import Iterator
+from contextlib import closing
 from dataclasses import replace
 from pathlib import Path
 
@@ -25,7 +28,7 @@ from multi_bot_agentic.fork import ForkError, build_history, plan_fork
 from multi_bot_agentic.lifecycle import InvalidTransitionError, RunStateMachine
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.models import EventType, RunState, ToolInvocation, ToolResult
-from multi_bot_agentic.runner import AgentRunner, ResumeError, RunResult
+from multi_bot_agentic.runner import AgentRunner, ResumeError, RunBusyError, RunResult
 from multi_bot_agentic.safety import SafetyPolicy, parse_approval_patterns
 from multi_bot_agentic.tracing import build_trace, parse_run, render_mermaid
 
@@ -105,6 +108,26 @@ def _types(event_log: SQLiteEventLog, run_id: str) -> list[str]:
     return [event.event_type for event in event_log.list_events(run_id)]
 
 
+# Above every platform's largest pid (Linux PID_MAX_LIMIT is 4194304), so no such process exists.
+_DEAD_PID = 4_194_305
+
+
+def _leave_lease(path: Path, run_id: str, *, pid: int, host: str) -> None:
+    """Leave a run's lease behind, as a process ``pid`` on ``host`` that never released it would."""
+
+    with closing(sqlite3.connect(path)) as connection:
+        connection.execute(
+            "INSERT INTO run_leases (run_id, token, pid, host, acquired_at) VALUES (?, 'left', ?, ?, ?)",
+            (run_id, pid, host, "2026-11-26T08:00:00+00:00"),
+        )
+        connection.commit()
+
+
+def _leases(path: Path) -> list[tuple[str, int]]:
+    with closing(sqlite3.connect(path)) as connection:
+        return [(str(row[0]), int(row[1])) for row in connection.execute("SELECT run_id, pid FROM run_leases")]
+
+
 def test_gated_tool_call_pauses_durably_without_executing(event_log: SQLiteEventLog) -> None:
     spy = SpyTool()
     result = _runner(event_log, spy).run(GOAL, run_id="r")
@@ -153,6 +176,7 @@ def test_resume_refuses_an_undecided_interrupt_and_writes_nothing(event_log: SQL
 
     assert len(event_log.list_events("r")) == before
     assert spy.calls == []
+    assert _leases(event_log.path) == []
 
 
 def test_approved_call_with_edited_arguments_runs_exactly_once(event_log: SQLiteEventLog) -> None:
@@ -287,7 +311,7 @@ def test_a_concurrent_resume_never_executes_the_claimed_call(event_log: SQLiteEv
     runner = _runner(event_log, spy)
     paused = runner.run(GOAL, run_id="r")
     decide_interrupt(event_log, paused.interrupt.interrupt_id, ApprovalDecision.APPROVED, decided_by="a")  # type: ignore[union-attr]
-    # Another process claimed the interrupt (its action_requested) and is still running the tool.
+    # A resume claimed the interrupt (its action_requested) and stopped before the tool recorded a result.
     event_log.append(
         "r",
         RunState.ACTING,
@@ -419,6 +443,51 @@ def test_a_second_resume_is_refused_while_the_first_still_runs(tmp_path: Path) -
     assert len(spy.calls) == 1
     assert _types(log, "r").count("run_completed") == 1
     log.close()
+
+
+def test_resume_takes_over_the_lease_of_a_process_that_died(event_log: SQLiteEventLog) -> None:
+    spy = SpyTool()
+    paused = _runner(event_log, spy).run(GOAL, run_id="r")
+    decide_interrupt(event_log, paused.interrupt.interrupt_id, ApprovalDecision.APPROVED, decided_by="a")  # type: ignore[union-attr]
+    _leave_lease(event_log.path, "r", pid=_DEAD_PID, host=socket.gethostname())
+
+    result = _runner(event_log, spy).resume("r")
+
+    assert result.state is RunState.SUCCEEDED
+    assert len(spy.calls) == 1
+    assert _leases(event_log.path) == []
+
+
+def test_a_lease_held_on_another_host_is_never_taken_over(event_log: SQLiteEventLog) -> None:
+    spy = SpyTool()
+    paused = _runner(event_log, spy).run(GOAL, run_id="r")
+    decide_interrupt(event_log, paused.interrupt.interrupt_id, ApprovalDecision.APPROVED, decided_by="a")  # type: ignore[union-attr]
+    _leave_lease(event_log.path, "r", pid=_DEAD_PID, host="elsewhere.invalid")
+    before = len(event_log.list_events("r"))
+
+    with pytest.raises(RunBusyError, match=f"being continued by process {_DEAD_PID} on elsewhere.invalid") as busy:
+        _runner(event_log, spy).resume("r")
+
+    assert busy.value.holder.host == "elsewhere.invalid"
+    assert len(event_log.list_events("r")) == before
+    assert spy.calls == []
+
+
+def test_run_and_fork_are_refused_while_their_run_id_is_held(event_log: SQLiteEventLog) -> None:
+    runner = _runner(event_log, SpyTool(), require_approval=frozenset())
+    runner.run(GOAL, run_id="base")
+    lease, acquired = event_log.acquire_lease("new")
+    assert acquired
+
+    with pytest.raises(RunBusyError):
+        runner.run(GOAL, run_id="new")
+    with pytest.raises(RunBusyError):
+        runner.fork("base", 1, "new")
+
+    assert event_log.list_events("new") == []
+    event_log.release_lease(lease)
+    assert runner.fork("base", 1, "new").state is RunState.SUCCEEDED
+    assert _leases(event_log.path) == []
 
 
 def test_recorded_policy_survives_resume_and_is_inherited_by_forks(event_log: SQLiteEventLog) -> None:

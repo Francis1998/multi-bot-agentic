@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -110,6 +111,31 @@ def test_run_pause_approve_with_edit_and_resume(capsys: pytest.CaptureFixture[st
     assert f"approval_decision id={interrupt_id} decision=approved by=alice args_edited=true" in out
     code, out, _ = _cli(capsys, "approvals", "list", "--event-log", str(log), "--all")
     assert "approved" in out and "(edited)" in out
+
+
+def test_resume_exits_75_while_another_process_continues_the_run(
+    capsys: pytest.CaptureFixture[str], tmp_path: Path
+) -> None:
+    log = tmp_path / "runs.sqlite"
+    _start(capsys, log, "demo", "--require-approval", "checklist")
+    code, _, err = _cli(capsys, "approve", "--run-id", "demo", "--event-log", str(log), "--by", "alice")
+    assert code == 0, err
+    holder = SQLiteEventLog(log)
+    lease, acquired = holder.acquire_lease("demo")
+    assert acquired
+    before = len(holder.list_events("demo"))
+    try:
+        code, out, err = _cli(capsys, "resume", "--run-id", "demo", "--event-log", str(log))
+        assert code == cli.EXIT_RUN_BUSY == 75
+        assert out == ""
+        assert f"error: run demo is being continued by process {os.getpid()} on " in err
+        assert len(holder.list_events("demo")) == before
+    finally:
+        holder.release_lease(lease)
+        holder.close()
+
+    code, out, _ = _cli(capsys, "resume", "--run-id", "demo", "--event-log", str(log))
+    assert code == 0 and json.loads(out)["state"] == "succeeded" and _tool_results(log, "demo") == 1
 
 
 def test_reject_by_run_id_replans(

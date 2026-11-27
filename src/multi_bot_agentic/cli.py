@@ -39,7 +39,14 @@ from multi_bot_agentic.fork import (
 )
 from multi_bot_agentic.mcp import McpConfigError, McpServerStatus, McpToolset, load_mcp_config
 from multi_bot_agentic.models import ToolSpec
-from multi_bot_agentic.runner import AgentRunner, ResumeError, RunResult, build_default_tools, recorded_outcome
+from multi_bot_agentic.runner import (
+    AgentRunner,
+    ResumeError,
+    RunBusyError,
+    RunResult,
+    build_default_tools,
+    recorded_outcome,
+)
 from multi_bot_agentic.safety import SafetyPolicy, parse_approval_patterns
 from multi_bot_agentic.tools.base import ToolAdapter
 
@@ -54,6 +61,9 @@ REQUIRE_APPROVAL_HELP = (
 )
 # Exit code of run, fork, and resume when the run paused at a human-approval interrupt.
 EXIT_AWAITING_APPROVAL = 3
+# Exit code of run, fork, and resume when another live process is continuing the run (sysexits
+# EX_TEMPFAIL: nothing was written; try again once that process has finished).
+EXIT_RUN_BUSY = 75
 
 
 class McpStartupError(RuntimeError):
@@ -332,7 +342,11 @@ def run_command(args: argparse.Namespace) -> int:
             safety_policy=safety_policy,
             tool_specs=tool_specs,
         )
-        result = runner.run(goal=args.goal, run_id=args.run_id)
+        try:
+            result = runner.run(goal=args.goal, run_id=args.run_id)
+        except RunBusyError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_RUN_BUSY
         print(json.dumps(result_payload(result, config.event_log), indent=2))
         announce_pause(result, config.event_log)
         return exit_code_for(result)
@@ -510,8 +524,8 @@ def resume_command(args: argparse.Namespace) -> int:
         args: Parsed arguments.
 
     Returns:
-        Process exit code: 0 succeeded, 3 (still) awaiting approval, 2 otherwise (also when the run
-        is unknown or cannot be resumed).
+        Process exit code: 0 succeeded, 3 (still) awaiting approval, 75 another process is continuing the
+        run (nothing was written), 2 otherwise (also when the run is unknown or cannot be resumed).
     """
 
     try:
@@ -560,6 +574,9 @@ def resume_command(args: argparse.Namespace) -> int:
         )
         try:
             result = runner.resume(run_id=args.run_id)
+        except RunBusyError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_RUN_BUSY
         except AwaitingApprovalError as error:
             return _refuse_undecided(error.interrupt, config.event_log)
         except (ApprovalError, ResumeError) as error:
@@ -1006,7 +1023,11 @@ def fork_command(args: argparse.Namespace) -> int:
             bots=bots,
             tool_specs=tool_specs,
         )
-        result = runner.fork(args.run_id, args.at_step, args.new_run_id, goal=args.goal, bot_id=args.bot)
+        try:
+            result = runner.fork(args.run_id, args.at_step, args.new_run_id, goal=args.goal, bot_id=args.bot)
+        except RunBusyError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_RUN_BUSY
         overrides = plan.lineage.get("overrides", {})
         changed = f"; new {', '.join(sorted(overrides))}" if overrides else ""
         print(
