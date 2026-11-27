@@ -92,3 +92,24 @@ PYTHONPATH=src python -m multi_bot_agentic.cli run \
   --output-retries 0 \
   --event-log /tmp/multi-bot-agentic-check.sqlite || status=$?
 test "$status" -eq 4
+# Usage limits: the run stops at its token limit (exit 5), resume with a higher limit finishes it.
+status=0
+PYTHONPATH=src python -m multi_bot_agentic.cli run \
+  --goal "Create a launch checklist for an AI agent platform" \
+  --provider fake \
+  --run-id check-usage \
+  --max-total-tokens 100 \
+  --event-log /tmp/multi-bot-agentic-check.sqlite || status=$?
+test "$status" -eq 5
+PYTHONPATH=src python -m multi_bot_agentic.cli resume \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --run-id check-usage \
+  --max-total-tokens 100000
+PYTHONPATH=src python -m multi_bot_agentic.cli replay \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --run-id check-usage \
+  --event-type llm_usage \
+  --format text
+PYTHONPATH=src python -m multi_bot_agentic.cli report \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --run-id check-usage

@@ -9,11 +9,13 @@ from pathlib import Path
 
 from multi_bot_agentic.llm.base import LLMAdapter
 from multi_bot_agentic.llm.claude_code_cli import DEFAULT_CLAUDE_CODE_COMMAND, ClaudeCodeCLIAdapter
-from multi_bot_agentic.llm.fake import FakeLLMAdapter
+from multi_bot_agentic.llm.fake import FAKE_MODEL, FakeLLMAdapter
 from multi_bot_agentic.llm.gemini import GeminiAdapter
 from multi_bot_agentic.llm.kimi import KimiAdapter
 from multi_bot_agentic.llm.openai import DEFAULT_MAX_COMPLETION_TOKENS, OpenAIAdapter
+from multi_bot_agentic.pricing import PriceTable
 from multi_bot_agentic.safety import SafetyPolicy, parse_approval_patterns
+from multi_bot_agentic.usage import UsageLimits
 
 
 @dataclass(frozen=True)
@@ -23,6 +25,7 @@ class AppConfig:
     provider: str
     event_log: Path
     safety: SafetyPolicy
+    prices_file: Path | None = None
 
     @classmethod
     def from_env(
@@ -31,6 +34,7 @@ class AppConfig:
         event_log: Path | None = None,
         max_steps: int | None = None,
         require_approval: Sequence[str] | None = None,
+        usage_limits: UsageLimits | None = None,
     ) -> AppConfig:
         """Load configuration from environment with optional CLI overrides.
 
@@ -40,6 +44,7 @@ class AppConfig:
             max_steps: Optional max-step override.
             require_approval: Optional ``--require-approval`` values; they replace
                 ``MULTIBOT_REQUIRE_APPROVAL``.
+            usage_limits: Optional ``--max-requests`` / ``--max-*-tokens`` / ``--max-cost-usd`` limits.
 
         Returns:
             Application configuration.
@@ -62,8 +67,23 @@ class AppConfig:
             max_prompt_chars=int(os.getenv("MULTIBOT_MAX_PROMPT_CHARS", "4000")),
             cancellation_file=_optional_path(os.getenv("MULTIBOT_CANCEL_FILE")),
             require_approval=parse_approval_patterns(approval_values),
+            usage_limits=usage_limits or UsageLimits(),
         )
-        return cls(provider=selected_provider, event_log=selected_event_log, safety=safety)
+        return cls(
+            provider=selected_provider,
+            event_log=selected_event_log,
+            safety=safety,
+            prices_file=_optional_path(os.getenv("MULTIBOT_PRICES_FILE", "").strip() or None),
+        )
+
+    def price_table(self) -> PriceTable:
+        """Return the built-in price table with ``MULTIBOT_PRICES_FILE`` entries on top.
+
+        Raises:
+            PriceTableError: If the price file cannot be read or holds an invalid entry.
+        """
+
+        return PriceTable.load(self.prices_file)
 
 
 def build_llm_adapter(provider: str) -> LLMAdapter:
@@ -80,7 +100,10 @@ def build_llm_adapter(provider: str) -> LLMAdapter:
     """
 
     if provider == "fake":
-        return FakeLLMAdapter(tool_name=os.getenv("MULTIBOT_FAKE_TOOL", "").strip() or "checklist")
+        return FakeLLMAdapter(
+            tool_name=os.getenv("MULTIBOT_FAKE_TOOL", "").strip() or "checklist",
+            model=os.getenv("MULTIBOT_FAKE_MODEL", "").strip() or FAKE_MODEL,
+        )
     if provider == "openai":
         api_key = _required_env("OPENAI_API_KEY")
         return OpenAIAdapter(

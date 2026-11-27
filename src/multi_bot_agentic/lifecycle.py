@@ -19,6 +19,7 @@ ALLOWED_TRANSITIONS: dict[RunState, frozenset[RunState]] = {
             RunState.ACTING,
             RunState.AWAITING_APPROVAL,
             RunState.VALIDATING,
+            RunState.USAGE_LIMIT_EXCEEDED,
             RunState.SUCCEEDED,
             RunState.CANCELLED,
             RunState.FAILED,
@@ -26,7 +27,11 @@ ALLOWED_TRANSITIONS: dict[RunState, frozenset[RunState]] = {
     ),
     # A paused run continues by acting on an approved call, or by observing a rejection and re-planning.
     RunState.AWAITING_APPROVAL: frozenset({RunState.ACTING, RunState.OBSERVING, RunState.CANCELLED, RunState.FAILED}),
-    RunState.ACTING: frozenset({RunState.OBSERVING, RunState.SUCCEEDED, RunState.CANCELLED, RunState.FAILED}),
+    # A run stopped at a usage limit (before or after a model call) continues by observing again on resume.
+    RunState.USAGE_LIMIT_EXCEEDED: frozenset({RunState.OBSERVING, RunState.CANCELLED, RunState.FAILED}),
+    RunState.ACTING: frozenset(
+        {RunState.OBSERVING, RunState.USAGE_LIMIT_EXCEEDED, RunState.SUCCEEDED, RunState.CANCELLED, RunState.FAILED}
+    ),
     # A final answer checked against the output schema: valid, corrected in another round, or given up on.
     RunState.VALIDATING: frozenset(
         {RunState.SUCCEEDED, RunState.OBSERVING, RunState.OUTPUT_INVALID, RunState.CANCELLED, RunState.FAILED}

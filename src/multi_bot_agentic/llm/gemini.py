@@ -8,6 +8,7 @@ from urllib.parse import quote
 from multi_bot_agentic.llm.base import render_output_contract, render_tool_catalog
 from multi_bot_agentic.llm.http import post_json
 from multi_bot_agentic.models import ModelOutput, ModelRequest
+from multi_bot_agentic.usage import parse_gemini_usage
 
 
 class GeminiAdapter:
@@ -27,7 +28,7 @@ class GeminiAdapter:
         self.model = model
 
     def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
-        """Call Gemini and normalize text output.
+        """Call Gemini and normalize text output and token usage (``usageMetadata``).
 
         Args:
             request: Normalized model request.
@@ -52,6 +53,8 @@ class GeminiAdapter:
             provider=self.provider_name,
             text=_extract_gemini_text(decoded)[: request.max_output_chars],
             raw={"model": self.model},
+            usage=parse_gemini_usage(decoded.get("usageMetadata")),
+            model=self.model,
         )
 
 

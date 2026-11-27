@@ -38,8 +38,10 @@ from multi_bot_agentic.tracing.timeline import (
     Resume,
     RunTimeline,
     ToolCall,
+    UsageLimitStop,
     parse_run,
 )
+from multi_bot_agentic.usage import format_number
 
 # Longest content snippet (characters, before escaping) shown on one arrow.
 SNIPPET_CHARS: Final[int] = 48
@@ -166,6 +168,8 @@ class _MermaidRenderer:
                 lines.append(self._note("resumed from checkpoint"))
             elif isinstance(step, Fork):
                 lines.append(self._note(_fork_label(step)))
+            elif isinstance(step, UsageLimitStop):
+                lines.append(self._note(f"usage limit: {step.message}"))
         lines.append(self._outcome())
         return "\n".join(lines)
 
@@ -230,6 +234,9 @@ class _MermaidRenderer:
             )
         else:
             lines.append(self._note("no result recorded", over=agent))
+        usage = _usage_note(call)
+        if usage:
+            lines.append(self._note(usage, over=agent))
         return lines
 
     def _tool_call(self, call: ToolCall) -> list[str]:
@@ -293,6 +300,8 @@ class _MermaidRenderer:
         outcome = self.timeline.outcome
         if outcome is None and self.timeline.awaiting_approval:
             return self._note("paused: awaiting human approval")
+        if outcome is None and self.timeline.usage_limit_exceeded:
+            return self._note("stopped: usage limit exceeded (resume with a higher limit)")
         if outcome is None:
             return self._note("unfinished (no terminal event)")
         if outcome.state == "failed":
@@ -339,6 +348,24 @@ class _MermaidRenderer:
         """Return one note line."""
 
         return f"{_INDENT}Note over {over}: {mermaid_text(text, SNIPPET_CHARS * 2)}"
+
+
+def _usage_note(call: ModelCall) -> str:
+    """Return ``usage: <in> in / <out> out tokens, $<cost>`` for a call that recorded ``llm_usage``."""
+
+    if call.usage is None:
+        return ""
+    input_tokens = call.usage.get("input_tokens")
+    output_tokens = call.usage.get("output_tokens")
+    if not isinstance(input_tokens, int) or not isinstance(output_tokens, int):
+        text = "usage: not reported"
+    else:
+        text = f"usage: {input_tokens:,} in / {output_tokens:,} out tokens"
+    if call.cost_usd is not None:
+        text += f", ${format_number(call.cost_usd)}"
+    else:
+        text += ", unpriced"
+    return text
 
 
 def _fork_label(fork: Fork) -> str:

@@ -29,10 +29,12 @@ sequenceDiagram
     Note over O: run mermaid-run (provider fake)
     O->>A1: call_llm (observe.no-model-output)
     A1-->>O: TOOL checklist
+    Note over A1: usage: 66 in / 17 out tokens, $0
     O->>T1: call_tool (model.requested-tool)
     T1-->>O: ok
     O->>A1: call_llm (tool.result-needs-synthesis)
     A1-->>O: DONE
+    Note over A1: usage: 152 in / 11 out tokens, $0
     Note over O: finish (model.done-or-budget)
     Note over O: succeeded after 4 steps"""
 

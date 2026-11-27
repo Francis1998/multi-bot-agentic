@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import shlex
 import subprocess
+from typing import Any
 
 from multi_bot_agentic.llm.base import render_output_contract, render_tool_catalog
-from multi_bot_agentic.models import ModelOutput, ModelRequest
+from multi_bot_agentic.models import ModelOutput, ModelRequest, Usage
+from multi_bot_agentic.usage import parse_anthropic_usage
 
 # Print mode (-p) is Claude Code's non-interactive mode: it reads the prompt from stdin,
 # prints the reply, and exits. Plain ``claude`` would start an interactive session.
@@ -17,7 +20,9 @@ class ClaudeCodeCLIAdapter:
     """Adapter that consumes output from a local Claude Code CLI command.
 
     The prompt is written to the command's stdin, so the command must run Claude Code
-    non-interactively (print mode, ``-p``), e.g. ``claude -p --model claude-opus-5-5``.
+    non-interactively (print mode, ``-p``), e.g. ``claude -p --model claude-opus-5-5``. Add
+    ``--output-format json`` to record the call's token usage and Claude Code's own cost estimate
+    (``total_cost_usd``); plain-text output carries no usage.
     """
 
     provider_name = "claude_code"
@@ -32,7 +37,7 @@ class ClaudeCodeCLIAdapter:
         self.command = command
 
     def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
-        """Run Claude Code and normalize stdout.
+        """Run Claude Code and normalize its reply (and, for JSON output, usage and cost).
 
         Args:
             request: Normalized model request.
@@ -58,11 +63,77 @@ class ClaudeCodeCLIAdapter:
             raise RuntimeError(f"Claude Code timed out after {timeout_seconds}s: {command[0]}") from error
         if completed.returncode != 0:
             raise RuntimeError(f"Claude Code exited with {completed.returncode}: {completed.stderr.strip()}")
+        raw: dict[str, Any] = {"command": command[0], "returncode": completed.returncode}
+        result = _json_result(completed.stdout)
+        if result is None:
+            return ModelOutput(
+                provider=self.provider_name,
+                text=completed.stdout.strip()[: request.max_output_chars],
+                raw=raw,
+            )
+        if result.get("is_error") is True:
+            raise RuntimeError(f"Claude Code reported an error result: {result.get('subtype') or 'error'}")
+        models = result.get("modelUsage")
+        model_names = sorted(name for name in models if isinstance(name, str)) if isinstance(models, dict) else []
+        cost = result.get("total_cost_usd")
         return ModelOutput(
             provider=self.provider_name,
-            text=completed.stdout.strip()[: request.max_output_chars],
-            raw={"command": command[0], "returncode": completed.returncode},
+            text=str(result.get("result", "")).strip()[: request.max_output_chars],
+            raw=raw | {"output_format": "json"},
+            usage=_model_usage(models) or parse_anthropic_usage(result.get("usage")),
+            model=model_names[0] if len(model_names) == 1 else None,
+            cost_usd=float(cost) if isinstance(cost, (int, float)) and not isinstance(cost, bool) else None,
         )
+
+
+def _json_result(stdout: str) -> dict[str, Any] | None:
+    """Return the result object Claude Code prints with ``--output-format json``, else ``None``."""
+
+    text = stdout.strip()
+    if not text.startswith("{"):
+        return None
+    try:
+        payload = json.loads(text)
+    except ValueError:
+        return None
+    if not isinstance(payload, dict) or payload.get("type") != "result":
+        return None
+    return payload
+
+
+def _model_usage(models: Any) -> Usage | None:
+    """Sum the per-model ``modelUsage`` counts, which (unlike ``usage``) include subagents.
+
+    Each entry reports ``inputTokens`` without cache reads and writes, so ``cacheReadInputTokens``
+    and ``cacheCreationInputTokens`` are added to the input; cache reads are the cached tokens.
+    """
+
+    if not isinstance(models, dict) or not models:
+        return None
+    input_tokens = output_tokens = cached = 0
+    for entry in models.values():
+        counts = (
+            {
+                "input_tokens": entry.get("inputTokens"),
+                "output_tokens": entry.get("outputTokens"),
+                "cache_read_input_tokens": entry.get("cacheReadInputTokens"),
+                "cache_creation_input_tokens": entry.get("cacheCreationInputTokens"),
+            }
+            if isinstance(entry, dict)
+            else None
+        )
+        usage = parse_anthropic_usage(counts)
+        if usage is None or usage.input_tokens is None or usage.output_tokens is None:
+            return None
+        input_tokens += usage.input_tokens
+        output_tokens += usage.output_tokens
+        cached += usage.cached_input_tokens or 0
+    return Usage(
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cached_input_tokens=cached,
+        total_tokens=input_tokens + output_tokens,
+    )
 
 
 def _render_prompt(request: ModelRequest) -> str:

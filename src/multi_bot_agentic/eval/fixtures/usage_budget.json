@@ -1,0 +1,14 @@
+{
+  "scenario_id": "usage_budget",
+  "goal": "Draft release notes within a token and cost budget",
+  "scripted_responses": [
+    "TOOL:checklist:Draft release notes",
+    "DONE: release notes drafted"
+  ],
+  "expected_tools": ["checklist"],
+  "expected_answer": "release notes drafted",
+  "max_steps": 5,
+  "model": "gpt-6.2-sol",
+  "max_total_tokens": 1000,
+  "max_cost_usd": 0.01
+}

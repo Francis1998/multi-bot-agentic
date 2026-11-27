@@ -1,20 +1,22 @@
 """Offline golden-path evaluation harness for Observe-Decide-Act runs.
 
 Compares tool sequences, DONE answers, and structured outputs (``output_schema`` /
-``expected_output``) against fixtures using Fake / scripted LLM adapters. Intentionally local and
+``expected_output``) against fixtures using Fake / scripted LLM adapters, and can assert a token and
+cost budget per scenario (``max_total_tokens`` / ``max_cost_usd``). Intentionally local and
 deterministic — not a hosted LangSmith / CrewAI evaluation cloud.
 """
 
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from multi_bot_agentic.event_log import SQLiteEventLog
-from multi_bot_agentic.llm.fake import FakeLLMAdapter
+from multi_bot_agentic.llm.fake import FAKE_MODEL, FakeLLMAdapter
 from multi_bot_agentic.models import EventType, ModelOutput, ModelRequest
 from multi_bot_agentic.runner import AgentRunner, build_default_tools
 from multi_bot_agentic.safety import SafetyPolicy
@@ -27,6 +29,7 @@ from multi_bot_agentic.structured_output import (
     extract_json,
     json_key,
 )
+from multi_bot_agentic.usage import UsageTotals, estimate_usage
 
 OUTPUT_MATCHES = ("exact", "subset")
 
@@ -61,6 +64,9 @@ class EvalScenario:
         output_schema: Optional output schema; the run must end with an output that validates.
         output_retries: Correction rounds of the run when ``output_schema`` is set.
         expected_output: Optional expected JSON output (read from the answer when there is no schema).
+        max_total_tokens: Optional budget: the run's total tokens must not exceed it.
+        max_cost_usd: Optional budget: the run's cost must be known and not exceed it.
+        model: Model id the offline usage is priced as (default ``fake``, which costs nothing).
     """
 
     scenario_id: str
@@ -73,14 +79,18 @@ class EvalScenario:
     output_schema: OutputSchema | None = None
     output_retries: int = DEFAULT_OUTPUT_RETRIES
     expected_output: ExpectedOutput | None = None
+    max_total_tokens: int | None = None
+    max_cost_usd: float | None = None
+    model: str = FAKE_MODEL
 
 
 @dataclass(frozen=True)
 class ScenarioScore:
     """Scores for one scenario.
 
-    ``details`` holds the run's final ``state``, its ``steps``, and the ``run_id`` that
-    was scored in ``<event_log_dir>/<scenario_id>.sqlite``.
+    ``details`` holds the run's final ``state``, its ``steps``, the ``run_id`` that was scored
+    in ``<event_log_dir>/<scenario_id>.sqlite``, its ``usage``, and ``budget_checks`` when the
+    scenario sets ``max_total_tokens`` or ``max_cost_usd``.
     """
 
     scenario_id: str
@@ -92,17 +102,19 @@ class ScenarioScore:
     details: dict[str, Any]
     output_score: float = 1.0
     actual_output: Any = None
+    usage: UsageTotals = field(default_factory=UsageTotals)
 
 
 @dataclass(frozen=True)
 class HarnessReport:
-    """Aggregate evaluation report."""
+    """Aggregate evaluation report (``usage_totals`` sums every scenario's model calls)."""
 
     scenarios: tuple[ScenarioScore, ...]
     pass_rate: float
     mean_tool_sequence_score: float
     mean_answer_score: float
     mean_output_score: float = 1.0
+    usage_totals: UsageTotals = field(default_factory=UsageTotals)
 
 
 class ScriptedLLMAdapter:
@@ -114,17 +126,19 @@ class ScriptedLLMAdapter:
 
     provider_name = "fake"
 
-    def __init__(self, responses: tuple[str, ...]) -> None:
+    def __init__(self, responses: tuple[str, ...], model: str = FAKE_MODEL) -> None:
         """Initialize with ordered scripted responses.
 
         Args:
             responses: Model output texts to emit sequentially.
+            model: Model id the deterministic usage is priced as.
         """
 
         if not responses:
             raise ValueError("responses must be non-empty")
         self._responses = responses
         self._index = 0
+        self.model = model
 
     def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
         """Return the next scripted response.
@@ -134,10 +148,9 @@ class ScriptedLLMAdapter:
             timeout_seconds: Provider timeout budget.
 
         Returns:
-            Scripted model output.
+            Scripted model output with deterministic usage.
         """
 
-        del request
         if self._index >= len(self._responses):
             text = "DONE: scripted responses exhausted"
         else:
@@ -147,6 +160,8 @@ class ScriptedLLMAdapter:
             provider=self.provider_name,
             text=text,
             raw={"timeout_seconds": timeout_seconds, "scripted_index": self._index},
+            usage=estimate_usage(request, text),
+            model=self.model,
         )
 
 
@@ -286,7 +301,29 @@ def load_scenario(path: Path) -> EvalScenario:
         output_schema=schema,
         output_retries=retries,
         expected_output=expected,
+        max_total_tokens=_budget(path, payload, "max_total_tokens", integer=True),
+        max_cost_usd=_budget(path, payload, "max_cost_usd", integer=False),
+        model=str(payload.get("model") or FAKE_MODEL),
     )
+
+
+def _budget(path: Path, payload: dict[str, Any], key: str, *, integer: bool) -> Any:
+    """Return an optional non-negative budget from a fixture.
+
+    Raises:
+        ValueError: If the value is not a non-negative number (an integer for token budgets).
+    """
+
+    value = payload.get(key)
+    if value is None:
+        return None
+    valid = not isinstance(value, bool) and (
+        isinstance(value, int) if integer else isinstance(value, (int, float)) and math.isfinite(value)
+    )
+    if not valid or value < 0:
+        kind = "an integer" if integer else "a number"
+        raise ValueError(f"{path.name}: {key} must be {kind} >= 0, got {value!r}")
+    return int(value) if integer else float(value)
 
 
 def load_scenarios(directory: Path) -> tuple[EvalScenario, ...]:
@@ -344,12 +381,16 @@ class EvaluationHarness:
         mean_tools = sum(item.tool_sequence_score for item in scores) / len(scores)
         mean_answer = sum(item.answer_score for item in scores) / len(scores)
         mean_output = sum(item.output_score for item in scores) / len(scores)
+        usage = UsageTotals()
+        for item in scores:
+            usage = usage.merge(item.usage)
         return HarnessReport(
             scenarios=tuple(scores),
             pass_rate=pass_rate,
             mean_tool_sequence_score=mean_tools,
             mean_answer_score=mean_answer,
             mean_output_score=mean_output,
+            usage_totals=usage,
         )
 
     def _run_one(self, scenario: EvalScenario, *, root: Path, event_log_dir: Path) -> ScenarioScore:
@@ -357,9 +398,9 @@ class EvaluationHarness:
 
         provider: FakeLLMAdapter | ScriptedLLMAdapter
         if not scenario.scripted_responses:
-            provider = FakeLLMAdapter()
+            provider = FakeLLMAdapter(model=scenario.model)
         else:
-            provider = ScriptedLLMAdapter(scenario.scripted_responses)
+            provider = ScriptedLLMAdapter(scenario.scripted_responses, model=scenario.model)
         log_path = event_log_dir / f"{scenario.scenario_id}.sqlite"
         # The log may already hold earlier evaluations of this scenario. Reusing their run id
         # would append to them, and scoring would read their tool calls first.
@@ -402,12 +443,22 @@ class EvaluationHarness:
             output_found=found,
             expected=scenario.expected_output,
         )
+        usage = UsageTotals.from_events(events)
+        checks = _budget_checks(scenario, usage)
         passed = tool_score >= 1.0 and answer_score >= 1.0 and output_score >= 1.0 and result.state.value == "succeeded"
-        details: dict[str, Any] = {"state": result.state.value, "steps": result.steps, "run_id": result.run_id}
+        passed = passed and all(check["passed"] for check in checks)
+        details: dict[str, Any] = {
+            "state": result.state.value,
+            "steps": result.steps,
+            "run_id": result.run_id,
+            "usage": usage.to_dict(),
+        }
         if result.output is not None:
             details["output_attempts"] = result.output.attempt
         if result.output_errors:
             details["output_errors"] = list(result.output_errors)
+        if checks:
+            details["budget_checks"] = checks
         return ScenarioScore(
             scenario_id=scenario.scenario_id,
             tool_sequence_score=tool_score,
@@ -418,6 +469,7 @@ class EvaluationHarness:
             details=details,
             output_score=output_score,
             actual_output=output,
+            usage=usage,
         )
 
 
@@ -437,6 +489,20 @@ def _actual_output(scenario: EvalScenario, validated: Any, answer: str) -> tuple
     except OutputExtractionError:
         return None, False
     return value, True
+
+
+def _budget_checks(scenario: EvalScenario, usage: UsageTotals) -> list[dict[str, Any]]:
+    """Compare the run's usage with the scenario's budgets; an unknown total fails its budget."""
+
+    budgets = (
+        ("max_total_tokens", scenario.max_total_tokens, None if usage.unmeasured_requests else usage.total_tokens or 0),
+        ("max_cost_usd", scenario.max_cost_usd, None if usage.unpriced_requests else usage.cost_usd or 0.0),
+    )
+    return [
+        {"budget": name, "value": value, "cap": cap, "passed": value is not None and value <= cap}
+        for name, cap, value in budgets
+        if cap is not None
+    ]
 
 
 def default_fixture_dir() -> Path:

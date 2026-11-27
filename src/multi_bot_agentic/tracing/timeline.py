@@ -87,6 +87,9 @@ class ModelCall:
         metadata: Non-secret provider metadata recorded with the output.
         failure: Failure reason when the call never produced a result.
         interrupted: True when the run was resumed before the call recorded a result.
+        usage: Normalized token usage from the call's ``llm_usage`` event (counters may be ``None``).
+        cost_usd: The call's cost, or ``None`` when it was unpriced or recorded no ``llm_usage`` event.
+        model: Model id the call was priced as, from its ``llm_usage`` event.
     """
 
     decision: DecisionRef
@@ -100,6 +103,9 @@ class ModelCall:
     metadata: Mapping[str, Any]
     failure: str | None = None
     interrupted: bool = False
+    usage: Mapping[str, Any] | None = None
+    cost_usd: float | None = None
+    model: str | None = None
 
 
 @dataclass(frozen=True)
@@ -236,6 +242,29 @@ class Checkpoint:
 
 
 @dataclass(frozen=True)
+class UsageLimitStop:
+    """A usage limit that stopped the run (``usage_limit_exceeded`` event).
+
+    Attributes:
+        seq: Sequence number of the event.
+        at: Event timestamp.
+        limit: Limit name, such as ``max_total_tokens``.
+        value: The running total when the run stopped (``None`` when it could not be measured).
+        cap: The limit.
+        phase: ``before_call`` or ``after_call``.
+        message: One-line explanation.
+    """
+
+    seq: int
+    at: str
+    limit: str
+    value: int | float | None
+    cap: int | float | None
+    phase: str
+    message: str
+
+
+@dataclass(frozen=True)
 class Resume:
     """A ``resume`` that continued the run from its latest checkpoint.
 
@@ -275,7 +304,16 @@ class Fork:
 
 
 Step: TypeAlias = (
-    ModelCall | ToolCall | Handoff | Approval | OutputValidation | FinalDecision | Checkpoint | Resume | Fork
+    ModelCall
+    | ToolCall
+    | Handoff
+    | Approval
+    | OutputValidation
+    | FinalDecision
+    | Checkpoint
+    | Resume
+    | Fork
+    | UsageLimitStop
 )
 
 
@@ -322,6 +360,7 @@ class RunTimeline:
         inherited_through_seq: Sequence number of the last event copied from the parent (0 if not a fork).
         awaiting_approval: True when the run is paused at a human-approval interrupt.
         output_schema_sha256: Digest of the run's output schema, when it has one.
+        usage_limit_exceeded: True when a usage limit stopped the run and it was not resumed since.
     """
 
     run_id: str
@@ -339,14 +378,18 @@ class RunTimeline:
     inherited_through_seq: int = 0
     awaiting_approval: bool = False
     output_schema_sha256: str | None = None
+    usage_limit_exceeded: bool = False
 
     @property
     def final_state(self) -> str:
-        """Return the terminal state, ``awaiting_approval`` for a paused run, or ``unfinished``."""
+        """Return the terminal state, ``awaiting_approval`` / ``usage_limit_exceeded`` for a stopped run,
+        or ``unfinished``."""
 
         if self.outcome is not None:
             return self.outcome.state
-        return "awaiting_approval" if self.awaiting_approval else "unfinished"
+        if self.awaiting_approval:
+            return "awaiting_approval"
+        return "usage_limit_exceeded" if self.usage_limit_exceeded else "unfinished"
 
 
 def timestamp_to_unix_nanos(value: str) -> int:
@@ -449,6 +492,7 @@ class _TimelineBuilder:
     outcome: Outcome | None = None
     final_decision: DecisionRef | None = None
     fork_starting: bool = False
+    pending_usage: Mapping[str, Any] | None = None
 
     def build(self) -> RunTimeline:
         """Consume every event and return the timeline."""
@@ -486,6 +530,7 @@ class _TimelineBuilder:
             inherited_through_seq=own.seq if own is not None else 0,
             awaiting_approval=self.outcome is None and last.state == "awaiting_approval",
             output_schema_sha256=_output_schema_sha256(first),
+            usage_limit_exceeded=self.outcome is None and last.state == "usage_limit_exceeded",
         )
 
     def _consume(self, event: EventRecord) -> None:
@@ -507,6 +552,11 @@ class _TimelineBuilder:
             self._on_action_requested(event)
         elif event.event_type == "action_result":
             self._on_action_result(event)
+        elif event.event_type == "llm_usage":
+            if self.open_action is not None and self.open_action.decision.action == "call_llm":
+                self.pending_usage = payload
+        elif event.event_type == "usage_limit_exceeded":
+            self.steps.append(_usage_limit_stop(event))
         elif event.event_type == "checkpoint":
             self.seen_checkpoint = True
             if self.goal is None:
@@ -565,7 +615,7 @@ class _TimelineBuilder:
         The first fresh state machine after a fork point starts the fork's own steps, not a resume.
         """
 
-        if event.payload.get("from") == "awaiting_approval":
+        if event.payload.get("from") in {"awaiting_approval", "usage_limit_exceeded"}:
             self.steps.append(Resume(seq=event.seq, at=event.timestamp))
         if event.payload.get("to") != "observing":
             return
@@ -631,6 +681,7 @@ class _TimelineBuilder:
                     inputs=open_action.inputs,
                     output=str(payload.get("output", "")),
                     metadata=_mapping(payload.get("metadata")),
+                    **self._take_usage(),
                 )
             )
         elif kind == "tool" and open_action is not None and open_action.decision.action == "call_tool":
@@ -740,6 +791,7 @@ class _TimelineBuilder:
                     metadata={},
                     failure=failure,
                     interrupted=interrupted,
+                    **self._take_usage(),
                 )
             )
         else:
@@ -758,6 +810,40 @@ class _TimelineBuilder:
                     interrupted=interrupted,
                 )
             )
+
+    def _take_usage(self) -> dict[str, Any]:
+        """Return the ``ModelCall`` usage fields of the pending ``llm_usage`` event, and clear it."""
+
+        payload, self.pending_usage = self.pending_usage, None
+        if payload is None:
+            return {}
+        cost = _mapping(payload.get("cost"))
+        usd = cost.get("usd")
+        usage = payload.get("usage")
+        return {
+            "usage": usage if isinstance(usage, Mapping) else None,
+            "cost_usd": float(usd) if isinstance(usd, (int, float)) and not isinstance(usd, bool) else None,
+            "model": _optional_str(payload.get("model")),
+        }
+
+
+def _usage_limit_stop(event: EventRecord) -> UsageLimitStop:
+    """Build the step a ``usage_limit_exceeded`` event records."""
+
+    payload = event.payload
+
+    def number(value: Any) -> int | float | None:
+        return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
+
+    return UsageLimitStop(
+        seq=event.seq,
+        at=event.timestamp,
+        limit=str(payload.get("limit", "")),
+        value=number(payload.get("value")),
+        cap=number(payload.get("cap")),
+        phase=str(payload.get("phase", "")),
+        message=str(payload.get("message", "")),
+    )
 
 
 def _output_validation(event: EventRecord) -> OutputValidation:
