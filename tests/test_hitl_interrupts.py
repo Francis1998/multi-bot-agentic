@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Iterator
 from dataclasses import replace
 from pathlib import Path
@@ -24,7 +25,7 @@ from multi_bot_agentic.fork import ForkError, build_history, plan_fork
 from multi_bot_agentic.lifecycle import InvalidTransitionError, RunStateMachine
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.models import EventType, RunState, ToolInvocation, ToolResult
-from multi_bot_agentic.runner import AgentRunner
+from multi_bot_agentic.runner import AgentRunner, ResumeError, RunResult
 from multi_bot_agentic.safety import SafetyPolicy, parse_approval_patterns
 from multi_bot_agentic.tracing import build_trace, parse_run, render_mermaid
 
@@ -67,6 +68,21 @@ class _DyingLog(SQLiteEventLog):
         if event_type is EventType.CHECKPOINT and bool(payload.get("interrupt_id")) is self.pause_checkpoint:
             raise _ProcessDied
         return super()._insert(run_id, state, event_type, payload)
+
+
+class _StallingLog(SQLiteEventLog):
+    """Event log of a resume that stalls just before its first checkpoint until the test releases it."""
+
+    def __init__(self, path: Path, reached: threading.Event, release: threading.Event) -> None:
+        super().__init__(path)
+        self.reached = reached
+        self.release = release
+
+    def append(self, run_id: str, state: RunState, event_type: EventType, payload: dict[str, object]) -> EventRecord:
+        if event_type is EventType.CHECKPOINT and not self.reached.is_set():
+            self.reached.set()
+            self.release.wait(10)
+        return super().append(run_id, state, event_type, payload)
 
 
 @pytest.fixture()
@@ -360,6 +376,48 @@ def test_recovery_keeps_a_gate_that_the_crashed_resume_added(tmp_path: Path) -> 
     assert len(spy.calls) == 1
     checkpoint = load_latest_checkpoint(log, "r")
     assert checkpoint is not None and checkpoint.require_approval == ("checklist", "deploy_*")
+    log.close()
+
+
+def test_a_second_resume_is_refused_while_the_first_still_runs(tmp_path: Path) -> None:
+    path = tmp_path / "runs.sqlite"
+    log = SQLiteEventLog(path)
+    spy = SpyTool()
+    paused = _runner(log, spy).run(GOAL, run_id="r")
+    decide_interrupt(log, paused.interrupt.interrupt_id, ApprovalDecision.APPROVED, decided_by="a")  # type: ignore[union-attr]
+    reached, release = threading.Event(), threading.Event()
+    first: list[RunResult | BaseException] = []
+
+    def resume_first() -> None:
+        own = _StallingLog(path, reached, release)
+        try:
+            first.append(_runner(own, spy).resume("r"))
+        except BaseException as error:
+            first.append(error)
+        finally:
+            own.close()
+
+    thread = threading.Thread(target=resume_first)
+    thread.start()
+    try:
+        # The first resume ran the approved call and recorded its result, but not the step's checkpoint.
+        assert reached.wait(10)
+        before = len(log.list_events("r"))
+        second: RunResult | ResumeError
+        try:
+            second = _runner(log, SpyTool()).resume("r")
+        except ResumeError as error:
+            second = error
+        written = len(log.list_events("r")) - before
+    finally:
+        release.set()
+        thread.join(10)
+
+    assert isinstance(second, ResumeError) and "is being continued by process" in str(second), second
+    assert written == 0
+    assert len(first) == 1 and isinstance(first[0], RunResult) and first[0].state is RunState.SUCCEEDED
+    assert len(spy.calls) == 1
+    assert _types(log, "r").count("run_completed") == 1
     log.close()
 
 
