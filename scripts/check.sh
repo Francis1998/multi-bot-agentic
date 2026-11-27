@@ -67,3 +67,28 @@ PYTHONPATH=src python -m multi_bot_agentic.cli replay \
   --run-id check-hitl \
   --event-type approval_decision \
   --format text
+# Structured output: the fake provider's first answer is plain text, so one correction round runs
+# before the JSON validates and is written to the output file; with no correction rounds the run exits 4.
+rm -f /tmp/multi-bot-agentic-check.sqlite.output.json
+PYTHONPATH=src python -m multi_bot_agentic.cli run \
+  --goal "Plan the agent launch" \
+  --provider fake \
+  --run-id check-output \
+  --output-schema examples/structured-output/launch-plan.schema.json \
+  --output-file /tmp/multi-bot-agentic-check.sqlite.output.json \
+  --event-log /tmp/multi-bot-agentic-check.sqlite
+python -m json.tool /tmp/multi-bot-agentic-check.sqlite.output.json
+PYTHONPATH=src python -m multi_bot_agentic.cli replay \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --run-id check-output \
+  --event-type output_validation_failed \
+  --format text
+status=0
+PYTHONPATH=src python -m multi_bot_agentic.cli run \
+  --goal "Plan the agent launch" \
+  --provider fake \
+  --run-id check-output-invalid \
+  --output-schema examples/structured-output/launch-plan.schema.json \
+  --output-retries 0 \
+  --event-log /tmp/multi-bot-agentic-check.sqlite || status=$?
+test "$status" -eq 4

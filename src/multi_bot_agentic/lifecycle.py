@@ -15,15 +15,31 @@ ALLOWED_TRANSITIONS: dict[RunState, frozenset[RunState]] = {
     RunState.CREATED: frozenset({RunState.OBSERVING, RunState.CANCELLED, RunState.FAILED}),
     RunState.OBSERVING: frozenset({RunState.DECIDING, RunState.CANCELLED, RunState.FAILED}),
     RunState.DECIDING: frozenset(
-        {RunState.ACTING, RunState.AWAITING_APPROVAL, RunState.SUCCEEDED, RunState.CANCELLED, RunState.FAILED}
+        {
+            RunState.ACTING,
+            RunState.AWAITING_APPROVAL,
+            RunState.VALIDATING,
+            RunState.SUCCEEDED,
+            RunState.CANCELLED,
+            RunState.FAILED,
+        }
     ),
     # A paused run continues by acting on an approved call, or by observing a rejection and re-planning.
     RunState.AWAITING_APPROVAL: frozenset({RunState.ACTING, RunState.OBSERVING, RunState.CANCELLED, RunState.FAILED}),
     RunState.ACTING: frozenset({RunState.OBSERVING, RunState.SUCCEEDED, RunState.CANCELLED, RunState.FAILED}),
+    # A final answer checked against the output schema: valid, corrected in another round, or given up on.
+    RunState.VALIDATING: frozenset(
+        {RunState.SUCCEEDED, RunState.OBSERVING, RunState.OUTPUT_INVALID, RunState.CANCELLED, RunState.FAILED}
+    ),
     RunState.SUCCEEDED: frozenset(),
     RunState.FAILED: frozenset(),
     RunState.CANCELLED: frozenset(),
+    RunState.OUTPUT_INVALID: frozenset(),
 }
+
+TERMINAL_STATES: frozenset[RunState] = frozenset(
+    {RunState.SUCCEEDED, RunState.FAILED, RunState.CANCELLED, RunState.OUTPUT_INVALID}
+)
 
 
 @dataclass
@@ -59,4 +75,4 @@ class RunStateMachine:
             True when no more actions should execute.
         """
 
-        return self.state in {RunState.SUCCEEDED, RunState.FAILED, RunState.CANCELLED}
+        return self.state in TERMINAL_STATES

@@ -80,6 +80,11 @@ multi-bot-agentic approvals list --event-log data/runs.sqlite
 multi-bot-agentic approve --run-id gated --event-log data/runs.sqlite --by alice   # or: reject --reason "..."
 multi-bot-agentic resume --run-id gated --event-log data/runs.sqlite
 
+# Structured output: the final answer must be JSON that validates against a schema (invalid answers get correction
+# rounds; exit 4 when none validates); the validated document is written to --output-file
+multi-bot-agentic run --goal "Plan the agent launch" --provider fake --event-log data/runs.sqlite --run-id plan \
+  --output-schema examples/structured-output/launch-plan.schema.json --output-file data/plan.json
+
 # Time travel: list the forkable steps, then branch the run after step 1 with a new goal
 multi-bot-agentic history --event-log data/runs.sqlite --run-id demo
 multi-bot-agentic fork --event-log data/runs.sqlite --run-id demo --at-step 1 --new-run-id demo-rollback \
@@ -110,6 +115,14 @@ re-plan. Every decision is in the event log, `report`, and `trace`
 
 ![HITL interrupts demo: a run pauses before a gated tool, resume is refused until a human decides, an approval with edited arguments runs once, a rejection makes the model re-plan](assets/demo/hitl-interrupts.gif)
 
+**Structured output:** `--output-schema schema.json` makes the final answer a JSON document that must validate
+against a JSON Schema. Invalid answers go back to the model with the exact errors (`$.steps: expected at least 3
+items, got 1`) for up to `--output-retries` correction rounds; then the run stops in `output_invalid` (exit code 4).
+The contract is recorded in the run, so `resume` and `fork` enforce it, and `--output-file` hands the validated
+document to the next pipeline step ([Structured output guide](docs/guides/STRUCTURED_OUTPUT_GUIDE.md)).
+
+![Structured output demo: a schema, a run that needs one correction round, the validation events, the output file, a run that exits 4, a fork that rescues it, its trace, and an eval assertion](assets/demo/structured-output.gif)
+
 ## Feature Map
 
 | Capability | What you get | Code | Docs |
@@ -124,9 +137,10 @@ re-plan. Every decision is in the event log, `report`, and `trace`
 | Provider adapters | GPT-6.2, Claude Code CLI, Gemini 4, Kimi K3.1, and a fake provider, all sending reasoning-safe parameters | `llm/` | [Configuration](docs/CONFIGURATION.md) |
 | Safety controls | Step budgets, timeouts, cancellation file, tool allowlists, prompt bounds | `safety.py` | [Safety](docs/SAFETY.md) |
 | **Human-in-the-loop interrupts** | `--require-approval TOOL[,TOOL]` pauses a run durably before matching tool calls (`awaiting_approval` state, exit 3). `approvals list/show`, `approve [--args JSON]`, and `reject --reason` record who decided what and when; `resume` runs an approved call exactly once or feeds a rejection back so the model re-plans. Shown in `replay`, `report`, `history`, and `trace`. The file-backed gate remains for caller-driven flows | `approval.py`, `runner.py`, `cli.py` | [HITL interrupts](docs/guides/HITL_INTERRUPTS_GUIDE.md), [HITL gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md) |
+| **Structured output** | `--output-schema schema.json` requires a final answer that is a JSON document validating against a JSON Schema (a dependency-free subset with exact error paths; unsupported keywords are refused, never ignored). Invalid answers get correction rounds (`--output-retries`, default 2), then the run stops in `output_invalid` (exit 4). The contract is recorded, so `resume` and `fork` enforce it; `--output-file` writes the output atomically. Shown in `replay`, `report`, `history`, `trace`, and asserted by `eval` (`expected_output`, `output_schema`) | `structured_output.py`, `runner.py`, `cli.py` | [Structured output](docs/guides/STRUCTURED_OUTPUT_GUIDE.md) |
 | Parallel fan-out | Capped, order-preserving task batches | `fanout.py` | [Fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md) |
 | Tool-call hygiene | Rate limits, PII redaction, result truncation, per-bot permissions | `tool_runner.py`, `observation_redactor.py`, `tool_result_truncator.py`, `tool_permission.py` | [Rate limiter](docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md) |
-| Offline evaluation | Golden-path fixtures scored on tool sequence and answer | `eval/` | [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md) |
+| Offline evaluation | Golden-path fixtures scored on tool sequence, answer, and structured output | `eval/` | [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md) |
 | 122 built-in tools | Offline, in-process tools for text, JSON, CSV, HTML, MIME, and encodings | `tools/` | [Tools catalog](docs/TOOLS.md) |
 | Advisors & guards | 150+ offline HITL guards for multi-bot failure modes | `*_band.py` and friends | [Advisor catalog](docs/ADVISOR_CATALOG.md) |
 
@@ -166,6 +180,7 @@ ignore them. The OpenAI adapter also sends no reasoning effort and no native too
   [Run fork (time travel)](docs/guides/RUN_FORK_GUIDE.md),
   [Human-in-the-loop interrupts](docs/guides/HITL_INTERRUPTS_GUIDE.md),
   [HITL approval gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md),
+  [Structured output](docs/guides/STRUCTURED_OUTPUT_GUIDE.md),
   [Parallel fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md),
   [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md),
   [Rate-limited tool runner](docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md),
@@ -197,6 +212,8 @@ These are the problems the project was built for. Each one is explained in
     `fork` branches any recorded step into a new run.
 13. "A person must sign off before the agent deploys, pays, or writes." `--require-approval` pauses the run before
     the call; `approve`/`reject` and `resume` continue it, with every decision audited.
+14. "The next step of my pipeline needs JSON, not prose." `--output-schema` validates the final answer, corrects it
+    with the model, and writes it with `--output-file`, or exits 4.
 
 ## Repository Layout
 
@@ -205,6 +222,7 @@ src/multi_bot_agentic/   runtime, decision engine, event log, adapters (llm/), t
                          trace export (tracing/)
 tests/                   deterministic unit and integration tests (MCP server fixtures in tests/fixtures/mcp/)
 examples/mcp/            demo MCP server and mcpServers configs (bundled + official servers)
+examples/structured-output/  output schema used by the structured-output guide and check.sh
 scripts/                 check, demo, and GIF rendering scripts
 migrations/              sqlite schema scaffold
 docs/                    architecture, safety, configuration, quickstart, guides, catalogs, use cases
@@ -219,8 +237,9 @@ scripts/check.sh
 
 `scripts/check.sh` runs `ruff check`, `ruff format --check`, `mypy src tests`, `pytest`, and a fake-provider
 smoke run with replay, report, and trace (OTLP/JSON and Mermaid), then lists its steps with `history`, forks it,
-and reports and traces the fork, and finally pauses a run at a human-approval interrupt, approves it, and resumes
-it. CI runs the same script on Python 3.10, 3.11, and 3.12. For a richer local demo, run `scripts/run_demo.sh`.
+and reports and traces the fork, pauses a run at a human-approval interrupt, approves it, and resumes it, and
+finally runs with an output schema (one correction round, a validated output file) and checks that a run without
+correction rounds exits 4. CI runs the same script on Python 3.10, 3.11, and 3.12. For a richer local demo, run `scripts/run_demo.sh`.
 
 ## Contributing
 

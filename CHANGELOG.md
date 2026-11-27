@@ -4,6 +4,30 @@
 
 ### Added
 
+- Structured output: `run --output-schema schema.json` makes the final answer a JSON document that must validate
+  against a JSON Schema (`docs/guides/STRUCTURED_OUTPUT_GUIDE.md`, demo `assets/demo/structured-output.gif`). A
+  dependency-free validator (`structured_output.py`) implements a documented subset (`type`, `enum`, `const`,
+  `properties`, `required`, `additionalProperties`, `items`, item counts, `uniqueItems`, string lengths, `pattern`,
+  numeric bounds, `allOf`/`anyOf`/`oneOf`, local `$ref` into `$defs`) with error paths such as
+  `$.items[2].price: expected number, got string`; any other keyword is refused when the schema is loaded, and
+  schemas are bounded in size, nesting, subschema count, reference cycles, and `pattern` shape. The answer is the
+  whole text after `DONE:` or exactly one fenced `json` block, parsed strictly. An invalid answer appends an
+  `output_validation_failed` event and an `output:validation` observation with the errors, and the new rule
+  `output.invalid-needs-correction` asks the model again, up to `--output-retries N` rounds (default 2); then the
+  run ends in the new terminal state `output_invalid` (exit code 4, a `run_failed` event in that state). A valid
+  answer appends a `final_output` event (document, attempt, digest, size), the run succeeds through the new
+  `validating` state, and `--output-file PATH` writes the document atomically. The contract (schema, SHA-256,
+  source, retries) is recorded in `run_created`; `resume` enforces it and continues the attempt count, forks
+  inherit it, and `fork --output-schema` / `--output-retries` replace it (recorded in the lineage `overrides`).
+  Every provider prompt carries the schema, and runs with a schema allow 16,000-character answers. `replay`,
+  `report` (per-run `output`), `history` (`output invalid` outcomes), `trace` (output span events and attributes,
+  `error.type` `output_invalid`, Mermaid notes), and `eval` (`output_schema`, `expected_output` with `exact` or
+  `subset` matching, `output_score`, `mean_output_score`) show it. `scripts/check.sh` smoke-tests a validated
+  output file and the exit code 4. Review hardening: `--output-file` may not name the event log or its SQLite files,
+  shared references are bounded (10,000 subschemas per value, 500,000 validation steps per answer), out-of-range
+  numbers and unpaired surrogates are invalid answers, each check is recorded atomically with its checkpoint or
+  the run's end, `resume` verifies a recorded output before publishing it, and `report`/`trace` count only checks
+  against the run's own schema.
 - Human-in-the-loop interrupts: a run pauses durably when the decision engine selects a tool that needs approval,
   and a human approves, edits, or rejects the call from the CLI before the run resumes exactly where it stopped
   (`docs/guides/HITL_INTERRUPTS_GUIDE.md`, demo `assets/demo/hitl-interrupts.gif`). `run`, `fork`, and `resume`

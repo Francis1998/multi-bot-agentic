@@ -96,6 +96,24 @@ multi-bot-agentic resume --run-id gated --event-log data/runs.sqlite
 
 See the [Human-in-the-Loop Interrupts Guide](guides/HITL_INTERRUPTS_GUIDE.md).
 
+## Require A JSON Final Answer
+
+```bash
+# The final answer must validate against the schema; the fake provider needs one correction round (exit 0)
+multi-bot-agentic run --goal "Plan the agent launch" --provider fake --event-log data/runs.sqlite --run-id plan \
+  --output-schema examples/structured-output/launch-plan.schema.json --output-file data/plan.json
+
+# The failed check, the correction decision, and the validated output
+multi-bot-agentic replay --event-log data/runs.sqlite --run-id plan --format text | grep -E "validating|correction"
+cat data/plan.json
+
+# Without correction rounds the run stops in output_invalid and exits with code 4
+multi-bot-agentic run --goal "Plan the agent launch" --provider fake --event-log data/runs.sqlite --run-id strict \
+  --output-schema examples/structured-output/launch-plan.schema.json --output-retries 0
+```
+
+See the [Structured Output Guide](guides/STRUCTURED_OUTPUT_GUIDE.md).
+
 ## Run The Scripted Demo
 
 ```bash

@@ -69,6 +69,11 @@ multi-bot-agentic replay --event-log data/eval-logs/echo_then_done.sqlite \
 }
 ```
 
+Structured-output fields (see the [Structured Output Guide](STRUCTURED_OUTPUT_GUIDE.md#evaluation-fixtures)):
+`output_schema` (an inline schema or a path relative to the fixture), `output_retries` (default `2`),
+`expected_output` (any JSON value), and `expected_output_match` (`exact`, the default, or `subset`). The packaged
+`structured_output_correction.json` scenario scripts one correction round.
+
 ## Scoring
 
 - `tool_sequence_score` is the longest common prefix of the run's tool calls (`actual_tools`) and
@@ -78,7 +83,10 @@ multi-bot-agentic replay --event-log data/eval-logs/echo_then_done.sqlite \
   `0.0`. List every tool call the run should make, including repeated calls.
 - `answer_score` is `1.0` when the DONE answer equals `expected_answer` (ignoring surrounding whitespace) and
   contains `expected_answer_contains`, checking only the ones that are set. With neither set, it is `1.0`.
-- A scenario passes when both scores are `1.0` and the run succeeded. `eval` exits `2` when any scenario fails.
+- `output_score` is `1.0` when the scenario asserts no structured output. With `output_schema`, the run must end
+  with a validated output; with `expected_output`, that output (or, without a schema, the JSON read from the
+  answer) must match it exactly or as a subset. Otherwise it is `0.0`. The summary reports `mean_output_score`.
+- A scenario passes when all three scores are `1.0` and the run succeeded. `eval` exits `2` when any scenario fails.
 
 ## Safety
 

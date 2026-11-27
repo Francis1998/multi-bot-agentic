@@ -36,7 +36,10 @@ Current deterministic rules:
 - `tool.result-needs-synthesis`: send tool results back to the provider.
 - `approval.rejected-needs-replan`: after a human rejected a tool call, ask the provider to re-plan with the
   rejection reason (an `approval:<tool>` observation) instead of running it.
-- `model.done-or-budget`: finish on `DONE:<answer>` or final budget step.
+- `model.done-or-budget`: finish on `DONE:<answer>` or final budget step. With an output schema
+  (`--output-schema`) the answer is validated first (see [Structured Output](#structured-output)).
+- `output.invalid-needs-correction`: after a final answer failed output-schema validation, ask the provider for a
+  corrected answer with the validation errors (an `output:validation` observation).
 - `model.needs-followup`: call the provider again for non-final text.
 
 ## Act
@@ -45,7 +48,7 @@ Actions are limited to provider calls, allowlisted tools, finish, fail, or cance
 
 ## Durable Event Log
 
-The sqlite event log stores every lifecycle transition, observation, decision, action request, action result, human-approval interrupt and decision, and failure with a per-run sequence number. A run can be replayed without calling a provider. Its `run_leases` table holds the lease of the process currently continuing each run (see [Human-In-The-Loop Interrupts](#human-in-the-loop-interrupts)); it is operational state, not part of the replayed history.
+The sqlite event log stores every lifecycle transition, observation, decision, action request, action result, human-approval interrupt and decision, output-schema validation (`output_validation_failed`, `final_output`), and failure with a per-run sequence number. A run can be replayed without calling a provider. Its `run_leases` table holds the lease of the process currently continuing each run (see [Human-In-The-Loop Interrupts](#human-in-the-loop-interrupts)); it is operational state, not part of the replayed history.
 
 `run` creates the log file and its directory when they are missing. Commands that read a log (`replay`, `report`, `resume`, `history`, `trace`, and `fork`) never create one: a missing `--event-log` fails with `error: event log not found: <path>` and exit code 2, so a mistyped path is not mistaken for a run that recorded nothing.
 
@@ -79,6 +82,10 @@ stateDiagram-v2
     awaiting_approval --> observing: rejected, the model re-plans
     acting --> observing
     deciding --> succeeded
+    deciding --> validating: finish, with an output schema
+    validating --> succeeded: the answer validates (final_output)
+    validating --> observing: invalid, a correction round is left
+    validating --> output_invalid: invalid, no round or step left
     deciding --> failed
     deciding --> cancelled
     awaiting_approval --> cancelled
@@ -86,9 +93,12 @@ stateDiagram-v2
     succeeded --> [*]
     failed --> [*]
     cancelled --> [*]
+    output_invalid --> [*]
 ```
 
-Every non-terminal state can also move to `failed` or `cancelled`. `awaiting_approval` is the only state a run
+Every non-terminal state can also move to `failed` or `cancelled`. `output_invalid` is terminal (exit code 4); it
+is recorded as a `run_failed` event in state `output_invalid`, so tools that only read event types still see a
+failure. `awaiting_approval` is the only state a run
 rests in between processes: the run records an `interrupt` event and a checkpoint, exits, and a later `resume`
 continues from that state after a human decided. Invalid transitions raise `InvalidTransitionError` and are covered
 by tests.
@@ -171,6 +181,35 @@ resume, rejected           -> checkpoint + approval:<tool> observation -> observ
   events and Mermaid arrows to a human participant, with the arguments an approved call actually ran with.
 
 See `docs/guides/HITL_INTERRUPTS_GUIDE.md`.
+
+## Structured Output
+
+`run --output-schema schema.json` gives a run an output contract: its final answer must be a JSON document that
+validates against a JSON Schema (a documented, dependency-free subset in `structured_output.py`).
+
+```text
+run_created {output_contract: schema, schema_sha256, source, retries}
+... DONE:<answer> -> decision finish -> deciding -> validating
+valid            -> final_output {output, attempt, source, output_sha256, bytes} -> succeeded (exit 0)
+invalid, round   -> output_validation_failed {attempt, errors, retry: true} + checkpoint + output:validation
+                    observation -> observing -> output.invalid-needs-correction -> call_llm
+invalid, no more -> output_validation_failed {retry: false, stop} -> output_invalid + run_failed (exit 4)
+```
+
+- Every unsupported schema keyword is refused when the schema is loaded, so no constraint is silently ignored;
+  schemas are bounded in size, nesting, and subschema count, `$ref` stays inside the schema, and `pattern` is
+  checked for catastrophic-backtracking shapes.
+- The answer is the whole text after `DONE:` or one fenced `json` block; anything else is an error.
+- Each check is one transaction with its consequence (the correction checkpoint, or the transition and terminal
+  event), so a crash never counts a check twice; `resume` verifies a finished run's recorded output before using it.
+- Every model request of the run carries the schema (`ModelRequest.output_schema`), and adapters append it to the
+  prompt; the provider output bound rises from 2,000 to 16,000 characters for such runs.
+- `resume` reads the contract from `run_created` and counts the run's earlier failed answers. A fork's
+  `run_forked` event carries its contract: the source's, or a new one from `fork --output-schema` /
+  `--output-retries` (recorded under `overrides`). `replay`, `report`, `history`, `trace`, and `eval` show the
+  validated output or the last errors.
+
+See `docs/guides/STRUCTURED_OUTPUT_GUIDE.md`.
 
 ## HITL Approval Gate
 

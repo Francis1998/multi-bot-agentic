@@ -7,7 +7,7 @@ from collections.abc import Callable
 import pytest
 
 from multi_bot_agentic.config import build_llm_adapter
-from multi_bot_agentic.llm.base import render_tool_catalog
+from multi_bot_agentic.llm.base import render_output_contract, render_tool_catalog
 from multi_bot_agentic.llm.claude_code_cli import _render_prompt as claude_prompt
 from multi_bot_agentic.llm.fake import FakeLLMAdapter
 from multi_bot_agentic.llm.gemini import _render_prompt as gemini_prompt
@@ -66,6 +66,21 @@ def test_provider_prompts_append_catalog_only_when_tools_are_advertised(render: 
     assert "Available tools" not in plain
     assert "- mcp__notes__search_notes: [MCP notes] Search notes." in with_tools
     assert with_tools.replace(render_tool_catalog((SEARCH,)), "") == plain
+
+
+@pytest.mark.parametrize("render", [openai_prompt, gemini_prompt, claude_prompt])
+def test_provider_prompts_append_the_output_contract_only_with_a_schema(render: Callable[[ModelRequest], str]) -> None:
+    """Every real provider is told the output schema of a run that has one; other prompts are unchanged."""
+
+    schema = {"type": "object", "required": ["title"]}
+    observations = (Observation(source="user", content="plan"),)
+    plain = render(ModelRequest(goal="plan", observations=observations, tools=(SEARCH,)))
+    with_schema = render(ModelRequest(goal="plan", observations=observations, tools=(SEARCH,), output_schema=schema))
+
+    contract = render_output_contract(schema)
+    assert render_output_contract(None) == "" and "Final answer contract" not in plain
+    assert contract.endswith('JSON Schema:\n{"required":["title"],"type":"object"}')
+    assert contract in with_schema and with_schema.replace(contract, "") == plain
 
 
 def test_fake_provider_tool_can_be_overridden(monkeypatch: pytest.MonkeyPatch) -> None:

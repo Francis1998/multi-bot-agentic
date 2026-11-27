@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -9,13 +10,18 @@ import pytest
 from multi_bot_agentic.eval import (
     EvalScenario,
     EvaluationHarness,
+    ExpectedOutput,
     ScenarioScore,
     default_fixture_dir,
+    json_subset,
+    load_scenario,
     load_scenarios,
     score_answer,
+    score_output,
     score_tool_sequence,
 )
 from multi_bot_agentic.event_log import SQLiteEventLog
+from multi_bot_agentic.structured_output import OutputSchema
 
 
 def test_score_tool_sequence_prefix_match() -> None:
@@ -54,6 +60,7 @@ def test_harness_runs_packaged_fixtures(tmp_path: Path) -> None:
     assert report.pass_rate == 1.0
     assert report.mean_tool_sequence_score == 1.0
     assert report.mean_answer_score == 1.0
+    assert report.mean_output_score == 1.0
     assert all(item.passed for item in report.scenarios)
 
 
@@ -140,3 +147,99 @@ def test_rerun_into_the_same_log_dir_scores_only_the_new_run(
         log.close()
     assert sorted(runs) == sorted([first.details["run_id"], second.details["run_id"]])
     assert all(run_id.startswith("echo_check-") for run_id in runs)
+
+
+@pytest.mark.parametrize(
+    ("expected", "actual", "matches"),
+    [
+        ({"a": 1}, {"a": 1.0, "b": 2}, True),
+        ({"a": {"b": [1, {"c": True}]}}, {"a": {"b": [1, {"c": True, "d": 0}], "e": 1}}, True),
+        ({"a": [1]}, {"a": [1, 2]}, False),
+        ({"a": 1}, {"a": True}, False),
+        ({"missing": None}, {}, False),
+        ([{"x": 1}], [{"x": 1, "y": 2}], True),
+        ("text", "text", True),
+    ],
+)
+def test_json_subset(expected: object, actual: object, matches: bool) -> None:
+    assert json_subset(expected, actual) is matches
+
+
+def test_score_output() -> None:
+    exact = ExpectedOutput(value={"a": 1})
+    assert score_output(has_schema=False, output=None, output_found=False, expected=None) == 1.0
+    assert score_output(has_schema=True, output=None, output_found=False, expected=None) == 0.0
+    assert score_output(has_schema=True, output={"a": 1}, output_found=True, expected=None) == 1.0
+    assert score_output(has_schema=False, output={"a": 1.0}, output_found=True, expected=exact) == 1.0
+    assert score_output(has_schema=False, output={"a": 1, "b": 2}, output_found=True, expected=exact) == 0.0
+    subset = ExpectedOutput(value={"a": 1}, match="subset")
+    assert score_output(has_schema=False, output={"a": 1, "b": 2}, output_found=True, expected=subset) == 1.0
+
+
+def _structured(scenario_id: str, *responses: str, expected: ExpectedOutput | None = None) -> EvalScenario:
+    schema = OutputSchema.from_value(
+        {"type": "object", "required": ["count"], "properties": {"count": {"type": "integer"}}}
+    )
+    return EvalScenario(
+        scenario_id=scenario_id,
+        goal="Count the launch steps",
+        scripted_responses=responses,
+        max_steps=6,
+        output_schema=schema,
+        output_retries=1,
+        expected_output=expected,
+    )
+
+
+def test_harness_scores_structured_outputs(tmp_path: Path) -> None:
+    """``output_schema`` needs a validated output; ``expected_output`` must match it."""
+
+    scenarios = (
+        _structured("valid", "DONE: five", 'DONE: {"count": 5}', expected=ExpectedOutput(value={"count": 5})),
+        _structured("never-valid", "DONE: five", "DONE: still five"),
+        _structured("wrong-value", 'DONE: {"count": 4}', expected=ExpectedOutput(value={"count": 5})),
+    )
+    report = EvaluationHarness(scenarios).run(root=tmp_path, event_log_dir=tmp_path / "logs")
+    by_id = {item.scenario_id: item for item in report.scenarios}
+
+    assert by_id["valid"].passed and by_id["valid"].actual_output == {"count": 5}
+    assert by_id["valid"].details["output_attempts"] == 2
+    assert not by_id["never-valid"].passed and by_id["never-valid"].output_score == 0.0
+    assert by_id["never-valid"].details["state"] == "output_invalid" and by_id["never-valid"].details["output_errors"]
+    assert not by_id["wrong-value"].passed and by_id["wrong-value"].actual_output == {"count": 4}
+    assert report.mean_output_score == pytest.approx(1 / 3)
+
+
+def test_expected_output_without_a_schema_reads_json_from_the_answer(tmp_path: Path) -> None:
+    scenario = EvalScenario(
+        scenario_id="answer-json",
+        goal="Answer as JSON",
+        scripted_responses=('DONE: ```json\n{"ok": true, "extra": 1}\n```',),
+        expected_output=ExpectedOutput(value={"ok": True}, match="subset"),
+    )
+    score = EvaluationHarness((scenario,)).run(root=tmp_path, event_log_dir=tmp_path / "logs").scenarios[0]
+    assert score.passed and score.actual_output == {"ok": True, "extra": 1}
+
+
+def test_load_scenario_reads_output_fields(tmp_path: Path) -> None:
+    (tmp_path / "schemas").mkdir()
+    (tmp_path / "schemas" / "count.json").write_text('{"type": "object"}', encoding="utf-8")
+    fixture = tmp_path / "scenario.json"
+    payload = {
+        "scenario_id": "s",
+        "goal": "g",
+        "output_schema": "schemas/count.json",
+        "output_retries": 0,
+        "expected_output": None,
+        "expected_output_match": "subset",
+    }
+    fixture.write_text(json.dumps(payload), encoding="utf-8")
+    scenario = load_scenario(fixture)
+    assert scenario.output_schema is not None and scenario.output_schema.value == {"type": "object"}
+    assert scenario.output_retries == 0 and scenario.expected_output == ExpectedOutput(value=None, match="subset")
+    fixture.write_text(json.dumps({**payload, "expected_output_match": "fuzzy"}), encoding="utf-8")
+    with pytest.raises(ValueError, match="expected_output_match must be one of exact, subset"):
+        load_scenario(fixture)
+    fixture.write_text(json.dumps({**payload, "output_retries": 11}), encoding="utf-8")
+    with pytest.raises(ValueError, match="output_retries must be an integer from 0 to 10, got 11"):
+        load_scenario(fixture)

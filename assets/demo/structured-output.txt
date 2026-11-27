@@ -1,0 +1,31 @@
+$ jq -c "{required, risk: .properties.risk, steps: (.properties.steps | {minItems, uniqueItems})}" examples/structured-output/launch-plan.schema.json
+{"required":["title","steps","risk","owner_count"],"risk":{"enum":["low","medium","high"]},"steps":{"minItems":3,"uniqueItems":true}}
+$ multi-bot-agentic run --goal "Plan the agent launch" --provider fake --event-log demo-output/output.sqlite --run-id demo --output-schema examples/structured-output/launch-plan.schema.json --output-file demo-output/plan.json | jq -c "{state, steps, output_attempts, output_file}"; echo "exit code: ${PIPESTATUS[0]}"
+{"state":"succeeded","steps":6,"output_attempts":2,"output_file":"demo-output/plan.json"}
+exit code: 0
+$ multi-bot-agentic replay --event-log demo-output/output.sqlite --run-id demo --format text | grep -E "validating|correction"
+036 validating state_transition
+037 validating output_validation_failed attempt=1/3 errors=1 retry=true first="$: no JSON document found; reply with only the JSON document, or put it in one ```json fenced block"
+038 validating checkpoint
+046 deciding   decision action=call_llm rule=output.invalid-needs-correction
+060 validating state_transition
+061 validating final_output attempt=2 source=answer bytes=300 sha256=3cc22aed3acd
+$ jq -c . demo-output/plan.json
+{"owner_count":5,"risk":"low","steps":["Define scope for Plan the agent launch","Confirm safety policy and tool allowlist","Run fake-provider replay before live providers","Review rationale traces for every decision","Archive the sqlite event log for post-run audit"],"title":"Plan the agent launch"}
+$ multi-bot-agentic report --event-log demo-output/output.sqlite --run-id demo | jq -c ".runs[0].output | {valid, attempts, retries, schema_sha256: .schema_sha256[0:12]}"
+{"valid":true,"attempts":2,"retries":2,"schema_sha256":"f4194116eeba"}
+$ multi-bot-agentic run --goal "Plan the agent launch" --provider fake --event-log demo-output/output.sqlite --run-id strict --output-schema examples/structured-output/launch-plan.schema.json --output-retries 0 | jq -c "{state, steps, output_errors}"; echo "exit code: ${PIPESTATUS[0]}"
+note: run strict ended in output_invalid; its answers and validation errors: replay --event-log demo-output/output.sqlite --run-id strict --event-type output_validation_failed
+{"state":"output_invalid","steps":4,"output_errors":["$: no JSON document found; reply with only the JSON document, or put it in one ```json fenced block"]}
+exit code: 4
+$ multi-bot-agentic fork --event-log demo-output/output.sqlite --run-id strict --at-step 3 --new-run-id rescue --output-retries 1 --provider fake --output-file demo-output/rescued.json | jq -c "{run_id, state, steps, output_attempts}"
+note: forked run strict after step 3 into rescue (28 events inherited; new output_retries)
+{"run_id":"rescue","state":"succeeded","steps":6,"output_attempts":2}
+$ multi-bot-agentic trace --event-log demo-output/output.sqlite --run-id demo --format mermaid | grep -E "Note over O: (finish|output)|correction"
+    Note over O: finish (model.done-or-budget)
+    Note over O: output invalid (attempt 1, 1 error)
+    O->>A1: call_llm (output.invalid-needs-correction)
+    Note over O: finish (model.done-or-budget)
+    Note over O: output valid (attempt 2)
+$ multi-bot-agentic eval --event-log-dir demo-output/eval-output | jq -c "{pass_rate, mean_output_score, structured: [.scenarios[] | select(.actual_output) | {scenario_id, output_score}]}"
+{"pass_rate":1.0,"mean_output_score":1.0,"structured":[{"scenario_id":"structured_output_correction","output_score":1.0}]}

@@ -16,9 +16,11 @@ class RunState(str, Enum):
     DECIDING = "deciding"
     AWAITING_APPROVAL = "awaiting_approval"
     ACTING = "acting"
+    VALIDATING = "validating"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
     CANCELLED = "cancelled"
+    OUTPUT_INVALID = "output_invalid"
 
 
 class EventType(str, Enum):
@@ -37,6 +39,8 @@ class EventType(str, Enum):
     RUN_FORKED = "run_forked"
     INTERRUPT = "interrupt"
     APPROVAL_DECISION = "approval_decision"
+    OUTPUT_VALIDATION_FAILED = "output_validation_failed"
+    FINAL_OUTPUT = "final_output"
 
 
 DecisionAction = Literal["call_llm", "call_tool", "handoff", "finish", "fail", "cancel"]
@@ -186,12 +190,15 @@ class ModelRequest:
         observations: Observed facts to include as context.
         max_output_chars: Provider output bound.
         tools: Optional tool catalog advertised to the model (empty keeps prompts unchanged).
+        output_schema: JSON Schema the final answer must validate against (``run --output-schema``);
+            ``None`` keeps prompts unchanged.
     """
 
     goal: str
     observations: tuple[Observation, ...]
     max_output_chars: int = 2000
     tools: tuple[ToolSpec, ...] = ()
+    output_schema: dict[str, Any] | bool | None = None
 
 
 @dataclass(frozen=True)
