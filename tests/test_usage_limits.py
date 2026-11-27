@@ -6,6 +6,7 @@ import json
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -39,6 +40,10 @@ class SpyTool:
     def execute(self, invocation: ToolInvocation) -> ToolResult:
         self.calls.append(dict(invocation.arguments))
         return ToolResult(tool_name="checklist", ok=True, content=f"ran: {invocation.arguments['text']}")
+
+
+class _Crash(BaseException):
+    """Simulates the process dying: the runner does not catch it."""
 
 
 class UnmeteredProvider:
@@ -406,3 +411,29 @@ def test_eval_fixture_budgets_are_validated(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="max_total_tokens must be an integer >= 0"):
         load_scenario(path)
+
+
+def test_a_crash_while_recording_an_after_call_stop_never_lets_resume_finish_above_the_cap(
+    event_log: SQLiteEventLog, monkeypatch: MonkeyPatch
+) -> None:
+    """The call that crossed the limit answered DONE; dying while stopping must not turn that into a success."""
+
+    insert = SQLiteEventLog._insert
+
+    def die_while_stopping(
+        log: SQLiteEventLog, run_id: str, state: RunState, event_type: EventType, payload: dict[str, Any]
+    ) -> EventRecord:
+        if state is RunState.USAGE_LIMIT_EXCEEDED:
+            raise _Crash
+        return insert(log, run_id, state, event_type, payload)
+
+    monkeypatch.setattr(SQLiteEventLog, "_insert", die_while_stopping)
+    with pytest.raises(_Crash):
+        _runner(event_log, limits=UsageLimits(max_total_tokens=150)).run(GOAL, run_id="r")
+    monkeypatch.setattr(SQLiteEventLog, "_insert", insert)
+
+    resumed = _runner(event_log).resume("r")
+
+    assert resumed.state is RunState.USAGE_LIMIT_EXCEEDED
+    assert resumed.usage is not None and resumed.usage.total_tokens is not None and resumed.usage.total_tokens > 150
+    assert _of(event_log, "r", EventType.RUN_COMPLETED) == []
