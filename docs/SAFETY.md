@@ -198,7 +198,8 @@ Set `MULTIBOT_CANCEL_FILE=/path/to/cancel`. If that file exists before the next 
 - Every keyword is checked when the schema is loaded; an unsupported keyword (such as `format`, `not`, or `if`) is an
   error, so the run never reports an answer as valid while silently ignoring one of its constraints.
 - Schemas are bounded: at most 256 KiB on disk and 64 KiB of compact JSON, 32 levels of nesting, 2,000 subschemas,
-  and no `$ref`/`allOf` cycle that never reaches a property or item.
+  at most 10,000 subschemas applied to one value through shared references, and no `$ref`/`allOf` cycle that never
+  reaches a property or item. One answer gets at most 500,000 validation steps.
 - `pattern` uses Python's `re`, which backtracks and has no timeout. Patterns are capped at 256 characters,
   backreferences and repeated groups whose content can vary in length (`(a+)+`, `(a|ab)*`) are refused, and strings
   longer than 4,096 characters are not matched (they are reported as invalid). Several adjacent overlapping
@@ -209,7 +210,10 @@ Set `MULTIBOT_CANCEL_FILE=/path/to/cancel`. If that file exists before the next 
   errors back to the model, at most 20 per answer.
 - Validation errors quote short previews of the answer, so they are content: `trace` exports them only with
   `--include-content` (redacted), and the `run_failed` reason of an `output_invalid` run never quotes the answer.
-  `--output-file` writes atomically (temporary file plus rename) and only for a validated output. See the
+  `--output-file` writes atomically (temporary file plus rename), only for a validated output, and never over the
+  event log or its `-wal`/`-shm`/`-journal` files. Each check is recorded in one transaction with its checkpoint or
+  the run's end, and `resume` verifies a finished run's recorded output (digests and schema) before publishing it.
+  See the
   [Structured Output Guide](guides/STRUCTURED_OUTPUT_GUIDE.md#safety).
 
 ## Provider Credentials

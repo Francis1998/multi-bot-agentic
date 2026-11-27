@@ -23,7 +23,11 @@
   `report` (per-run `output`), `history` (`output invalid` outcomes), `trace` (output span events and attributes,
   `error.type` `output_invalid`, Mermaid notes), and `eval` (`output_schema`, `expected_output` with `exact` or
   `subset` matching, `output_score`, `mean_output_score`) show it. `scripts/check.sh` smoke-tests a validated
-  output file and the exit code 4.
+  output file and the exit code 4. Review hardening: `--output-file` may not name the event log or its SQLite files,
+  shared references are bounded (10,000 subschemas per value, 500,000 validation steps per answer), out-of-range
+  numbers and unpaired surrogates are invalid answers, each check is recorded atomically with its checkpoint or
+  the run's end, `resume` verifies a recorded output before publishing it, and `report`/`trace` count only checks
+  against the run's own schema.
 - Human-in-the-loop interrupts: a run pauses durably when the decision engine selects a tool that needs approval,
   and a human approves, edits, or rejects the call from the CLI before the run resumes exactly where it stopped
   (`docs/guides/HITL_INTERRUPTS_GUIDE.md`, demo `assets/demo/hitl-interrupts.gif`). `run`, `fork`, and `resume`

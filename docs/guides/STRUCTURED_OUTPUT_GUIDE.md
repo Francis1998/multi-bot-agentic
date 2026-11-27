@@ -205,6 +205,8 @@ Error paths name the offending value: `$` is the document, `$.items[2].price` a 
 | Compact schema size | 64 KiB | `the output schema is N bytes in compact form; the limit is 65536` |
 | Schema nesting | 32 levels | `schema #/...: nesting exceeds 32 levels` |
 | Subschemas | 2,000 | `the schema has more than 2000 subschemas` |
+| Subschemas one value is checked against through `allOf`/`anyOf`/`oneOf`/`$ref` | 10,000 | `schema #/$defs/d14: its allOf/anyOf/oneOf/$ref references expand to more than 10000 subschemas for one value` |
+| Validation steps per answer (shared references can multiply them) | 500,000 | a validation error: `validation stopped after 500000 steps: ...; simplify the schema` |
 | `pattern` length | 256 characters | `the pattern is N characters long; the limit is 256` |
 | `pattern` shapes | no backreferences, no repeated group whose content varies in length | `the pattern repeats a group whose content varies in length (such as (a+)+ or (a\|ab)*)...` |
 | String checked by `pattern` | 4,096 characters | a validation error: `is N characters long, too long to check against pattern ...` |
@@ -232,7 +234,8 @@ Error paths name the offending value: `$` is the document, `$.items[2].price` a 
   answers are checked). It needs `--output-schema`.
 - `--output-file PATH`: where the validated output is written when the run succeeds: indented JSON with sorted
   keys, written to a temporary file next to `PATH` and renamed over it. It is never written for a failed run. It
-  needs `--output-schema`, and `PATH` must not be a directory.
+  needs `--output-schema`, and `PATH` must not be a directory, the event log, or one of the files SQLite keeps
+  next to it (`-wal`, `-shm`, `-journal`).
 
 The printed result gains `output` (the validated document) and `output_attempts` (which answer validated) on
 success, `output_errors` (the errors of the last answer) for `output_invalid`, and `output_file` when the file was
@@ -248,8 +251,10 @@ written:
 
 `resume` enforces the contract recorded when the run started (there is no `--output-schema` on `resume`) and counts
 the failed answers the run already used. `--output-file` writes the validated output when the resumed run succeeds,
-and also re-exports the recorded output of a run that already finished. A run without a schema is refused:
-`error: run plain has no output schema, so --output-file has nothing to write`.
+and also re-exports the recorded output of a run that already finished. That recorded output is verified first,
+offline and without writing anything: the contract must match its digest, the document its `output_sha256`, and the
+document must still validate, so a document or schema changed in the event log is reported instead of published.
+A run without a schema is refused: `error: run plain has no output schema, so --output-file has nothing to write`.
 
 ### `fork --output-schema PATH --output-retries N --output-file PATH`
 
@@ -268,6 +273,8 @@ inherited from the source count against the fork's rounds only when the schema i
 | `error: output schema s.json is not valid JSON: duplicate object key "type"` | The file is not strict JSON |
 | `error: output schema s.json: schema #/properties/when: unsupported keyword "format"; ...` | A keyword outside the [supported subset](#supported-schema-keywords) |
 | `error: --output-file out is a directory; name a file` | `--output-file` names a directory |
+| `error: --output-file data/runs.sqlite is the event log or one of its SQLite files; choose another path` | `--output-file` would replace the event log (or its `-wal`, `-shm`, `-journal` file) |
+| `error: cannot use the recorded outcome of run demo: the recorded final output does not match its sha256 digest; ...` | `resume` of a finished run whose recorded output or schema was changed in the event log |
 | `error: run plain has no output schema, so --output-file needs --output-schema PATH` | `fork --output-file` of a run without a schema |
 | `error: run plain has no output schema; give the fork one (CLI: --output-schema PATH)` | `fork --output-retries` of a run without a schema |
 
@@ -465,14 +472,18 @@ leave two steps per correction round you want to allow. See [Configuration](../C
 - **Bot handoffs and MCP tools.** The contract belongs to the run, not to a bot: every bot's model calls see the same
   schema, and tool results (including MCP results) are observations the final answer can use.
 - **Trace export.** `trace` adds a `multi_bot_agentic.output.validation` span event per checked answer (`valid`,
-  `attempt`, `error_count`, `retry`, `bytes`; the errors only with `--include-content`, redacted) and root span
-  attributes `multi_bot_agentic.output.schema_sha256`, `.attempts`, and `.valid`. An `output_invalid` run's root span
+  `attempt`, `schema_sha256`, `error_count`, `retry`, `bytes`; the errors only with `--include-content`, redacted)
+  and root span attributes `multi_bot_agentic.output.schema_sha256`, `.attempts`, and `.valid`, which count only
+  checks against the run's own schema (a fork's inherited checks against a schema it replaced keep their events). An `output_invalid` run's root span
   has status error with `error.type` `output_invalid`; Mermaid diagrams show `output invalid (attempt 1, 1 error)` and
   `output valid (attempt 2)` notes.
 - **Replay and report.** `replay --format text` shows `attempt=1/3 errors=1 retry=true first="..."` and
   `attempt=2 source=answer bytes=300 sha256=...`; `report` adds an `output` object per run with a schema.
 
 ## Event Reference
+
+Each check is written in one transaction with what follows from it: `output_validation_failed` with its correction
+`checkpoint`, or the check (`final_output` / `output_validation_failed`) with the `state_transition` and terminal event.
 
 | Event | State | Payload |
 | --- | --- | --- |
@@ -495,8 +506,14 @@ leave two steps per correction round you want to allow. See [Configuration](../C
   schemas as trusted operator input: never load one from an untrusted source.
 - Validation errors can quote short previews of the answer, so they are content. They stay in the event log;
   `trace` exports them only with `--include-content`, redacted, and the `run_failed` reason never quotes the answer.
+- Bounded work: one value is checked against at most 10,000 subschemas through shared references (refused when
+  loading), and one answer gets at most 500,000 validation steps, so a small schema cannot stall a run.
 - The correction observation repeats only the errors, never the schema, so a large schema is not sent twice.
-- `--output-file` is written atomically, only for a validated output, and never to a directory.
+- Crash-safe records: each check is written in one transaction with its correction checkpoint, or with the state
+  transition and terminal event, so a crash never costs a correction round or records an output twice.
+- `--output-file` is written atomically, only for a validated output, and never to a directory or over the event
+  log and its SQLite files. A finished run's recorded output is verified (digests and schema) before `resume`
+  publishes it.
 
 See also [Safety](../SAFETY.md#structured-output-schemas).
 
@@ -529,7 +546,8 @@ See also [Safety](../SAFETY.md#structured-output-schemas).
 | `no JSON document found` on every attempt | The model answers prose. Ask for JSON in the goal too, or use `--output-retries 3` |
 | `the answer has 2 ```json blocks` | The model returned alternatives; the correction round asks for exactly one |
 | `$.x: additional property is not allowed (allowed: ...)` | The model invented a field; the error lists the allowed names, so the next round usually fixes it |
-| `resume` fails with `does not match its sha256 digest` | The recorded schema was edited in the event log; fork the run with `--output-schema` instead of editing it |
+| `resume` fails with `does not match its sha256 digest` | The recorded schema or final output was edited in the event log; fork the run with `--output-schema` instead of editing it |
+| `validation stopped after 500000 steps` or `references expand to more than 10000 subschemas` | Shared `$ref`/`allOf` references multiply the work; flatten the schema (define each constraint once) |
 | `--output-file` was not written | It is written only for a validated output; check the exit code (4 means `output_invalid`) |
 
 ## FAQ

@@ -200,6 +200,8 @@ invalid, no more -> output_validation_failed {retry: false, stop} -> output_inva
   schemas are bounded in size, nesting, and subschema count, `$ref` stays inside the schema, and `pattern` is
   checked for catastrophic-backtracking shapes.
 - The answer is the whole text after `DONE:` or one fenced `json` block; anything else is an error.
+- Each check is one transaction with its consequence (the correction checkpoint, or the transition and terminal
+  event), so a crash never counts a check twice; `resume` verifies a finished run's recorded output before using it.
 - Every model request of the run carries the schema (`ModelRequest.output_schema`), and adapters append it to the
   prompt; the provider output bound rises from 2,000 to 16,000 characters for such runs.
 - `resume` reads the contract from `run_created` and counts the run's earlier failed answers. A fork's
