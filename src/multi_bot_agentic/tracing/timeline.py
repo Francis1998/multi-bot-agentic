@@ -9,7 +9,7 @@ Parsing is pure: it never calls a provider or a tool and never touches the event
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Final, TypeAlias, TypeGuard
 
@@ -499,8 +499,29 @@ class _TimelineBuilder:
                     request_id=_optional_str(payload.get("interrupt_id")),
                 )
             )
+            self._apply_edited_arguments(event)
         elif event.event_type in TERMINAL_EVENT_STATES:
             self._on_terminal(event)
+
+    def _apply_edited_arguments(self, event: EventRecord) -> None:
+        """Make the paused decision carry an approver's edited arguments (the ones the resumed call runs with).
+
+        The decision keeps its identity and rationale; only its payload changes, so traces export the
+        executed arguments rather than the model's original request.
+        """
+
+        payload = event.payload
+        arguments = payload.get("arguments")
+        pending = self.pending_decision
+        if (
+            payload.get("decision") == "approved"
+            and payload.get("args_edited") is True
+            and isinstance(arguments, dict)
+            and pending is not None
+            and pending.action == "call_tool"
+            and pending.target == payload.get("tool")
+        ):
+            self.pending_decision = replace(pending, payload=dict(arguments))
 
     def _on_transition(self, event: EventRecord) -> None:
         """Track step boundaries and detect resumes (a fresh state machine after a checkpoint, or a
