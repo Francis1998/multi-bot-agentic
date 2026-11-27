@@ -18,8 +18,15 @@
   model re-plans (new rule `approval.rejected-needs-replan`). Double decisions, unknown or expired interrupts,
   resuming before a decision (exit 3), and concurrent resumes are refused with clean errors; checks and appends
   run in one SQLite write transaction (`SQLiteEventLog.append_guarded`), and a crashed resume never re-executes the
-  call. The cancellation file and step budget are checked before acting. The policy is recorded in `run_created`
-  and checkpoints, kept by `resume`, and inherited by forks (`fork --dry-run` shows `needs_approval`). `replay`,
+  call. A pause (transition, `interrupt`, checkpoint) is written in one transaction, and a resume that adds
+  `--require-approval` entries records the merged policy in a checkpoint before it advances, so a crash never drops a
+  gate. `run`, `resume`, and `fork` hold the run's lease (new `run_leases` table, `SQLiteEventLog.acquire_lease`)
+  while they continue it: a second process is refused with `RunBusyError` and exit code 75 before it writes
+  anything, and the lease of a process that died on the same host is taken over. `approvals show` prints the
+  original and edited arguments complete (redacted, never truncated), `approve --args null` is refused, and `trace`
+  exports the edited arguments an approved call ran with. The cancellation file and step budget are checked before
+  acting. The policy is recorded in `run_created` and checkpoints, kept by `resume`, and inherited by forks
+  (`fork --dry-run` shows `needs_approval`). `replay`,
   `report` (per-run `interrupts`), `history` (`approval pending`, `rejected by human`), and `trace` (approval span
   events, Mermaid arrows to a human approver, `awaiting_approval` run state) show interrupts and decisions.
   `scripts/check.sh` smoke-tests interrupt, approve, and resume. The file-backed `HitlApprovalGate` API is

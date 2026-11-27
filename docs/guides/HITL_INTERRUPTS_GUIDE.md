@@ -120,8 +120,10 @@ stateDiagram-v2
 
 1. **Pause.** After the decision engine picks `call_tool` for a tool that matches the approval policy, the runner
    first checks that the tool is allowlisted and registered (a human is never asked to approve a call that could
-   not run). It then transitions `deciding -> awaiting_approval`, appends an `interrupt` event, writes a checkpoint
-   that carries the interrupt id, and returns. The tool is not executed and the provider is not called.
+   not run). It then transitions `deciding -> awaiting_approval`, appends an `interrupt` event, and writes a
+   checkpoint that carries the interrupt id and the run's approval policy, all in one SQLite transaction (a process
+   that dies while pausing leaves the whole pause or none of it), and returns. The tool is not executed and the
+   provider is not called.
 2. **Decide.** `approve` / `reject` appends one `approval_decision` event. The check ("is the run still paused at
    this interrupt, and undecided?") and the append run in a single SQLite `BEGIN IMMEDIATE` transaction, so the
    first decision wins even when two people decide at the same moment.
@@ -141,15 +143,30 @@ A crashed resume never causes a second execution: if an earlier resume already c
 the tool result, the next `resume` continues from the **recorded** result; if it claimed it but recorded no result,
 `resume` refuses (fork an earlier step to retry deliberately).
 
+**One process continues a run at a time.** `run`, `resume`, and `fork` hold the run's *lease* (a row in the event
+log's `run_leases` table, taken in one `BEGIN IMMEDIATE` transaction) while they continue a run, and release it when
+they return, also when the run pauses. A second `resume` while another process still continues the run (for example
+one that recorded the approved call's result but not yet its checkpoint) is refused before it reads or writes
+anything, with exit code 75: retry once that process has finished. So a recorded result is only ever recovered from
+a resume that has ended. A lease left by a process that died (same host, its pid no longer exists) is taken over,
+so a killed run can still be resumed. A lease from another host or a pid that is still running is never taken
+over; if its process is really gone (for example the log was copied from another machine after a crash), fork the
+run to continue it under a new id.
+
+**Gates added at resume survive a crash.** `resume --require-approval` can add entries to the recorded policy.
+Before the resume advances, it records the merged policy in a checkpoint for the same step (inside the atomic claim
+when it resumes an approved call), so if the process dies before the run's next checkpoint, the next `resume`
+restores the stricter policy even without the flag.
+
 ## CLI Reference
 
 ### Exit codes
 
-| Command | 0 | 2 | 3 |
-| --- | --- | --- | --- |
-| `run`, `fork`, `resume` | the run succeeded | failed, cancelled, or a usage error | **the run is paused awaiting approval** (or `resume` was refused because nobody decided yet) |
-| `approve`, `reject` | decision recorded | refused; nothing was written | - |
-| `approvals list`, `approvals show` | printed | missing/unreadable log, unknown run or interrupt | - |
+| Command | 0 | 2 | 3 | 75 |
+| --- | --- | --- | --- | --- |
+| `run`, `fork`, `resume` | the run succeeded | failed, cancelled, or a usage error | **the run is paused awaiting approval** (or `resume` was refused because nobody decided yet) | another process is continuing this run; nothing was written, retry once it has finished |
+| `approve`, `reject` | decision recorded | refused; nothing was written | - | - |
+| `approvals list`, `approvals show` | printed | missing/unreadable log, unknown run or interrupt | - | - |
 
 ### `--require-approval TOOL[,TOOL]` (on `run`, `fork`, `resume`)
 
@@ -160,7 +177,8 @@ Examples: `--require-approval checklist`, `--require-approval 'mcp__*'`, `--requ
   or MCP with `--mcp-config`), otherwise the command exits 2 before writing anything, so a typo can never disable a
   gate. An empty value (`--require-approval ""`) is refused too.
 - The policy is recorded in the run (`run_created` and every checkpoint). `resume` always keeps the recorded
-  policy; `--require-approval` on `resume` can only add tools.
+  policy; `--require-approval` on `resume` can only add tools, and the additions are recorded in a checkpoint before
+  the resume advances, so they stay in force after a crash.
 - `fork` inherits the source run's policy at the fork point; `--require-approval` adds to it. `fork --dry-run`
   prints the resulting `require_approval` and whether the fork's first decision `needs_approval`.
 
@@ -181,7 +199,9 @@ argument preview, marked `(edited)` when the approver changed it.
 multi-bot-agentic approvals show INTERRUPT_ID --event-log PATH [--run-id RUN] [--format text|json]
 ```
 
-Shows one interrupt: run, step, bot, tool, the call's arguments (redacted, not truncated), when it was requested,
+Shows one interrupt: run, step, bot, tool, the call's complete arguments and, when the approver edited them, the
+edited ones (both redacted with the trace scrubbers but never truncated, so a long value can be read in full before
+approving), when it was requested,
 the rule and rationale that selected the call, and the decision (who, when, reason, edited arguments) and progress
 (`waiting for resume`, `resumed`, `executed`). `--run-id` is needed only if the same id is paused in two runs, which
 cannot happen through the CLI (forks copy only decided interrupts).
@@ -197,7 +217,7 @@ multi-bot-agentic approve [INTERRUPT_ID] --event-log PATH [--run-id RUN] [--by N
 | `INTERRUPT_ID` | the interrupt `--run-id` is paused at | which call to approve |
 | `--by` | the OS user (`getpass.getuser()`) | who decides, recorded verbatim |
 | `--reason` | none | why, recorded (at most 1,000 characters) |
-| `--args` | keep the model's arguments | replacement arguments: a JSON object with **exactly the same keys, each with the same JSON type** as the requested call (`TOOL:` directives always produce `{"text": "..."}`), at most 65,536 characters of JSON; identical arguments are not recorded as an edit |
+| `--args` | keep the model's arguments | replacement arguments: a JSON object with **exactly the same keys, each with the same JSON type** as the requested call (`TOOL:` directives always produce `{"text": "..."}`), at most 65,536 characters of JSON; identical arguments are not recorded as an edit; JSON `null` or any other non-object is refused (omit `--args` to keep the arguments) |
 
 ### `reject`
 
@@ -216,9 +236,10 @@ multi-bot-agentic reject [INTERRUPT_ID] --event-log PATH [--run-id RUN] [--by NA
 | Run not paused / finished / cancelled while paused | `run demo is not paused at an interrupt (state succeeded)` or `interrupt int-... expired: run ... is no longer paused at it` | 2 |
 | `resume` before a decision | `run demo is awaiting approval of interrupt int-... (checklist in step 2); nothing was resumed` | 3 |
 | `resume` of a finished run | `note: run demo already finished (succeeded); nothing to resume` (the recorded outcome is printed, as before) | 0/2 |
-| Two resumes race for one approved call | `interrupt int-... of run demo was resumed by another process; nothing was executed here` | 2 |
+| Another process is still continuing the run (for example a second `resume`) | `run demo is being continued by process 4242 on build-host (since ...); nothing was written. Resume again after it finishes; ...` | 75 |
+| An earlier resume claimed the approved call and died before recording its result | `interrupt int-... of run demo was already resumed and recorded no result; an approved call is never executed twice. ...` | 2 |
 | Approved tool missing in this resume (for example no `--mcp-config`) | `cannot run approved interrupt int-...: tool is not registered: ...; resume with the same tools as the run` | 2 |
-| Bad `--args` | `--args is not valid JSON: ...`, `--args must be a JSON object, got array`, `--args must have exactly the keys of the requested call (text), got query`, `--args key 'text' must be a string, got number` | 2 |
+| Bad `--args` | `--args is not valid JSON: ...`, `--args must be a JSON object, got null (omit --args to keep the arguments)`, `--args must be a JSON object, got array`, `--args must have exactly the keys of the requested call (text), got query`, `--args key 'text' must be a string, got number` | 2 |
 | Policy typo | `require-approval matches no registered tool: chekclist (...)` | 2 |
 | `reject` without `--reason` | argparse usage error | 2 |
 
@@ -266,7 +287,9 @@ log.close()
 | `approval.InterruptRecord` (`status`, `paused`, `executed`, `effective_arguments`, `to_dict()`), `InterruptDecision` | typed views |
 | `approval.validate_edited_arguments(original, edited)`, `argument_preview(arguments)` | edit validation and redacted previews |
 | `approval.ApprovalError`, `AwaitingApprovalError` | refusals (`AgentRunner.resume` raises `AwaitingApprovalError` for an undecided interrupt) |
-| `event_log.SQLiteEventLog.append_guarded(run_id, entries, guard)` | check-and-append in one write transaction |
+| `runner.RunBusyError` (`holder`) | `run`, `resume`, or `fork` refused because another live process holds the run's lease (a `ResumeError`; nothing was written) |
+| `event_log.SQLiteEventLog.append_guarded(run_id, entries, guard=None)` | check-and-append in one write transaction (all-or-nothing also without a guard) |
+| `event_log.SQLiteEventLog.acquire_lease(run_id)`, `release_lease(lease)`, `event_log.RunLease` | the single-owner lease the runner holds while it continues a run |
 | `approval.HitlApprovalGate`, `record_approval` | the unchanged file-backed gate ([guide](HITL_APPROVAL_GATE_GUIDE.md)) |
 
 ## Worked Examples
@@ -393,7 +416,8 @@ forkable steps: 0, 1, 2, 3
 `multi_bot_agentic.approval` span events (`approval.tool`, `approval.status` = `pending` then `approved` /
 `rejected`, `approval.request_id` = the interrupt id) and a `multi_bot_agentic.run.resumed` event. A paused run's
 root span has `multi_bot_agentic.run.state = awaiting_approval`, and its diagram ends with
-`Note over O: paused: awaiting human approval`.
+`Note over O: paused: awaiting human approval`. For an approval with edited arguments, the tool call's span and
+arrow carry the arguments the call actually ran with (the approver's edit), not the model's original request.
 
 ```text
     O->>A1: call_llm (observe.no-model-output)
@@ -419,7 +443,10 @@ There is no approval timeout: a paused run waits in the log until someone decide
 ## Interaction With Other Features
 
 - **Checkpoint resume.** An interrupt checkpoint is a normal `checkpoint` event with `state: awaiting_approval`,
-  `interrupt_id`, and the paused step's observations. Runs without interrupts resume exactly as before.
+  `interrupt_id`, and the paused step's observations. Runs without interrupts resume exactly as before. A resume
+  that adds `--require-approval` entries first writes one more checkpoint for the same step with the merged policy;
+  `history` shows it as the same step (and drops a decision the dead process made before it), `trace` as one more
+  checkpoint.
 - **Forks.** A fork inherits the approval policy at its fork point and can add to it. The paused step itself is not
   forkable (`history` shows `approval pending` and `fork: no`); earlier steps are. Forking a step after a decided
   interrupt copies the interrupt and its decision (they show up as decided in the fork).
@@ -439,7 +466,7 @@ There is no approval timeout: a paused run waits in the log until someone decide
 | `run_created` | `created` | adds `require_approval` (sorted list) when a policy is set |
 | `state_transition` | `awaiting_approval` | `{"from": "deciding", "to": "awaiting_approval"}` |
 | `interrupt` | `awaiting_approval` | `interrupt_id`, `kind: "tool_approval"`, `tool`, `bot`, `step` (paused step, `history` numbering), `arguments` (the requested call), `arguments_preview` (redacted, at most 240 characters), `rationale` (rule, observations used, rejected actions, explanation), `policy` (matching entries) |
-| `checkpoint` | `awaiting_approval` | the usual checkpoint fields (`step` = paused zero-based step) plus `interrupt_id` and `require_approval` |
+| `checkpoint` | `awaiting_approval` | the usual checkpoint fields (`step` = paused zero-based step) plus `interrupt_id` and `require_approval`; written in one transaction with the `interrupt` and its `state_transition`. A resume that adds gates restates its starting checkpoint (same step, merged `require_approval`) before it advances |
 | `approval_decision` | `awaiting_approval` | `interrupt_id`, `decision` (`approved`/`rejected`), `tool`, `step`, `decided_by`, `decided_at`, `reason`, `args_edited`, and when edited `arguments` + `arguments_preview` |
 | `action_requested` / `action_result` | `acting` | as usual, plus `interrupt_id` for the approved call |
 | `observation` | `observing` | a rejection: `source: "approval:<tool>"`, metadata `interrupt_id`, `decision`, `tool`, `reason` |
@@ -447,17 +474,20 @@ There is no approval timeout: a paused run waits in the log until someone decide
 ## Safety
 
 - **Fail closed.** A gated call never runs without an `approved` decision. A typo in the policy is refused, an
-  undecided resume is refused, and a missing or disallowed tool at resume is refused without writing.
-- **Exactly once.** The approved call's `action_requested` append is an atomic claim, so concurrent resumes cannot
-  both run it, and a resume after a crash continues from the recorded result instead of running the call again.
+  undecided resume is refused, and a missing or disallowed tool at resume is refused without writing. A pause is
+  written atomically and gates added at resume are recorded before the run advances, so a crash never drops a gate.
+- **Exactly once.** The approved call's `action_requested` append is an atomic claim, and only the holder of the
+  run's lease continues the run, so a concurrent resume is refused (exit 75) instead of continuing it too, and a
+  resume after a crash continues from the recorded result instead of running the call again.
 - **Decisions are immutable.** The first `approval_decision` wins (atomic check-and-append); later ones are refused.
   Nothing is overwritten, so the log is a complete audit trail of who decided what and when.
 - **Edits keep the call's shape.** `--args` may change values, not keys or types, and is size-limited. The tool still
   validates its input, and the safety allowlist and bot scope are checked again at resume.
 - **Redaction.** Argument previews (`interrupt` events, `approvals list`, `report`) and `approvals show` pass through
   the same scrubbers as `trace` (sensitive keys such as `api_key`/`password`/`token`, emails, phone numbers,
-  `Bearer`/`sk-` tokens). The full arguments stay in the event log, like every `decision` event before this
-  feature, so protect the log file like any audit log.
+  `Bearer`/`sk-` tokens); `approvals show` applies them without the trace length cap, so nothing is truncated. The
+  full arguments stay in the event log, like every `decision` event before this feature, so protect the log file
+  like any audit log.
 - **The model sees only what you write in `--reason`.** A rejection reason becomes part of the model's prompt; do not
   put secrets in it. `decided_by` is recorded in the log and `report` but never sent to a provider or exported by
   `trace`.
@@ -475,6 +505,9 @@ There is no approval timeout: a paused run waits in the log until someone decide
 - Decisions are not authenticated; `--by` is self-declared.
 - A tool that crashes mid-call during an approved resume leaves the run refusing to resume (by design, never
   re-executed); fork an earlier step to retry deliberately.
+- A lease is taken over automatically only when its holder ran on this host and its pid no longer exists. A lease
+  from another host, or on Windows (no safe pid probe), is never taken over, and a pid reused by an unrelated
+  process looks alive; in those rare cases fork the run to continue it. There is no heartbeat or lease timeout.
 - No web UI. `approvals list --format json` is the integration point for a review inbox or chat bot.
 
 ## Troubleshooting
@@ -484,6 +517,7 @@ There is no approval timeout: a paused run waits in the log until someone decide
 | `run` exits 3 in CI | The run is paused by design. Treat exit 3 as "needs a human": decide with `approve`/`reject`, then `resume` |
 | `error: require-approval matches no registered tool: ...` | Typo, or an MCP tool without `--mcp-config`. List tools in [docs/TOOLS.md](../TOOLS.md) or with `mcp-tools` |
 | `error: run demo is awaiting approval of interrupt ...` | Decide first, then `resume` |
+| `error: run demo is being continued by process ...` (exit 75) | Another `run`, `resume`, or `fork` is continuing this run. Wait for it to finish and retry; if that process is gone and the lease is from another host, fork the run |
 | `error: interrupt ... was already approved by ...` | Decisions are final. To try another decision, fork a step before the interrupt |
 | `error: interrupt ... expired` | The run moved on without a decision (for example it was cancelled while paused) |
 | `error: cannot run approved interrupt ...: tool is not registered` | Resume with the same tools as the run, for example the same `--mcp-config` |
@@ -494,7 +528,8 @@ There is no approval timeout: a paused run waits in the log until someone decide
 ## FAQ
 
 **Does the paused run hold a process, thread, or lock?** No. The run is just events in SQLite; `run` exits with
-code 3 and any process can decide or resume later, even on another machine with a copy of the log.
+code 3 (releasing the run's lease) and any process can decide or resume later, even on another machine with a copy
+of the log.
 
 **Is the provider called again on resume?** Not for the paused step. The approved call runs directly; after a
 rejection the next step asks the model to re-plan, which is one provider call.

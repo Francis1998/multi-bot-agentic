@@ -207,7 +207,8 @@ disabling the gate. The policy is recorded in the run: `resume` keeps it (the fl
 inherits it. Decide with `approve [ID] [--args JSON] [--by NAME] [--reason TEXT]` or `reject [ID] --reason TEXT`
 (`--run-id RUN` instead of an id decides the interrupt that run is paused at), inspect with `approvals list` /
 `approvals show`, and continue with `resume`. Exit codes of `run`, `fork`, and `resume`: 0 succeeded, 2 failed,
-cancelled, or refused, 3 paused awaiting approval. See the
+cancelled, or refused, 3 paused awaiting approval, 75 another process is continuing the run (nothing was written;
+retry once it has finished). See the
 [Human-in-the-Loop Interrupts Guide](guides/HITL_INTERRUPTS_GUIDE.md).
 
 ## Notes
