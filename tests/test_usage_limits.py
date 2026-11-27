@@ -46,6 +46,23 @@ class _Crash(BaseException):
     """Simulates the process dying: the runner does not catch it."""
 
 
+class CrashingProvider:
+    """Fake provider that dies (like a killed process) on its ``crash_on``-th call."""
+
+    provider_name = "fake"
+
+    def __init__(self, crash_on: int) -> None:
+        self.inner = FakeLLMAdapter()
+        self.crash_on = crash_on
+        self.calls = 0
+
+    def complete(self, request: ModelRequest, timeout_seconds: float) -> ModelOutput:
+        self.calls += 1
+        if self.calls >= self.crash_on:
+            raise _Crash
+        return self.inner.complete(request, timeout_seconds)
+
+
 class UnmeteredProvider:
     """Provider that reports no usage, like Claude Code's plain-text output."""
 
@@ -437,3 +454,20 @@ def test_a_crash_while_recording_an_after_call_stop_never_lets_resume_finish_abo
     assert resumed.state is RunState.USAGE_LIMIT_EXCEEDED
     assert resumed.usage is not None and resumed.usage.total_tokens is not None and resumed.usage.total_tokens > 150
     assert _of(event_log, "r", EventType.RUN_COMPLETED) == []
+
+
+def test_a_limit_set_at_resume_survives_a_crash_before_the_next_checkpoint(event_log: SQLiteEventLog) -> None:
+    """A resume that tightens the budget records it before it advances, like a grown approval policy."""
+
+    with pytest.raises(_Crash):
+        _runner(event_log, provider=CrashingProvider(crash_on=2)).run(GOAL, run_id="r")
+    with pytest.raises(_Crash):
+        _runner(event_log, limits=UsageLimits(max_total_tokens=100), provider=CrashingProvider(crash_on=1)).resume("r")
+
+    resumed = _runner(event_log).resume("r")
+
+    assert resumed.state is RunState.USAGE_LIMIT_EXCEEDED
+    assert resumed.usage_limit is not None and (resumed.usage_limit.limit, resumed.usage_limit.cap) == (
+        "max_total_tokens",
+        100,
+    )
