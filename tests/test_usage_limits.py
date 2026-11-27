@@ -26,6 +26,7 @@ from multi_bot_agentic.llm.openai import OpenAIAdapter
 from multi_bot_agentic.models import EventType, ModelOutput, ModelRequest, RunState, ToolInvocation, ToolResult, Usage
 from multi_bot_agentic.runner import AgentRunner
 from multi_bot_agentic.safety import SafetyPolicy
+from multi_bot_agentic.structured_output import OutputContract, OutputSchema
 from multi_bot_agentic.tracing import build_trace, render_mermaid
 from multi_bot_agentic.usage import UsageLimits, UsageTotals
 
@@ -611,3 +612,26 @@ def test_a_limit_is_unmeasurable_only_when_its_own_counter_is_unreported(
         assert result.state is RunState.USAGE_LIMIT_EXCEEDED
         assert result.usage_limit is not None
         assert (result.usage_limit.limit, result.usage_limit.value) == (stopped_by, None)
+
+
+def test_structured_output_runs_report_usage_and_correction_rounds_count_against_limits(
+    event_log: SQLiteEventLog,
+) -> None:
+    """A correction round is a model call: a limit can stop it, and validated or invalid runs report usage."""
+
+    schema = OutputSchema.from_value(
+        {"type": "object", "required": ["title"], "properties": {"title": {"type": "string"}}}
+    )
+    stopped = _runner(event_log, limits=UsageLimits(max_requests=2)).run(
+        GOAL, run_id="r", output_contract=OutputContract(schema=schema, retries=2)
+    )
+    assert stopped.state is RunState.USAGE_LIMIT_EXCEEDED
+    assert stopped.usage_limit is not None and stopped.usage_limit.phase == "before_call"
+
+    done = _runner(event_log, limits=UsageLimits(max_requests=3)).resume("r")
+    assert done.state is RunState.SUCCEEDED and done.output is not None
+    assert done.usage is not None and done.usage.requests == 3
+
+    invalid = _runner(event_log).run(GOAL, run_id="strict", output_contract=OutputContract(schema=schema, retries=0))
+    assert invalid.state is RunState.OUTPUT_INVALID
+    assert invalid.usage is not None and invalid.usage.requests == 2
