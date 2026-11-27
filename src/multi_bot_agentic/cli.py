@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import getpass
 import json
+import os
 import sqlite3
 import sys
 from collections.abc import Iterable, Mapping, Sequence
@@ -85,6 +86,8 @@ OUTPUT_RETRIES_HELP = (
     f"correction rounds after an invalid final answer (0-{MAX_OUTPUT_RETRIES}, default {DEFAULT_OUTPUT_RETRIES})"
 )
 OUTPUT_FILE_HELP = "write the validated output to this file (atomically, as indented JSON) when the run succeeds"
+# The event log and the files SQLite keeps next to it; --output-file may name none of them.
+SQLITE_FILE_SUFFIXES = ("", "-wal", "-shm", "-journal")
 
 
 class McpStartupError(RuntimeError):
@@ -346,15 +349,27 @@ def _retries(value: str) -> int:
     return number
 
 
-def check_output_file(path: Path | None) -> None:
-    """Refuse an ``--output-file`` that names a directory before anything runs.
+def check_output_file(path: Path | None, event_log: Path) -> None:
+    """Refuse an ``--output-file`` that names a directory or the event log before anything runs.
+
+    Writing the output over the SQLite database, or over one of the files SQLite keeps next to it
+    (``-wal``, ``-shm``, ``-journal``), would destroy the run history that recorded it.
 
     Raises:
-        ValueError: If ``path`` is an existing directory.
+        ValueError: If ``path`` is an existing directory, the event log, or one of its SQLite files.
     """
 
-    if path is not None and path.is_dir():
+    if path is None:
+        return
+    if path.is_dir():
         raise ValueError(f"--output-file {path} is a directory; name a file")
+    target = path.resolve()
+    for suffix in SQLITE_FILE_SUFFIXES:
+        database_file = Path(f"{event_log}{suffix}")
+        if target == database_file.resolve() or (
+            path.exists() and database_file.exists() and os.path.samefile(path, database_file)
+        ):
+            raise ValueError(f"--output-file {path} is the event log or one of its SQLite files; choose another path")
 
 
 def output_contract_from_args(args: argparse.Namespace) -> OutputContract | None:
@@ -365,7 +380,6 @@ def output_contract_from_args(args: argparse.Namespace) -> OutputContract | None
         ValueError: If ``--output-retries`` or ``--output-file`` is given without ``--output-schema``.
     """
 
-    check_output_file(args.output_file)
     if args.output_schema is None:
         for flag, value in (("--output-retries", args.output_retries), ("--output-file", args.output_file)):
             if value is not None:
@@ -400,6 +414,11 @@ def run_command(args: argparse.Namespace) -> int:
         max_steps=args.max_steps,
         require_approval=approvals,
     )
+    try:
+        check_output_file(args.output_file, config.event_log)
+    except ValueError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
     if args.run_id and config.event_log.is_file() and _run_recorded(config.event_log, args.run_id):
         print(
             f"error: run {args.run_id} already exists in event log {config.event_log}; "
@@ -660,7 +679,7 @@ def resume_command(args: argparse.Namespace) -> int:
 
     try:
         approvals = approval_flag_values(args.require_approval)
-        check_output_file(args.output_file)
+        check_output_file(args.output_file, args.event_log)
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
@@ -1182,7 +1201,7 @@ def fork_command(args: argparse.Namespace) -> int:
             require_approval=approval_flag_values(args.require_approval),
         )
         bots: dict[str, BotSpec] = load_bot_registry(args.bots) if args.bots is not None else {}
-        check_output_file(args.output_file)
+        check_output_file(args.output_file, path)
         output_schema = OutputSchema.load(args.output_schema) if args.output_schema is not None else None
     except (BotRegistryError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
