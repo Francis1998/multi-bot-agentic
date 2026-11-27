@@ -40,6 +40,9 @@ flowchart LR
     observe --> decide{"Decide<br/>deterministic rules<br/>+ rationale trace"}
     decide -->|call_llm| llm["LLM adapter<br/>GPT-6.2 · Claude 5.5 / Fable 5.2 · Gemini 4 · Kimi K3.1 · fake"]
     decide -->|call_tool| tool["Allowlisted tool<br/>built-in or mcp__server__tool"]
+    decide -->|gated call_tool| human{{"Human approval<br/>approve · edit · reject"}}
+    human -->|approved| tool
+    human -->|rejected| observe
     decide -->|handoff| bot["Bot handoff<br/>scoped tool allowlist"]
     decide -->|finish / fail / cancel| done([Terminal state])
     llm --> observe
@@ -70,6 +73,13 @@ multi-bot-agentic report --event-log data/runs.sqlite --run-id demo
 multi-bot-agentic trace --event-log data/runs.sqlite --run-id demo --format mermaid
 multi-bot-agentic trace --event-log data/runs.sqlite --run-id demo --otlp-endpoint http://localhost:4318/v1/traces
 
+# Human in the loop: pause before a sensitive tool (exit 3), decide, then resume where it stopped
+multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log data/runs.sqlite --run-id gated \
+  --require-approval checklist
+multi-bot-agentic approvals list --event-log data/runs.sqlite
+multi-bot-agentic approve --run-id gated --event-log data/runs.sqlite --by alice   # or: reject --reason "..."
+multi-bot-agentic resume --run-id gated --event-log data/runs.sqlite
+
 # Time travel: list the forkable steps, then branch the run after step 1 with a new goal
 multi-bot-agentic history --event-log data/runs.sqlite --run-id demo
 multi-bot-agentic fork --event-log data/runs.sqlite --run-id demo --at-step 1 --new-run-id demo-rollback \
@@ -92,6 +102,14 @@ the original untouched, and the new run records its lineage
 
 ![Time-travel fork demo: history of a run, a fork with a new goal, a fork of the fork as another bot, refused forks, lineage, and the fork's trace](assets/demo/run-fork.gif)
 
+**Human-in-the-loop interrupts:** `--require-approval TOOL` pauses a run durably before a sensitive tool call
+(state `awaiting_approval`, exit code 3). A human approves, edits the arguments, or rejects with a reason from the
+CLI, and `resume` continues exactly where the run stopped: an approved call runs once, a rejection makes the model
+re-plan. Every decision is in the event log, `report`, and `trace`
+([HITL interrupts guide](docs/guides/HITL_INTERRUPTS_GUIDE.md)).
+
+![HITL interrupts demo: a run pauses before a gated tool, resume is refused until a human decides, an approval with edited arguments runs once, a rejection makes the model re-plan](assets/demo/hitl-interrupts.gif)
+
 ## Feature Map
 
 | Capability | What you get | Code | Docs |
@@ -105,7 +123,7 @@ the original untouched, and the new run records its lineage
 | **MCP tool bridge** | Tools from any MCP server, with a dual-era (2026-07-28 + legacy) stdio client and no dependencies | `mcp/` | [MCP tools](docs/guides/MCP_TOOLS_GUIDE.md) |
 | Provider adapters | GPT-6.2, Claude Code CLI, Gemini 4, Kimi K3.1, and a fake provider, all sending reasoning-safe parameters | `llm/` | [Configuration](docs/CONFIGURATION.md) |
 | Safety controls | Step budgets, timeouts, cancellation file, tool allowlists, prompt bounds | `safety.py` | [Safety](docs/SAFETY.md) |
-| Human-in-the-loop | File-backed approval gate for sensitive tools | `approval.py` | [HITL gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md) |
+| **Human-in-the-loop interrupts** | `--require-approval TOOL[,TOOL]` pauses a run durably before matching tool calls (`awaiting_approval` state, exit 3). `approvals list/show`, `approve [--args JSON]`, and `reject --reason` record who decided what and when; `resume` runs an approved call exactly once or feeds a rejection back so the model re-plans. Shown in `replay`, `report`, `history`, and `trace`. The file-backed gate remains for caller-driven flows | `approval.py`, `runner.py`, `cli.py` | [HITL interrupts](docs/guides/HITL_INTERRUPTS_GUIDE.md), [HITL gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md) |
 | Parallel fan-out | Capped, order-preserving task batches | `fanout.py` | [Fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md) |
 | Tool-call hygiene | Rate limits, PII redaction, result truncation, per-bot permissions | `tool_runner.py`, `observation_redactor.py`, `tool_result_truncator.py`, `tool_permission.py` | [Rate limiter](docs/guides/RATE_LIMITED_TOOL_RUNNER_GUIDE.md) |
 | Offline evaluation | Golden-path fixtures scored on tool sequence and answer | `eval/` | [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md) |
@@ -146,6 +164,7 @@ ignore them. The OpenAI adapter also sends no reasoning effort and no native too
   [Bot handoff](docs/guides/BOT_HANDOFF_GUIDE.md),
   [Checkpoint resume](docs/guides/CHECKPOINT_RESUME_GUIDE.md),
   [Run fork (time travel)](docs/guides/RUN_FORK_GUIDE.md),
+  [Human-in-the-loop interrupts](docs/guides/HITL_INTERRUPTS_GUIDE.md),
   [HITL approval gate](docs/guides/HITL_APPROVAL_GATE_GUIDE.md),
   [Parallel fan-out](docs/guides/PARALLEL_FANOUT_GUIDE.md),
   [Eval harness](docs/guides/EVAL_HARNESS_GUIDE.md),
@@ -176,6 +195,8 @@ These are the problems the project was built for. Each one is explained in
 11. "I want to see agent runs in our tracing backend, not a terminal." `trace` exports OpenTelemetry GenAI spans.
 12. "I want to retry from the middle of a run with another goal, bot, or provider, without re-running the start."
     `fork` branches any recorded step into a new run.
+13. "A person must sign off before the agent deploys, pays, or writes." `--require-approval` pauses the run before
+    the call; `approve`/`reject` and `resume` continue it, with every decision audited.
 
 ## Repository Layout
 
@@ -198,8 +219,8 @@ scripts/check.sh
 
 `scripts/check.sh` runs `ruff check`, `ruff format --check`, `mypy src tests`, `pytest`, and a fake-provider
 smoke run with replay, report, and trace (OTLP/JSON and Mermaid), then lists its steps with `history`, forks it,
-and reports and traces the fork. CI runs the same script on Python 3.10, 3.11, and 3.12. For a richer local demo,
-run `scripts/run_demo.sh`.
+and reports and traces the fork, and finally pauses a run at a human-approval interrupt, approves it, and resumes
+it. CI runs the same script on Python 3.10, 3.11, and 3.12. For a richer local demo, run `scripts/run_demo.sh`.
 
 ## Contributing
 

@@ -9,7 +9,7 @@ Parsing is pure: it never calls a provider or a tool and never touches the event
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Any, Final, TypeAlias, TypeGuard
 
@@ -160,7 +160,8 @@ class Handoff:
 
 @dataclass(frozen=True)
 class Approval:
-    """A human-in-the-loop approval recorded as ``action_result`` with ``kind: approval``.
+    """A human-in-the-loop approval: an ``interrupt`` (``pending``) or ``approval_decision`` event, or an
+    ``action_result`` with ``kind: approval`` written by ``record_approval``.
 
     Attributes:
         seq: Sequence number of the approval event.
@@ -289,6 +290,7 @@ class RunTimeline:
         final_decision: Last ``finish``/``fail``/``cancel`` decision, if any.
         fork: Where this run was forked from, or ``None`` for an original run.
         inherited_through_seq: Sequence number of the last event copied from the parent (0 if not a fork).
+        awaiting_approval: True when the run is paused at a human-approval interrupt.
     """
 
     run_id: str
@@ -304,12 +306,15 @@ class RunTimeline:
     final_decision: DecisionRef | None
     fork: Fork | None = None
     inherited_through_seq: int = 0
+    awaiting_approval: bool = False
 
     @property
     def final_state(self) -> str:
-        """Return the terminal state, or ``unfinished`` when the run has no terminal event."""
+        """Return the terminal state, ``awaiting_approval`` for a paused run, or ``unfinished``."""
 
-        return self.outcome.state if self.outcome is not None else "unfinished"
+        if self.outcome is not None:
+            return self.outcome.state
+        return "awaiting_approval" if self.awaiting_approval else "unfinished"
 
 
 def timestamp_to_unix_nanos(value: str) -> int:
@@ -447,6 +452,7 @@ class _TimelineBuilder:
             final_decision=self.final_decision,
             fork=own,
             inherited_through_seq=own.seq if own is not None else 0,
+            awaiting_approval=self.outcome is None and last.state == "awaiting_approval",
         )
 
     def _consume(self, event: EventRecord) -> None:
@@ -481,15 +487,51 @@ class _TimelineBuilder:
                     active_bot_id=_optional_str(payload.get("active_bot_id")),
                 )
             )
+        elif event.event_type in {"interrupt", "approval_decision"}:
+            status = "pending" if event.event_type == "interrupt" else str(payload.get("decision") or "unknown")
+            self.steps.append(
+                Approval(
+                    seq=event.seq,
+                    at=event.timestamp,
+                    agent=self.active_bot,
+                    tool=str(payload.get("tool") or "unknown"),
+                    status=status,
+                    request_id=_optional_str(payload.get("interrupt_id")),
+                )
+            )
+            self._apply_edited_arguments(event)
         elif event.event_type in TERMINAL_EVENT_STATES:
             self._on_terminal(event)
 
+    def _apply_edited_arguments(self, event: EventRecord) -> None:
+        """Make the paused decision carry an approver's edited arguments (the ones the resumed call runs with).
+
+        The decision keeps its identity and rationale; only its payload changes, so traces export the
+        executed arguments rather than the model's original request.
+        """
+
+        payload = event.payload
+        arguments = payload.get("arguments")
+        pending = self.pending_decision
+        if (
+            payload.get("decision") == "approved"
+            and payload.get("args_edited") is True
+            and isinstance(arguments, dict)
+            and pending is not None
+            and pending.action == "call_tool"
+            and pending.target == payload.get("tool")
+        ):
+            self.pending_decision = replace(pending, payload=dict(arguments))
+
     def _on_transition(self, event: EventRecord) -> None:
-        """Track step boundaries and detect resumes (a fresh state machine after a checkpoint).
+        """Track step boundaries and detect resumes (a fresh state machine after a checkpoint, or a
+        run leaving ``awaiting_approval``).
 
         The first fresh state machine after a fork point starts the fork's own steps, not a resume.
         """
 
+        if event.payload.get("from") == "awaiting_approval":
+            self.steps.append(Resume(seq=event.seq, at=event.timestamp))
         if event.payload.get("to") != "observing":
             return
         self.observations = []

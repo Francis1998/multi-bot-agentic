@@ -4,6 +4,11 @@
 
 File-backed human-in-the-loop approvals for GPT-6 Astra / Claude Opus 5.5 / Gemini 4 Argon / Kimi K3.1 Pro tool calls.
 
+> **Want the runner to pause by itself?** Use [human-in-the-loop interrupts](HITL_INTERRUPTS_GUIDE.md):
+> `run --require-approval TOOL` pauses the run durably before the call (state `awaiting_approval`, exit code 3),
+> `approve` / `reject` record the decision, and `resume` continues exactly where the run stopped. This page covers
+> the lower-level, caller-driven JSON-file gate, which is unchanged.
+
 ## Why
 
 Some tools (deploy, shell, payments) should not execute until an operator says
@@ -50,7 +55,8 @@ if gate.requires_approval("deploy"):
 - Only tools listed in `tools_requiring_approval` can create requests.
 - `resolve(..., PENDING)` is rejected; already-resolved requests cannot flip.
 - Request ids are plain filenames; path traversal characters are rejected.
-- v1 does not auto-wire `AgentRunner`; integrate at the call site when ready.
+- The gate does not wire into `AgentRunner`; integrate it at the call site, or use the runner-integrated
+  [interrupts](HITL_INTERRUPTS_GUIDE.md) instead.
 
 ## Recording Approvals In The Event Log
 

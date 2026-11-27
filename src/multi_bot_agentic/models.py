@@ -14,6 +14,7 @@ class RunState(str, Enum):
     CREATED = "created"
     OBSERVING = "observing"
     DECIDING = "deciding"
+    AWAITING_APPROVAL = "awaiting_approval"
     ACTING = "acting"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
@@ -34,6 +35,8 @@ class EventType(str, Enum):
     RUN_CANCELLED = "run_cancelled"
     CHECKPOINT = "checkpoint"
     RUN_FORKED = "run_forked"
+    INTERRUPT = "interrupt"
+    APPROVAL_DECISION = "approval_decision"
 
 
 DecisionAction = Literal["call_llm", "call_tool", "handoff", "finish", "fail", "cancel"]

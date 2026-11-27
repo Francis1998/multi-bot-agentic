@@ -9,10 +9,17 @@
 - **Timeouts**: each provider call has a timeout.
 - **Cancellation**: a cancellation file can stop a run before the next action.
 - **Tool allowlist**: tools must be registered and allowed by policy.
+- **Human approval for sensitive tools (fail closed)**: `--require-approval TOOL[,TOOL]` /
+  `MULTIBOT_REQUIRE_APPROVAL` pause the run in `awaiting_approval` before any matching call (exit code 3); the tool
+  runs only after an `approve` decision and a `resume`, exactly once. Rejections are fed back to the model instead of
+  running. See [Human-In-The-Loop Interrupts](#human-in-the-loop-interrupts).
 - **Rationale traces**: every decision records matched rule IDs, inputs used, and rejected actions.
 - **One run per run id**: `run` refuses a `--run-id` the event log already holds (exit code 2, nothing written), so
   a repeated command never mixes a second run into a recorded one that `history`, `report`, `fork`, or `resume`
   read.
+- **One process per run**: `run`, `resume`, and `fork` hold the run's lease in the event log while they continue it,
+  so a second process (for example a concurrent `resume`) is refused with exit code 75 and nothing written instead
+  of repeating provider calls or tool side effects. A lease left by a process that died on this host is taken over.
 - **Trace export (opt-in egress)**: `trace` reads the event log only and sends nothing unless `--otlp-endpoint`
   is given. Prompts, outputs, and tool payloads are excluded unless `--include-content` is passed, and everything
   exported is redacted with `ObservationRedactor` and `ToolArgumentSanitizer`. The push refuses redirects and
@@ -160,6 +167,30 @@ Unknown tools are rejected by `SafetyPolicy.validate_tool()`.
 
 Set `MULTIBOT_CANCEL_FILE=/path/to/cancel`. If that file exists before the next action, the run transitions to `cancelled` and persists a `run_cancelled` event.
 
+## Human-In-The-Loop Interrupts
+
+- A gated call is never executed without an `approved` decision. The tool is checked against the allowlist and
+  registry before a human is asked, and again (with the restored bot scope) before it runs.
+- Policy entries that match no registered tool are refused, so a typo cannot silently disable a gate. The policy is
+  recorded in the run; `resume` and `fork` can add to it, never remove from it. A pause (transition, `interrupt`,
+  checkpoint) is written in one transaction, and a resume that adds entries records the merged policy before it
+  advances, so a process that dies at any point never leaves a run that resumes without a gate it had.
+- Decisions are append-only `approval_decision` events (who, when, decision, reason, whether arguments were
+  edited). The first decision wins: check and append are one SQLite write transaction, so a second decision is
+  refused even when two approvers race.
+- An approved call runs exactly once: its `action_requested` append is an atomic claim, only the holder of the run's
+  lease continues the run (a concurrent resume exits 75 without writing), and a resume after a crash continues from
+  the recorded tool result or refuses; it never runs the call twice.
+- Edited arguments (`approve --args`) must be a JSON object (an explicit `null` is refused) that keeps the call's
+  keys and JSON types, and are size-limited. The rejection reason is shown to the model, so keep secrets out of it.
+- The cancellation file and the step budget are checked at resume before anything runs. A paused run holds no
+  process or lock and has no timeout.
+- Argument previews and `approvals show` are redacted with the trace scrubbers (`approvals show` without truncation,
+  so the approver sees every non-secret value); the full arguments stay in the event log, as for every decision.
+  Decisions are not authenticated (`--by` is self-declared): restrict who can write the
+  event log if approvals must be attributable. See the
+  [Human-in-the-Loop Interrupts Guide](guides/HITL_INTERRUPTS_GUIDE.md#safety).
+
 ## Provider Credentials
 
 Credentials are read from environment variables and are never written to the event log. Event payloads store normalized provider output text and metadata, not secret values.
@@ -200,3 +231,5 @@ This repo does not expose a network service or remote terminal control. If adapt
 Durable checkpoint resume for ODA runs is available via `resume`. A finished run (succeeded, failed, or
 cancelled) is never re-executed: `resume` returns its recorded outcome and appends no events, so tools
 with side effects are not repeated and removing the cancellation file does not reopen a cancelled run.
+A run paused awaiting approval resumes only after a decision (otherwise `resume` exits 3 and writes nothing),
+unless the cancellation file exists, which cancels it without running the gated call.

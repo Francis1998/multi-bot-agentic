@@ -84,6 +84,21 @@ class DeterministicDecisionEngine:
                     explanation="A bot handoff occurred, so the provider must continue under the new bot scope.",
                 ),
             )
+        if latest_observation.source.startswith("approval:"):
+            return Decision(
+                action="call_llm",
+                target=self.provider_name,
+                payload={"reason": "a human rejected the requested tool call"},
+                rationale=RationaleTrace(
+                    rule_id="approval.rejected-needs-replan",
+                    observations_used=(latest_observation.observation_id,),
+                    rejected_actions=("call_tool", "finish", "handoff"),
+                    explanation=(
+                        "A human rejected the requested tool call, so the provider must re-plan "
+                        "with the rejection reason instead of running it."
+                    ),
+                ),
+            )
 
         latest_model_output = _latest_observation_by_prefix(observations, "llm:")
         if latest_model_output is None:

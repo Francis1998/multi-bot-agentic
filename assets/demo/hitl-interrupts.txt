@@ -1,0 +1,58 @@
+$ multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log demo-output/hitl.sqlite --run-id demo --require-approval checklist | jq -c "{state, steps, interrupt: .interrupt | {interrupt_id, tool, step}}"; echo "exit code: ${PIPESTATUS[0]}"
+note: run demo paused in step 2: checklist needs approval (interrupt int-ec8ce00f1f5b)
+note: decide: approve|reject int-ec8ce00f1f5b --event-log demo-output/hitl.sqlite; then: resume --run-id demo --event-log demo-output/hitl.sqlite
+{"state":"awaiting_approval","steps":1,"interrupt":{"interrupt_id":"int-ec8ce00f1f5b","tool":"checklist","step":2}}
+exit code: 3
+$ multi-bot-agentic approvals list --event-log demo-output/hitl.sqlite
+interrupt         run   step  tool       bot  status   decided by  arguments
+int-ec8ce00f1f5b  demo     2  checklist  -    pending  -           {"text": "Create a launch checklist"}
+$ multi-bot-agentic resume --run-id demo --event-log demo-output/hitl.sqlite; echo "exit code: $?"
+error: run demo is awaiting approval of interrupt int-ec8ce00f1f5b (checklist in step 2); nothing was resumed
+note: run demo paused in step 2: checklist needs approval (interrupt int-ec8ce00f1f5b)
+note: decide: approve|reject int-ec8ce00f1f5b --event-log demo-output/hitl.sqlite; then: resume --run-id demo --event-log demo-output/hitl.sqlite
+exit code: 3
+$ multi-bot-agentic approve --run-id demo --event-log demo-output/hitl.sqlite --by alice --args '{"text": "Create a launch checklist with a rollback plan"}' | jq -c "{status, decision: .decision | {decided_by, args_edited}}"
+note: approved interrupt int-ec8ce00f1f5b; continue the run with 'resume --run-id demo --event-log demo-output/hitl.sqlite'
+{"status":"approved","decision":{"decided_by":"alice","args_edited":true}}
+$ multi-bot-agentic resume --run-id demo --event-log demo-output/hitl.sqlite | jq -c "{state, answer, steps}"
+{"state":"succeeded","answer":"synthesized plan from 3 observations","steps":4}
+$ multi-bot-agentic replay --event-log demo-output/hitl.sqlite --run-id demo --format text | sed -n "14,21p"
+014 deciding   decision action=call_tool rule=model.requested-tool
+015 awaiting_approval state_transition
+016 awaiting_approval interrupt id=int-ec8ce00f1f5b tool=checklist step=2
+017 awaiting_approval checkpoint
+018 awaiting_approval approval_decision id=int-ec8ce00f1f5b decision=approved by=alice args_edited=true
+019 acting     state_transition
+020 acting     action_requested
+021 acting     action_result kind=tool target=checklist
+$ multi-bot-agentic replay --event-log demo-output/hitl.sqlite --run-id demo --event-type action_requested | jq -c "select(.payload.interrupt_id) | .payload.payload"
+{"text":"Create a launch checklist with a rollback plan"}
+$ multi-bot-agentic reject int-ec8ce00f1f5b --event-log demo-output/hitl.sqlite --reason "too late"
+error: interrupt int-ec8ce00f1f5b was already approved by alice at 2026-11-25T04:33:37.669142+00:00; a decision cannot be changed
+$ multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log demo-output/hitl.sqlite --run-id rej --require-approval checklist > /dev/null
+note: run rej paused in step 2: checklist needs approval (interrupt int-9b047616bf54)
+note: decide: approve|reject int-9b047616bf54 --event-log demo-output/hitl.sqlite; then: resume --run-id rej --event-log demo-output/hitl.sqlite
+$ multi-bot-agentic reject --run-id rej --event-log demo-output/hitl.sqlite --by bob --reason "use the release template" | jq -c "{status, reason: .decision.reason}"
+note: rejected interrupt int-9b047616bf54; continue the run with 'resume --run-id rej --event-log demo-output/hitl.sqlite'
+{"status":"rejected","reason":"use the release template"}
+$ multi-bot-agentic resume --run-id rej --event-log demo-output/hitl.sqlite | jq -c "{state, answer}"
+{"state":"succeeded","answer":"re-planned without checklist after a human rejected it (use the release template)"}
+$ multi-bot-agentic history --event-log demo-output/hitl.sqlite --run-id rej
+run rej: succeeded after 4 steps (provider fake)
+goal: Create a launch checklist
+step  bot  action     target     rule                            outcome            fork
+   0  -    start      -          -                               -                  yes
+   1  -    call_llm   fake       observe.no-model-output         TOOL checklist     yes
+   2  -    call_tool  checklist  model.requested-tool            rejected by human  yes
+   3  -    call_llm   fake       approval.rejected-needs-replan  DONE               yes
+   4  -    finish     -          model.done-or-budget            succeeded          no
+forkable steps: 0, 1, 2, 3
+$ multi-bot-agentic trace --event-log demo-output/hitl.sqlite --run-id rej --format mermaid | sed -n "6,13p"
+    Note over O: run rej (provider fake)
+    O->>A1: call_llm (observe.no-model-output)
+    A1-->>O: TOOL
+    O->>H: approve checklist?
+    H--xO: rejected
+    Note over O: resumed from checkpoint
+    O->>A1: call_llm (approval.rejected-needs-replan)
+    A1-->>O: DONE

@@ -28,6 +28,7 @@ import hashlib
 import json
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
+from fnmatch import fnmatchcase
 from typing import Any, Final
 
 from multi_bot_agentic.bots import BotSpec
@@ -159,7 +160,8 @@ class RunHistory:
         run_id: Run identifier.
         goal: Goal the run worked on (a fork's own goal), if recorded.
         provider: Provider the run used (a fork's own provider), if recorded.
-        final_state: ``succeeded``, ``failed``, ``cancelled``, or ``unfinished``.
+        final_state: ``succeeded``, ``failed``, ``cancelled``, ``awaiting_approval`` (paused at a
+            human-approval interrupt), or ``unfinished``.
         steps: Step 0 (the start) and every step that made a decision, in order.
         lineage: Where the run was forked from, or ``None`` for an original run.
     """
@@ -211,6 +213,7 @@ class ForkPoint:
             first ``run_created`` event for step 0 when there is no step-0 checkpoint.
         prefix: Source events a fork inherits: every event up to and including ``event``,
             except ancestor ``run_forked`` events whose inherited events would be cut off.
+        require_approval: Approval policy recorded at that point (tool names or patterns).
     """
 
     run_id: str
@@ -220,6 +223,7 @@ class ForkPoint:
     bot: str | None
     event: EventRecord
     prefix: tuple[EventRecord, ...]
+    require_approval: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -240,6 +244,8 @@ class ForkPlan:
         handoff: ``action_result`` payload recording the bot switch, or ``None`` when the bot is unchanged.
         lineage: Payload of the fork's ``run_forked`` event.
         next_decision: Decision the fork's first own step makes (the engine is deterministic).
+        require_approval: Approval policy of the fork: the source's at the fork point plus
+            ``policy.require_approval`` (a fork never drops an approval requirement).
     """
 
     source_run_id: str
@@ -255,6 +261,7 @@ class ForkPlan:
     handoff: Mapping[str, Any] | None
     lineage: Mapping[str, Any]
     next_decision: Decision
+    require_approval: tuple[str, ...] = ()
 
     @property
     def at_step(self) -> int:
@@ -272,7 +279,12 @@ class ForkPlan:
         """Return the plan as a JSON-serializable dictionary (``fork --dry-run`` output)."""
 
         decision = self.next_decision
-        return {
+        next_decision: dict[str, Any] = {
+            "action": decision.action,
+            "target": decision.target,
+            "rule_id": decision.rationale.rule_id,
+        }
+        payload: dict[str, Any] = {
             "dry_run": True,
             "source_run_id": self.source_run_id,
             "new_run_id": self.new_run_id,
@@ -290,12 +302,16 @@ class ForkPlan:
             "observations": [
                 {"source": observation.source, "content": observation.content} for observation in self.observations
             ],
-            "next_decision": {
-                "action": decision.action,
-                "target": decision.target,
-                "rule_id": decision.rationale.rule_id,
-            },
+            "next_decision": next_decision,
         }
+        if self.require_approval:
+            payload["require_approval"] = list(self.require_approval)
+            next_decision["needs_approval"] = (
+                decision.action == "call_tool"
+                and decision.target is not None
+                and any(fnmatchcase(decision.target, pattern) for pattern in self.require_approval)
+            )
+        return payload
 
 
 def event_digest(event: EventRecord) -> str:
@@ -489,6 +505,9 @@ def plan_fork(
       under the new scope. A tool request the model made under the old scope is not executed.
     * ``policy.max_steps`` is the fork's whole budget; it must leave at least one step after
       ``at_step``. The goal passes ``policy.validate_goal``.
+    * The approval policy recorded at the fork point stays in force; ``policy.require_approval``
+      can only add to it. A step paused at an approval interrupt is not forkable until it is
+      resumed; earlier steps are.
 
     Args:
         event_log: Event log holding the source run; the fork is written to the same log.
@@ -621,6 +640,7 @@ def plan_fork(
         handoff=handoff,
         lineage=lineage,
         next_decision=next_decision,
+        require_approval=tuple(sorted(set(point.require_approval) | policy.require_approval)),
     )
 
 
@@ -660,6 +680,11 @@ class _Scan:
         if record is None or not record.forkable:
             if record is not None and record.outcome in _TERMINAL_STATES.values():
                 reason = f"step {step} ended run {run_id} ({record.action} -> {record.outcome})"
+            elif history.final_state == RunState.AWAITING_APPROVAL.value and step == history.last_step:
+                reason = (
+                    f"step {step} of run {run_id} is paused awaiting human approval; "
+                    "approve or reject it and resume the run, or fork an earlier step"
+                )
             else:
                 reason = f"step {step} of run {run_id} never recorded a result (the run was interrupted during it)"
             raise ForkError(f"{reason}; forkable steps: {forkable}")
@@ -681,6 +706,7 @@ class _Scan:
             bot=snapshot.active_bot_id,
             event=event,
             prefix=self._prefix(index),
+            require_approval=snapshot.require_approval,
         )
 
     def _start_point(self) -> ForkPoint:
@@ -698,6 +724,7 @@ class _Scan:
                 if candidate.payload.get("source") == "user" and candidate.payload.get("content") == goal:
                     observation = observation_from_dict(candidate.payload)
                 break
+        policy = event.payload.get("require_approval")
         return ForkPoint(
             run_id=self.history.run_id,
             step=0,
@@ -706,6 +733,7 @@ class _Scan:
             bot=self.start_bot,
             event=event,
             prefix=self._prefix(self.start_index),
+            require_approval=tuple(str(item) for item in policy) if isinstance(policy, list) else (),
         )
 
     def _prefix(self, cut: int) -> tuple[EventRecord, ...]:
@@ -750,11 +778,25 @@ def _scan(events: Sequence[EventRecord]) -> _Scan:
     pending: _PendingStep | None = None
     last_closed = 0
     final_state = "unfinished"
+    paused = False
     goal: str | None = None
     provider: str | None = None
     for index, event in enumerate(ordered):
         payload = event.payload
         kind = event.event_type
+        if kind == EventType.CHECKPOINT.value and payload.get("interrupt_id"):
+            # Paused awaiting a human decision: the step stays open and is not a fork point.
+            paused = True
+            continue
+        if kind == EventType.INTERRUPT.value:
+            if pending is not None:
+                pending.outcome = "approval pending"
+            continue
+        if kind == EventType.APPROVAL_DECISION.value:
+            if pending is not None and payload.get("decision") in {"approved", "rejected"}:
+                pending.outcome = f"{payload.get('decision')} by human"
+            continue
+        paused = False
         if kind == EventType.RUN_CREATED.value and index == start_index:
             goal = _optional_str(payload.get("goal"))
             provider = _optional_str(payload.get("provider"))
@@ -779,8 +821,10 @@ def _scan(events: Sequence[EventRecord]) -> _Scan:
                 continue
             active_bot = _optional_str(payload.get("active_bot_id"))
             checkpoints[step] = index
-            if pending is None and step in steps:
-                # A checkpoint with no new decision (a fork's starting state) replaces the state after that step.
+            if step in steps and (pending is None or step <= last_closed):
+                # A checkpoint with no new step (a fork's starting state, or a resume restating the state
+                # with a stricter approval policy) replaces the state after that step; a decision the run
+                # made before it died is dropped, as the resumed step decides again.
                 steps[step] = replace(steps[step], forkable=True, event_seq=event.seq)
             else:
                 closed = pending or _PendingStep(bot=None, action=None, target=None, rule_id=None, outcome="checkpoint")
@@ -796,7 +840,10 @@ def _scan(events: Sequence[EventRecord]) -> _Scan:
                 )
                 pending = None
     if pending is not None:
-        pending.outcome = "interrupted"
+        if paused:
+            final_state = RunState.AWAITING_APPROVAL.value
+        else:
+            pending.outcome = "interrupted"
         step = last_closed + 1
         steps[step] = _history_step(step, pending, forkable=False, lineage=lineage, event_seq=None)
 

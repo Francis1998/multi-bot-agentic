@@ -2,16 +2,30 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
+from fnmatch import fnmatchcase
 from pathlib import Path
+from typing import Any
 from uuid import uuid4
 
+from multi_bot_agentic.approval import (
+    ApprovalDecision,
+    ApprovalError,
+    AwaitingApprovalError,
+    InterruptRecord,
+    collect_interrupts,
+    find_interrupt,
+    interrupt_payload,
+    new_interrupt_id,
+    rejection_observation,
+)
 from multi_bot_agentic.bots import BotSpec
-from multi_bot_agentic.checkpoint import load_latest_checkpoint, save_checkpoint
+from multi_bot_agentic.checkpoint import CheckpointSnapshot, load_latest_checkpoint, save_checkpoint
 from multi_bot_agentic.decision import DeterministicDecisionEngine
-from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
-from multi_bot_agentic.fork import plan_fork
+from multi_bot_agentic.event_log import EventRecord, RunLease, SQLiteEventLog
+from multi_bot_agentic.fork import ForkPlan, plan_fork
 from multi_bot_agentic.lifecycle import InvalidTransitionError, RunStateMachine
 from multi_bot_agentic.llm.base import LLMAdapter
 from multi_bot_agentic.models import (
@@ -19,8 +33,10 @@ from multi_bot_agentic.models import (
     EventType,
     ModelRequest,
     Observation,
+    RationaleTrace,
     RunState,
     ToolInvocation,
+    ToolResult,
     ToolSpec,
 )
 from multi_bot_agentic.safety import SafetyError, SafetyPolicy
@@ -38,6 +54,7 @@ class RunResult:
         steps: Number of loop steps the run took.
         already_finished: True when ``resume`` found the run already finished and returned
             its recorded outcome without executing anything.
+        interrupt: The interrupt the run paused at when ``state`` is ``awaiting_approval``.
     """
 
     run_id: str
@@ -45,6 +62,7 @@ class RunResult:
     answer: str
     steps: int
     already_finished: bool = False
+    interrupt: InterruptRecord | None = None
 
 
 class ResumeError(ValueError):
@@ -56,6 +74,26 @@ class ResumeError(ValueError):
 
 class RunNotFoundError(ResumeError):
     """Raised when the event log holds no events for the run id to resume."""
+
+
+class RunBusyError(ResumeError):
+    """Raised when another live process is continuing the run; nothing is written.
+
+    ``run``, ``resume`` and ``fork`` hold the run's lease in the event log while they continue it, so
+    two processes never both append a run's next steps (duplicating provider calls or tool side effects).
+
+    Attributes:
+        holder: Lease of the process that is continuing the run.
+    """
+
+    def __init__(self, run_id: str, holder: RunLease) -> None:
+        super().__init__(
+            f"run {run_id} is being continued by process {holder.pid} on {holder.host} "
+            f"(since {holder.acquired_at}); nothing was written. Resume again after it finishes; if that "
+            "process is gone but still holds the run (for example it ran on another host), fork the run "
+            "to continue it under a new id"
+        )
+        self.holder = holder
 
 
 class RunExistsError(ValueError):
@@ -149,6 +187,7 @@ class AgentRunner:
             )
         self._initial_bot_id = self.active_bot_id
         self._initial_allowed_tools = self.safety_policy.allowed_tools
+        self._initial_require_approval = self.safety_policy.require_approval
         self.decision_engine = DeterministicDecisionEngine(
             provider_name=provider.provider_name,
             bots=self.bots or None,
@@ -171,6 +210,7 @@ class AgentRunner:
 
         Raises:
             RunExistsError: If the event log already holds events for ``run_id``.
+            RunBusyError: If another live process holds ``run_id``'s lease; nothing was written.
         """
 
         self.safety_policy.validate_goal(goal)
@@ -183,13 +223,12 @@ class AgentRunner:
         selected_run_id = run_id or str(uuid4())
         state_machine = RunStateMachine()
         observations: tuple[Observation, ...] = (Observation(source="user", content=goal),)
-        self.event_log.append(
-            selected_run_id,
-            state_machine.state,
-            EventType.RUN_CREATED,
-            {"goal": goal, "provider": self.provider.provider_name},
-        )
-        return self._run_loop(selected_run_id, goal, observations, state_machine, start_step=0)
+        created: dict[str, Any] = {"goal": goal, "provider": self.provider.provider_name}
+        if self.safety_policy.require_approval:
+            created["require_approval"] = sorted(self.safety_policy.require_approval)
+        with self._sole_owner(selected_run_id):
+            self.event_log.append(selected_run_id, state_machine.state, EventType.RUN_CREATED, created)
+            return self._run_loop(selected_run_id, goal, observations, state_machine, start_step=0)
 
     def resume(self, run_id: str) -> RunResult:
         """Resume an interrupted run from its latest checkpoint.
@@ -202,7 +241,20 @@ class AgentRunner:
         The bot that was active when the checkpoint was written is restored, so a
         resumed run keeps that bot's tool scope instead of the constructor's. A
         checkpoint without a bot resumes with the constructor's scope, never with one
-        left behind by an earlier run on this runner.
+        left behind by an earlier run on this runner. The approval policy recorded in the
+        checkpoint stays in force (this runner's ``require_approval`` can only add to it); a resume
+        that adds entries records the merged policy in a checkpoint before it advances, so a crash
+        never drops them.
+
+        A run paused at a human-approval interrupt continues exactly where it stopped: an
+        approved call runs once, with the approver's edited arguments if any, and a rejected
+        call is fed back to the model as an ``approval:<tool>`` observation so it re-plans.
+        With the cancellation file present, the paused run is cancelled instead.
+
+        Only one process continues a run at a time: ``resume`` holds the run's lease in the event
+        log while it reads and continues the run, and a second ``resume`` (or one racing the ``run``
+        or ``fork`` still executing it) is refused without writing. A lease left behind by a process
+        that died is taken over, so a crashed run can still be resumed.
 
         Args:
             run_id: Existing run identifier.
@@ -212,9 +264,22 @@ class AgentRunner:
 
         Raises:
             RunNotFoundError: If the event log holds no events for ``run_id``.
+            RunBusyError: If another live process is continuing the run. Nothing was written.
+            AwaitingApprovalError: If the run is paused at an interrupt nobody decided yet.
+            ApprovalError: If an earlier resume claimed the approved call but recorded no result, or the
+                approved tool is not registered or allowed in this resume. Nothing was written.
             ResumeError: If an unfinished run has no usable checkpoint or the
                 checkpoint's active bot is not registered on this runner.
         """
+
+        recorded = recorded_outcome(self.event_log, run_id)
+        if recorded is not None:
+            return recorded
+        with self._sole_owner(run_id):
+            return self._resume_owned(run_id)
+
+    def _resume_owned(self, run_id: str) -> RunResult:
+        """Continue ``run_id`` while holding its lease; everything is read again under the lease."""
 
         recorded = recorded_outcome(self.event_log, run_id)
         if recorded is not None:
@@ -241,6 +306,14 @@ class AgentRunner:
                 )
             self.active_bot_id = bot.bot_id
             self.safety_policy = replace(self.safety_policy, allowed_tools=bot.allowed_tools)
+        if snapshot.require_approval:
+            recorded_policy = self.safety_policy.require_approval | frozenset(snapshot.require_approval)
+            self.safety_policy = replace(self.safety_policy, require_approval=recorded_policy)
+        if snapshot.interrupt_id is not None:
+            return self._resume_interrupt(run_id, snapshot)
+        restated = self._with_merged_policy(snapshot)
+        if restated is not None:
+            self.event_log.append(run_id, restated.state, EventType.CHECKPOINT, restated.to_payload())
         return self._run_loop(
             run_id,
             snapshot.goal,
@@ -283,8 +356,10 @@ class AgentRunner:
 
         Raises:
             ForkError: If the fork is not allowed; nothing has been written.
+            RunBusyError: If another live process holds ``new_run_id``'s lease; nothing has been written.
         """
 
+        self._restore_initial_scope()
         plan = plan_fork(
             self.event_log,
             source_run_id,
@@ -296,6 +371,12 @@ class AgentRunner:
             goal=goal,
             bot_id=bot_id,
         )
+        with self._sole_owner(new_run_id):
+            return self._start_fork(new_run_id, plan)
+
+    def _start_fork(self, new_run_id: str, plan: ForkPlan) -> RunResult:
+        """Write a planned fork's first events and run it, while holding its lease."""
+
         self.event_log.append(new_run_id, RunState.CREATED, EventType.RUN_FORKED, dict(plan.lineage))
         for event in plan.point.prefix:
             self.event_log.append(new_run_id, RunState(event.state), EventType(event.event_type), event.payload)
@@ -310,9 +391,12 @@ class AgentRunner:
             state=RunState.CREATED,
             observations=plan.observations,
             active_bot_id=plan.bot,
+            require_approval=plan.require_approval,
         )
         self.active_bot_id = plan.bot
-        self.safety_policy = replace(self.safety_policy, allowed_tools=plan.allowed_tools)
+        self.safety_policy = replace(
+            self.safety_policy, allowed_tools=plan.allowed_tools, require_approval=frozenset(plan.require_approval)
+        )
         return self._run_loop(new_run_id, plan.goal, plan.observations, RunStateMachine(), start_step=plan.at_step)
 
     def _run_loop(
@@ -377,6 +461,11 @@ class AgentRunner:
                         str(decision.payload.get("reason", "failed")),
                     )
 
+                if decision.action == "call_tool":
+                    matched = self._approval_patterns(decision)
+                    if matched:
+                        return self._interrupt(run_id, state_machine, goal, observations, decision, step, matched)
+
                 self._transition(run_id, state_machine, RunState.ACTING)
                 if decision.action == "handoff":
                     new_observation = self._handoff(run_id, state_machine.state, decision)
@@ -391,6 +480,7 @@ class AgentRunner:
                     state=state_machine.state,
                     observations=observations,
                     active_bot_id=self.active_bot_id,
+                    require_approval=self.safety_policy.require_approval,
                 )
 
         except (InvalidTransitionError, SafetyError, OSError, RuntimeError, ValueError) as error:
@@ -398,16 +488,295 @@ class AgentRunner:
 
         return self._fail(run_id, state_machine, self.safety_policy.max_steps, "step budget exhausted")
 
+    @contextmanager
+    def _sole_owner(self, run_id: str) -> Iterator[None]:
+        """Hold ``run_id``'s lease while continuing it, so no other process continues it at the same time.
+
+        Raises:
+            RunBusyError: If a live process holds the lease; nothing was written.
+        """
+
+        lease, acquired = self.event_log.acquire_lease(run_id)
+        if not acquired:
+            raise RunBusyError(run_id, lease)
+        try:
+            yield
+        finally:
+            self.event_log.release_lease(lease)
+
     def _restore_initial_scope(self) -> None:
         """Return to the constructor's active bot and tool allowlist before a run starts or resumes.
 
-        Handoffs and ``resume`` change ``active_bot_id`` and the live allowlist for the
-        current run only. Only ``allowed_tools`` is reset, so other policy fields keep
-        their current values.
+        Handoffs and ``resume`` change ``active_bot_id``, the live allowlist, and the approval
+        policy for the current run only. Only ``allowed_tools`` and ``require_approval`` are
+        reset, so other policy fields keep their current values.
         """
 
         self.active_bot_id = self._initial_bot_id
-        self.safety_policy = replace(self.safety_policy, allowed_tools=self._initial_allowed_tools)
+        self.safety_policy = replace(
+            self.safety_policy,
+            allowed_tools=self._initial_allowed_tools,
+            require_approval=self._initial_require_approval,
+        )
+
+    def _approval_patterns(self, decision: Decision) -> tuple[str, ...]:
+        """Return the ``require_approval`` entries that match a ``call_tool`` decision's tool."""
+
+        if decision.target is None:
+            return ()
+        return tuple(
+            sorted(pattern for pattern in self.safety_policy.require_approval if fnmatchcase(decision.target, pattern))
+        )
+
+    def _interrupt(
+        self,
+        run_id: str,
+        state_machine: RunStateMachine,
+        goal: str,
+        observations: tuple[Observation, ...],
+        decision: Decision,
+        step: int,
+        matched: tuple[str, ...],
+    ) -> RunResult:
+        """Pause the run before a tool call that needs a human decision.
+
+        The tool is checked against the allowlist and registry first, so a human is never asked
+        to approve a call that could not run. Nothing is executed: the run moves to
+        ``awaiting_approval``, records an ``interrupt`` event, and checkpoints the paused step, all in
+        one transaction, so a process that dies while pausing never leaves an interrupt without the
+        checkpoint (and approval policy) that resume restores.
+
+        Args:
+            run_id: Run identifier.
+            state_machine: Run state machine (``deciding``).
+            goal: User goal.
+            observations: Observations the decision used.
+            decision: The gated ``call_tool`` decision.
+            step: Zero-based loop step being paused.
+            matched: Policy entries that matched the tool.
+
+        Returns:
+            Result in state ``awaiting_approval`` with the interrupt.
+        """
+
+        self._tool_for(decision)
+        previous, current = state_machine.transition_to(RunState.AWAITING_APPROVAL)
+        interrupt_id = new_interrupt_id()
+        checkpoint = CheckpointSnapshot(
+            run_id=run_id,
+            goal=goal,
+            step=step,
+            state=current,
+            observations=observations,
+            active_bot_id=self.active_bot_id,
+            require_approval=tuple(sorted(self.safety_policy.require_approval)),
+            interrupt_id=interrupt_id,
+        )
+        self.event_log.append_guarded(
+            run_id,
+            [
+                (current, EventType.STATE_TRANSITION, {"from": previous.value, "to": current.value}),
+                (
+                    current,
+                    EventType.INTERRUPT,
+                    interrupt_payload(
+                        decision, interrupt_id=interrupt_id, step=step + 1, bot=self.active_bot_id, policy=matched
+                    ),
+                ),
+                (current, EventType.CHECKPOINT, checkpoint.to_payload()),
+            ],
+        )
+        return RunResult(
+            run_id=run_id,
+            state=state_machine.state,
+            answer=f"paused: {decision.target} needs human approval (interrupt {interrupt_id})",
+            steps=step,
+            interrupt=find_interrupt(self.event_log, interrupt_id, run_id=run_id),
+        )
+
+    def _resume_interrupt(self, run_id: str, snapshot: CheckpointSnapshot) -> RunResult:
+        """Continue a run from the interrupt its latest checkpoint paused at.
+
+        The caller holds the run's lease, and the first write is also an atomic claim (it fails if
+        anything happened since the pause), so the approved call never runs twice. A resume that finds
+        an earlier claim (by a resume that has since stopped) never executes the call again: it
+        continues from the recorded tool result, or refuses when no result was recorded.
+
+        Args:
+            run_id: Run identifier.
+            snapshot: The interrupt checkpoint (``step`` is the paused zero-based step).
+
+        Returns:
+            Final (or next paused) run result.
+        """
+
+        events = self.event_log.list_events(run_id)
+        record = next(
+            (item for item in collect_interrupts(events) if item.interrupt_id == snapshot.interrupt_id),
+            None,
+        )
+        if record is None:
+            raise ApprovalError(f"checkpoint of run {run_id} references unknown interrupt {snapshot.interrupt_id}")
+        step = snapshot.step
+        if not record.paused:
+            return self._recover_interrupt(run_id, snapshot, record, events)
+        state_machine = RunStateMachine(RunState.AWAITING_APPROVAL)
+        if self.safety_policy.is_cancelled():
+            return self._cancel(run_id, state_machine, step, "cancellation requested")
+        if record.decision is None:
+            raise AwaitingApprovalError(record)
+        try:
+            self.safety_policy.validate_step(step)
+        except SafetyError as error:
+            return self._fail(run_id, state_machine, step, str(error))
+
+        if record.decision.decision is ApprovalDecision.REJECTED:
+            observations = (*snapshot.observations, rejection_observation(record))
+            checkpoint = self._next_checkpoint(snapshot, state_machine.state, observations)
+            self._claim(run_id, record, [(state_machine.state, EventType.CHECKPOINT, checkpoint.to_payload())])
+            return self._run_loop(run_id, snapshot.goal, observations, state_machine, start_step=step + 1)
+
+        interrupt_event = next(event for event in events if event.seq == record.seq)
+        decision = Decision(
+            action="call_tool",
+            target=record.tool,
+            payload=dict(record.effective_arguments),
+            rationale=_rationale(interrupt_event.payload.get("rationale")),
+        )
+        try:
+            self._tool_for(decision)
+        except (SafetyError, ValueError) as error:
+            raise ApprovalError(
+                f"cannot run approved interrupt {record.interrupt_id}: {error}; "
+                "resume with the same tools as the run (for example the same --mcp-config)"
+            ) from error
+        previous, current = state_machine.transition_to(RunState.ACTING)
+        requested = decision.to_dict() | {"interrupt_id": record.interrupt_id}
+        restated = self._with_merged_policy(snapshot)
+        policy = [] if restated is None else [(restated.state, EventType.CHECKPOINT, restated.to_payload())]
+        self._claim(
+            run_id,
+            record,
+            [
+                *policy,
+                (current, EventType.STATE_TRANSITION, {"from": previous.value, "to": current.value}),
+                (current, EventType.ACTION_REQUESTED, requested),
+            ],
+        )
+        try:
+            observation = self._execute_tool(run_id, current, decision, interrupt_id=record.interrupt_id)
+        except (InvalidTransitionError, SafetyError, OSError, RuntimeError, ValueError) as error:
+            return self._fail(run_id, state_machine, step + 1, str(error))
+        observations = (*snapshot.observations, observation)
+        self.event_log.append(
+            run_id,
+            current,
+            EventType.CHECKPOINT,
+            self._next_checkpoint(snapshot, current, observations).to_payload(),
+        )
+        return self._run_loop(run_id, snapshot.goal, observations, state_machine, start_step=step + 1)
+
+    def _recover_interrupt(
+        self,
+        run_id: str,
+        snapshot: CheckpointSnapshot,
+        record: InterruptRecord,
+        events: Sequence[EventRecord],
+    ) -> RunResult:
+        """Continue after an earlier resume of this interrupt stopped before its next checkpoint.
+
+        Only the lease holder gets here, so that resume is known to have ended (it died or failed)
+        rather than to be still running. An approved call whose result was recorded is never executed
+        again: the recorded result becomes the observation. Anything else (the call started but
+        recorded no result, so its outcome is unknown) is refused without writing.
+        """
+
+        result = next(
+            (
+                event
+                for event in reversed(events)
+                if event.event_type == EventType.ACTION_RESULT.value
+                and event.payload.get("interrupt_id") == record.interrupt_id
+            ),
+            None,
+        )
+        if record.decision is None or record.decision.decision is not ApprovalDecision.APPROVED or result is None:
+            raise ApprovalError(
+                f"interrupt {record.interrupt_id} of run {run_id} was already resumed and recorded no result; "
+                "an approved call is never executed twice. If that resume crashed, fork the run after "
+                f"step {snapshot.step} to try again"
+            )
+        payload = result.payload
+        metadata = payload.get("metadata")
+        observation = ToolResult(
+            tool_name=str(payload.get("tool") or record.tool),
+            ok=bool(payload.get("ok")),
+            content=str(payload.get("content", "")),
+            metadata=dict(metadata) if isinstance(metadata, dict) else {},
+        ).to_observation()
+        state_machine = RunStateMachine(RunState.ACTING)
+        observations = (*snapshot.observations, observation)
+        self.event_log.append(
+            run_id,
+            state_machine.state,
+            EventType.CHECKPOINT,
+            self._next_checkpoint(snapshot, state_machine.state, observations).to_payload(),
+        )
+        return self._run_loop(run_id, snapshot.goal, observations, state_machine, start_step=snapshot.step + 1)
+
+    def _with_merged_policy(self, snapshot: CheckpointSnapshot) -> CheckpointSnapshot | None:
+        """Return ``snapshot`` restated with this resume's approval policy, or ``None`` if it did not grow.
+
+        A resume records the restated checkpoint before it advances (inside the claim at an interrupt),
+        so ``require_approval`` entries it added survive a crash before its next checkpoint.
+        """
+
+        merged = tuple(sorted(self.safety_policy.require_approval))
+        if set(merged) == set(snapshot.require_approval):
+            return None
+        return replace(snapshot, require_approval=merged)
+
+    def _next_checkpoint(
+        self,
+        snapshot: CheckpointSnapshot,
+        state: RunState,
+        observations: tuple[Observation, ...],
+    ) -> CheckpointSnapshot:
+        """Return the checkpoint that closes a paused step."""
+
+        return CheckpointSnapshot(
+            run_id=snapshot.run_id,
+            goal=snapshot.goal,
+            step=snapshot.step + 1,
+            state=state,
+            observations=observations,
+            active_bot_id=self.active_bot_id,
+            require_approval=tuple(sorted(self.safety_policy.require_approval)),
+        )
+
+    def _claim(
+        self,
+        run_id: str,
+        record: InterruptRecord,
+        entries: Sequence[tuple[RunState, EventType, dict[str, Any]]],
+    ) -> None:
+        """Append the first events of a resume only if the run is still paused at ``record``.
+
+        Raises:
+            ApprovalError: If another process resumed the interrupt first.
+        """
+
+        def guard(events: list[EventRecord]) -> None:
+            current = next(
+                (item for item in collect_interrupts(events) if item.interrupt_id == record.interrupt_id), None
+            )
+            if current is None or not current.paused:
+                raise ApprovalError(
+                    f"interrupt {record.interrupt_id} of run {run_id} was resumed by another process; "
+                    "nothing was executed here"
+                )
+
+        self.event_log.append_guarded(run_id, entries, guard)
 
     def _handoff(self, run_id: str, state: RunState, decision: Decision) -> Observation:
         """Switch the active bot and scoped tool allowlist.
@@ -488,28 +857,58 @@ class AgentRunner:
             return observation
 
         if decision.action == "call_tool":
-            if decision.target is None:
-                raise ValueError("tool decision requires a target")
-            self.safety_policy.validate_tool(decision.target)
-            tool = self.tools.get(decision.target)
-            if tool is None:
-                raise ValueError(f"tool is not registered: {decision.target}")
-            result = tool.execute(ToolInvocation(tool_name=decision.target, arguments=decision.payload))
-            self.event_log.append(
-                run_id,
-                state,
-                EventType.ACTION_RESULT,
-                {
-                    "kind": "tool",
-                    "tool": result.tool_name,
-                    "ok": result.ok,
-                    "content": result.content,
-                    "metadata": result.metadata,
-                },
-            )
-            return result.to_observation()
+            return self._execute_tool(run_id, state, decision)
 
         raise ValueError(f"unsupported action for _act: {decision.action}")
+
+    def _tool_for(self, decision: Decision) -> ToolAdapter:
+        """Return the registered, allowlisted tool a ``call_tool`` decision targets.
+
+        Raises:
+            SafetyError: If the tool is not allowlisted.
+            ValueError: If the decision has no target or the tool is not registered.
+        """
+
+        if decision.target is None:
+            raise ValueError("tool decision requires a target")
+        self.safety_policy.validate_tool(decision.target)
+        tool = self.tools.get(decision.target)
+        if tool is None:
+            raise ValueError(f"tool is not registered: {decision.target}")
+        return tool
+
+    def _execute_tool(
+        self,
+        run_id: str,
+        state: RunState,
+        decision: Decision,
+        interrupt_id: str | None = None,
+    ) -> Observation:
+        """Execute a tool call and record its result (tagged with the interrupt it was approved in).
+
+        Args:
+            run_id: Run identifier.
+            state: Current state.
+            decision: ``call_tool`` decision.
+            interrupt_id: Interrupt that approved the call, if any.
+
+        Returns:
+            Observation of the tool result.
+        """
+
+        tool = self._tool_for(decision)
+        result = tool.execute(ToolInvocation(tool_name=str(decision.target), arguments=decision.payload))
+        payload: dict[str, Any] = {
+            "kind": "tool",
+            "tool": result.tool_name,
+            "ok": result.ok,
+            "content": result.content,
+            "metadata": result.metadata,
+        }
+        if interrupt_id is not None:
+            payload["interrupt_id"] = interrupt_id
+        self.event_log.append(run_id, state, EventType.ACTION_RESULT, payload)
+        return result.to_observation()
 
     def _visible_tool_specs(self) -> tuple[ToolSpec, ...]:
         """Return advertised tool specs that are registered and currently allowed.
@@ -628,6 +1027,20 @@ class AgentRunner:
             {"reason": reason, "steps": steps},
         )
         return RunResult(run_id=run_id, state=state_machine.state, answer=reason, steps=steps)
+
+
+def _rationale(value: Any) -> RationaleTrace:
+    """Rebuild the rationale trace an ``interrupt`` event recorded for the paused decision."""
+
+    payload = value if isinstance(value, dict) else {}
+    used = payload.get("observations_used")
+    rejected = payload.get("rejected_actions")
+    return RationaleTrace(
+        rule_id=str(payload.get("rule_id", "")),
+        observations_used=tuple(str(item) for item in used) if isinstance(used, list) else (),
+        rejected_actions=tuple(str(item) for item in rejected) if isinstance(rejected, list) else (),
+        explanation=str(payload.get("explanation", "")),
+    )
 
 
 def build_default_tools(root: Path) -> dict[str, ToolAdapter]:

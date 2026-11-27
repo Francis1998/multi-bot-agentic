@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+### Added
+
+- Human-in-the-loop interrupts: a run pauses durably when the decision engine selects a tool that needs approval,
+  and a human approves, edits, or rejects the call from the CLI before the run resumes exactly where it stopped
+  (`docs/guides/HITL_INTERRUPTS_GUIDE.md`, demo `assets/demo/hitl-interrupts.gif`). `run`, `fork`, and `resume`
+  accept `--require-approval TOOL[,TOOL]` (names or `fnmatch` patterns such as `mcp__*`; also
+  `MULTIBOT_REQUIRE_APPROVAL`); entries that match no registered tool are refused. The runner checks the tool is
+  allowed and registered, moves the run to the new `awaiting_approval` state, appends an `interrupt` event (tool,
+  bot, step, redacted and truncated argument preview, rationale) and a checkpoint, and exits with code 3 without
+  executing the tool. New commands: `approvals list [--run-id] [--all]`, `approvals show`, `approve [--args JSON]
+  [--by] [--reason]`, and `reject --reason`, which append `approval_decision` events (who, when, decision, reason,
+  whether the arguments were edited; edits keep the call's keys and types). `resume` then runs an approved call
+  exactly once with the effective arguments, or feeds a rejection back as an `approval:<tool>` observation so the
+  model re-plans (new rule `approval.rejected-needs-replan`). Double decisions, unknown or expired interrupts,
+  resuming before a decision (exit 3), and concurrent resumes are refused with clean errors; checks and appends
+  run in one SQLite write transaction (`SQLiteEventLog.append_guarded`), and a crashed resume never re-executes the
+  call. A pause (transition, `interrupt`, checkpoint) is written in one transaction, and a resume that adds
+  `--require-approval` entries records the merged policy in a checkpoint before it advances, so a crash never drops a
+  gate. `run`, `resume`, and `fork` hold the run's lease (new `run_leases` table, `SQLiteEventLog.acquire_lease`)
+  while they continue it: a second process is refused with `RunBusyError` and exit code 75 before it writes
+  anything, and the lease of a process that died on the same host is taken over. `approvals show` prints the
+  original and edited arguments complete (redacted, never truncated), `approve --args null` is refused, and `trace`
+  exports the edited arguments an approved call ran with. The cancellation file and step budget are checked before
+  acting. The policy is recorded in `run_created` and checkpoints, kept by `resume`, and inherited by forks
+  (`fork --dry-run` shows `needs_approval`). `replay`,
+  `report` (per-run `interrupts`), `history` (`approval pending`, `rejected by human`), and `trace` (approval span
+  events, Mermaid arrows to a human approver, `awaiting_approval` run state) show interrupts and decisions.
+  `scripts/check.sh` smoke-tests interrupt, approve, and resume. The file-backed `HitlApprovalGate` API is
+  unchanged.
+
 ### Changed
 
 - Refreshed the model stack to the lineup verified against the providers' model pages on 2026-11-19. GPT-6.2 Sol

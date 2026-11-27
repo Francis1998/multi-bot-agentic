@@ -42,3 +42,28 @@ PYTHONPATH=src python -m multi_bot_agentic.cli trace \
   --event-log /tmp/multi-bot-agentic-check.sqlite \
   --run-id check-smoke-fork \
   --format mermaid
+# Human-in-the-loop interrupt: the run pauses before the gated tool (exit 3), a human approves, resume finishes it.
+status=0
+PYTHONPATH=src python -m multi_bot_agentic.cli run \
+  --goal "Create a launch checklist for an AI agent platform" \
+  --provider fake \
+  --run-id check-hitl \
+  --require-approval checklist \
+  --event-log /tmp/multi-bot-agentic-check.sqlite || status=$?
+test "$status" -eq 3
+PYTHONPATH=src python -m multi_bot_agentic.cli approvals list \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --run-id check-hitl
+PYTHONPATH=src python -m multi_bot_agentic.cli approve \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --run-id check-hitl \
+  --by check-script \
+  --reason "smoke test"
+PYTHONPATH=src python -m multi_bot_agentic.cli resume \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --run-id check-hitl
+PYTHONPATH=src python -m multi_bot_agentic.cli replay \
+  --event-log /tmp/multi-bot-agentic-check.sqlite \
+  --run-id check-hitl \
+  --event-type approval_decision \
+  --format text

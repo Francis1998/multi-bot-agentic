@@ -31,8 +31,11 @@ Current deterministic rules:
 - `observe.no-model-output`: call the selected provider first.
 - `observe.new-user-goal`: call the provider when the user set a new goal after its latest output (a fork's
   `--goal`), so an earlier `TOOL:` or `DONE:` directive is not acted on first.
-- `model.requested-tool`: call an allowlisted tool for `TOOL:<name>:<payload>`.
+- `model.requested-tool`: call an allowlisted tool for `TOOL:<name>:<payload>`. If the tool matches the
+  approval policy (`--require-approval`), the run pauses in `awaiting_approval` before the call instead.
 - `tool.result-needs-synthesis`: send tool results back to the provider.
+- `approval.rejected-needs-replan`: after a human rejected a tool call, ask the provider to re-plan with the
+  rejection reason (an `approval:<tool>` observation) instead of running it.
 - `model.done-or-budget`: finish on `DONE:<answer>` or final budget step.
 - `model.needs-followup`: call the provider again for non-final text.
 
@@ -42,7 +45,7 @@ Actions are limited to provider calls, allowlisted tools, finish, fail, or cance
 
 ## Durable Event Log
 
-The sqlite event log stores every lifecycle transition, observation, decision, action request, action result, and failure with a per-run sequence number. A run can be replayed without calling a provider.
+The sqlite event log stores every lifecycle transition, observation, decision, action request, action result, human-approval interrupt and decision, and failure with a per-run sequence number. A run can be replayed without calling a provider. Its `run_leases` table holds the lease of the process currently continuing each run (see [Human-In-The-Loop Interrupts](#human-in-the-loop-interrupts)); it is operational state, not part of the replayed history.
 
 `run` creates the log file and its directory when they are missing. Commands that read a log (`replay`, `report`, `resume`, `history`, `trace`, and `fork`) never create one: a missing `--event-log` fails with `error: event log not found: <path>` and exit code 2, so a mistyped path is not mistaken for a run that recorded nothing.
 
@@ -65,17 +68,30 @@ level. See [Provider Parameter Rules](CONFIGURATION.md#provider-parameter-rules)
 
 ## State Machine
 
-```text
-created
-  -> observing
-  -> deciding
-  -> acting
-  -> observing
-  -> deciding
-  -> succeeded | failed | cancelled
+```mermaid
+stateDiagram-v2
+    [*] --> created
+    created --> observing
+    observing --> deciding
+    deciding --> acting: call_llm, handoff, or an ungated call_tool
+    deciding --> awaiting_approval: call_tool that needs human approval
+    awaiting_approval --> acting: approved, resume runs the call once
+    awaiting_approval --> observing: rejected, the model re-plans
+    acting --> observing
+    deciding --> succeeded
+    deciding --> failed
+    deciding --> cancelled
+    awaiting_approval --> cancelled
+    awaiting_approval --> failed
+    succeeded --> [*]
+    failed --> [*]
+    cancelled --> [*]
 ```
 
-Invalid transitions raise `InvalidTransitionError` and are covered by tests.
+Every non-terminal state can also move to `failed` or `cancelled`. `awaiting_approval` is the only state a run
+rests in between processes: the run records an `interrupt` event and a checkpoint, exits, and a later `resume`
+continues from that state after a human decided. Invalid transitions raise `InvalidTransitionError` and are covered
+by tests.
 
 ## Replay
 
@@ -128,9 +144,39 @@ Execution still flows through the unchanged decision engine (`TOOL:<name>:<paylo
 calls get rationale traces, replay, and resume like any other tool. See
 [MCP Tool Bridge Guide](guides/MCP_TOOLS_GUIDE.md).
 
+## Human-In-The-Loop Interrupts
+
+`SafetyPolicy.require_approval` (CLI `--require-approval`, env `MULTIBOT_REQUIRE_APPROVAL`) names tools whose calls
+need a human decision:
+
+```text
+decision call_tool X (X gated) -> deciding -> awaiting_approval + interrupt event + checkpoint(interrupt_id) -> exit 3
+                                  (one transaction: a crash leaves the whole pause or none of it)
+approve / reject           -> approval_decision event (atomic: first decision wins)
+resume, approved           -> awaiting_approval -> acting, action_requested (atomic claim) -> tool once -> checkpoint -> loop
+resume, rejected           -> checkpoint + approval:<tool> observation -> observing -> approval.rejected-needs-replan
+```
+
+- The interrupt records the tool, bot, paused step, a redacted argument preview, and the decision's rationale.
+  Decisions record who, when, the decision, the reason, and edited arguments (same keys and types as the call).
+- `SQLiteEventLog.append_guarded` runs a check and its appends in one `BEGIN IMMEDIATE` transaction, so double
+  decisions are refused and a resume never runs an approved call a second time.
+- Single owner: `run`, `resume`, and `fork` hold the run's lease (`run_leases` table, `acquire_lease` /
+  `release_lease`, also one `BEGIN IMMEDIATE` transaction) while they continue a run. Another process gets
+  `RunBusyError` (CLI exit 75) before it reads or writes anything; recovery from a recorded result therefore only
+  happens after the earlier resume has ended. A lease whose holder died on this host (pid gone) is taken over.
+- The policy is stored in `run_created` and checkpoints, restored by `resume`, and inherited by forks. A resume that
+  adds entries restates its starting checkpoint with the merged policy before it advances, so a crash cannot drop
+  them. `history` shows a paused step as `approval pending` (not forkable), and `trace` exports approvals as span
+  events and Mermaid arrows to a human participant, with the arguments an approved call actually ran with.
+
+See `docs/guides/HITL_INTERRUPTS_GUIDE.md`.
+
 ## HITL Approval Gate
 
-`HitlApprovalGate` optionally pauses sensitive tool calls behind file-backed JSON approvals (`pending`/`approved`/`rejected`). v1 is caller-driven and does not require runner rewiring. `record_approval` appends a request or decision to the run's event log as an `action_result` with `kind: approval`, so `replay` and `trace` show it.
+`HitlApprovalGate` is the lower-level, caller-driven alternative: file-backed JSON approvals
+(`pending`/`approved`/`rejected`) your own code polls. `record_approval` appends a request or decision to the run's
+event log as an `action_result` with `kind: approval`, so `replay` and `trace` show it.
 
 ## Parallel Fan-Out
 

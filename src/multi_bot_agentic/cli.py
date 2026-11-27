@@ -3,15 +3,27 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import json
 import sqlite3
 import sys
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping, Sequence
 from contextlib import ExitStack
 from dataclasses import replace
+from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import Any
 
+from multi_bot_agentic.approval import (
+    ApprovalDecision,
+    ApprovalError,
+    AwaitingApprovalError,
+    InterruptRecord,
+    collect_interrupts,
+    decide_interrupt,
+    find_interrupt,
+    paused_interrupt,
+)
 from multi_bot_agentic.bots import BotRegistryError, BotSpec, load_bot_registry
 from multi_bot_agentic.config import AppConfig, build_llm_adapter
 from multi_bot_agentic.event_log import EventRecord, SQLiteEventLog
@@ -27,8 +39,15 @@ from multi_bot_agentic.fork import (
 )
 from multi_bot_agentic.mcp import McpConfigError, McpServerStatus, McpToolset, load_mcp_config
 from multi_bot_agentic.models import ToolSpec
-from multi_bot_agentic.runner import AgentRunner, ResumeError, RunResult, build_default_tools, recorded_outcome
-from multi_bot_agentic.safety import SafetyPolicy
+from multi_bot_agentic.runner import (
+    AgentRunner,
+    ResumeError,
+    RunBusyError,
+    RunResult,
+    build_default_tools,
+    recorded_outcome,
+)
+from multi_bot_agentic.safety import SafetyPolicy, parse_approval_patterns
 from multi_bot_agentic.tools.base import ToolAdapter
 
 MCP_CONFIG_HELP = "MCP servers JSON (Claude Desktop 'mcpServers' format); tools appear as mcp__<server>__<tool>"
@@ -36,21 +55,33 @@ BOTS_HELP = 'bot registry JSON: {"bots": {"<id>": {"allowed_tools": [...], "name
 TRACE_FORMATS = ("otlp-json", "mermaid")
 # How many of the log's runs an unknown-run error names.
 RECENT_RUNS_SHOWN = 5
+REQUIRE_APPROVAL_HELP = (
+    "pause before calling these tools until a human approves or rejects the call: tool names or fnmatch "
+    "patterns such as 'mcp__*', comma-separated, repeatable (replaces MULTIBOT_REQUIRE_APPROVAL)"
+)
+# Exit code of run, fork, and resume when the run paused at a human-approval interrupt.
+EXIT_AWAITING_APPROVAL = 3
+# Exit code of run, fork, and resume when another live process is continuing the run (sysexits
+# EX_TEMPFAIL: nothing was written; try again once that process has finished).
+EXIT_RUN_BUSY = 75
 
 
 class McpStartupError(RuntimeError):
     """Raised when a configured MCP server cannot be started for a run."""
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     """Run the CLI.
+
+    Args:
+        argv: Arguments (default: ``sys.argv[1:]``).
 
     Returns:
         Process exit code.
     """
 
     parser = build_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.command == "run":
         return run_command(args)
     if args.command == "replay":
@@ -69,6 +100,12 @@ def main() -> int:
         return history_command(args)
     if args.command == "fork":
         return fork_command(args)
+    if args.command == "approvals":
+        return approvals_command(args)
+    if args.command == "approve":
+        return decide_command(args, ApprovalDecision.APPROVED)
+    if args.command == "reject":
+        return decide_command(args, ApprovalDecision.REJECTED)
     parser.print_help()
     return 1
 
@@ -90,6 +127,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--max-steps", type=int, default=None, help="maximum loop steps")
     run_parser.add_argument("--run-id", default=None, help="optional run id")
     run_parser.add_argument("--mcp-config", type=Path, default=None, help=MCP_CONFIG_HELP)
+    run_parser.add_argument("--require-approval", action="append", metavar="TOOL[,TOOL]", help=REQUIRE_APPROVAL_HELP)
 
     replay_parser = subparsers.add_parser("replay", help="print durable event log")
     replay_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
@@ -107,6 +145,12 @@ def build_parser() -> argparse.ArgumentParser:
     resume_parser.add_argument("--provider", default=None, help="fake, openai, claude_code, gemini, kimi")
     resume_parser.add_argument("--max-steps", type=int, default=None, help="maximum loop steps")
     resume_parser.add_argument("--mcp-config", type=Path, default=None, help=MCP_CONFIG_HELP)
+    resume_parser.add_argument(
+        "--require-approval",
+        action="append",
+        metavar="TOOL[,TOOL]",
+        help="more tools that need approval; the run's recorded approval policy always stays in force",
+    )
     eval_parser = subparsers.add_parser("eval", help="run offline golden-path evaluation fixtures")
     eval_parser.add_argument("--fixtures", type=Path, default=None, help="fixture directory")
     eval_parser.add_argument(
@@ -189,6 +233,46 @@ def build_parser() -> argparse.ArgumentParser:
     fork_parser.add_argument(
         "--dry-run", action="store_true", help="print the rebuilt state and the first decision; write nothing"
     )
+    fork_parser.add_argument(
+        "--require-approval",
+        action="append",
+        metavar="TOOL[,TOOL]",
+        help="more tools that need approval; the source run's approval policy is inherited",
+    )
+
+    approvals_parser = subparsers.add_parser("approvals", help="list or show human-approval interrupts")
+    approvals_sub = approvals_parser.add_subparsers(dest="approvals_command", required=True)
+    list_parser = approvals_sub.add_parser("list", help="list interrupts (default: pending ones)")
+    list_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
+    list_parser.add_argument("--run-id", default=None, help="only this run")
+    list_parser.add_argument("--all", action="store_true", help="include decided and expired interrupts")
+    list_parser.add_argument("--format", choices=("text", "json"), default="text", help="output format")
+    show_parser = approvals_sub.add_parser("show", help="show one interrupt with its arguments and decision")
+    show_parser.add_argument("interrupt_id", help="interrupt id (int-...)")
+    show_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
+    show_parser.add_argument("--run-id", default=None, help="run to look in (only needed for ambiguous ids)")
+    show_parser.add_argument("--format", choices=("text", "json"), default="text", help="output format")
+
+    for name, verb in (("approve", "approve"), ("reject", "reject")):
+        decide_parser = subparsers.add_parser(name, help=f"{verb} the tool call a paused run is waiting on")
+        decide_parser.add_argument(
+            "interrupt_id", nargs="?", default=None, help="interrupt id (default: the one --run-id is paused at)"
+        )
+        decide_parser.add_argument("--event-log", type=Path, required=True, help="sqlite event log path")
+        decide_parser.add_argument("--run-id", default=None, help="run whose paused interrupt to decide")
+        decide_parser.add_argument("--by", default=None, help="who decides (default: the OS user)")
+        if name == "approve":
+            decide_parser.add_argument("--reason", default=None, help="why (optional, recorded)")
+            decide_parser.add_argument(
+                "--args",
+                default=None,
+                metavar="JSON",
+                help='replacement arguments: a JSON object with the same keys and types, e.g. \'{"text": "..."}\'',
+            )
+        else:
+            decide_parser.add_argument(
+                "--reason", required=True, help="why; recorded and shown to the model so it can re-plan"
+            )
     return parser
 
 
@@ -217,10 +301,16 @@ def run_command(args: argparse.Namespace) -> int:
         Process exit code.
     """
 
+    try:
+        approvals = approval_flag_values(args.require_approval)
+    except ValueError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
     config = AppConfig.from_env(
         provider=args.provider,
         event_log=args.event_log,
         max_steps=args.max_steps,
+        require_approval=approvals,
     )
     if args.run_id and config.event_log.is_file() and _run_recorded(config.event_log, args.run_id):
         print(
@@ -237,9 +327,14 @@ def run_command(args: argparse.Namespace) -> int:
     with ExitStack() as cleanup:
         if toolset is not None:
             cleanup.callback(toolset.close)
+        tools, safety_policy, tool_specs = build_runtime_tools(config.safety, toolset)
+        try:
+            check_approval_policy(safety_policy, tools)
+        except ValueError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 2
         event_log = SQLiteEventLog(config.event_log)
         cleanup.callback(event_log.close)
-        tools, safety_policy, tool_specs = build_runtime_tools(config.safety, toolset)
         runner = AgentRunner(
             provider=build_llm_adapter(config.provider),
             event_log=event_log,
@@ -247,20 +342,101 @@ def run_command(args: argparse.Namespace) -> int:
             safety_policy=safety_policy,
             tool_specs=tool_specs,
         )
-        result = runner.run(goal=args.goal, run_id=args.run_id)
-        print(
-            json.dumps(
-                {
-                    "run_id": result.run_id,
-                    "state": result.state.value,
-                    "answer": result.answer,
-                    "steps": result.steps,
-                    "event_log": str(config.event_log),
-                },
-                indent=2,
-            )
+        try:
+            result = runner.run(goal=args.goal, run_id=args.run_id)
+        except RunBusyError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_RUN_BUSY
+        print(json.dumps(result_payload(result, config.event_log), indent=2))
+        announce_pause(result, config.event_log)
+        return exit_code_for(result)
+
+
+def approval_flag_values(values: Sequence[str] | None) -> list[str] | None:
+    """Return ``--require-approval`` values, or ``None`` when the flag was not given.
+
+    Raises:
+        ValueError: If the flag was given without any tool name.
+    """
+
+    if values is None:
+        return None
+    if not parse_approval_patterns(values):
+        raise ValueError("--require-approval needs at least one tool name or pattern")
+    return list(values)
+
+
+def check_approval_policy(policy: SafetyPolicy, tools: Mapping[str, ToolAdapter]) -> None:
+    """Refuse approval entries that match no registered tool, so a typo never disables a gate.
+
+    Raises:
+        ValueError: If an entry matches no registered tool.
+    """
+
+    unmatched = sorted(
+        pattern for pattern in policy.require_approval if not any(fnmatchcase(name, pattern) for name in tools)
+    )
+    if unmatched:
+        raise ValueError(
+            f"require-approval matches no registered tool: {', '.join(unmatched)} "
+            "(check --require-approval / MULTIBOT_REQUIRE_APPROVAL; MCP tools need --mcp-config)"
         )
-        return 0 if result.state.value == "succeeded" else 2
+
+
+def result_payload(result: RunResult, event_log_path: Path, **extra: Any) -> dict[str, Any]:
+    """Return the JSON a run, fork, or resume prints, with the interrupt of a paused run."""
+
+    payload: dict[str, Any] = {
+        "run_id": result.run_id,
+        **extra,
+        "state": result.state.value,
+        "answer": result.answer,
+        "steps": result.steps,
+        "event_log": str(event_log_path),
+    }
+    if result.interrupt is not None:
+        record = result.interrupt
+        payload["interrupt"] = {
+            "interrupt_id": record.interrupt_id,
+            "tool": record.tool,
+            "step": record.step,
+            "bot": record.bot,
+            "arguments_preview": record.arguments_preview,
+        }
+    return payload
+
+
+def announce_pause(result: RunResult, event_log_path: Path) -> None:
+    """Tell the operator how to decide a paused run (stderr)."""
+
+    if result.interrupt is not None:
+        print_decision_hint(result.interrupt, event_log_path)
+
+
+def print_decision_hint(record: InterruptRecord, event_log_path: Path) -> None:
+    """Print where a run paused and the commands that decide and resume it (stderr)."""
+
+    log = event_log_path
+    print(
+        f"note: run {record.run_id} paused in step {record.step}: {record.tool} needs approval "
+        f"(interrupt {record.interrupt_id})",
+        file=sys.stderr,
+    )
+    print(
+        f"note: decide: approve|reject {record.interrupt_id} --event-log {log}; "
+        f"then: resume --run-id {record.run_id} --event-log {log}",
+        file=sys.stderr,
+    )
+
+
+def exit_code_for(result: RunResult) -> int:
+    """Return 0 for a succeeded run, 3 for a run paused awaiting approval, else 2."""
+
+    if result.state.value == "succeeded":
+        return 0
+    if result.state.value == "awaiting_approval":
+        return EXIT_AWAITING_APPROVAL
+    return 2
 
 
 def _event_log_missing(path: Path) -> bool:
@@ -340,21 +516,28 @@ def report_command(args: argparse.Namespace) -> int:
 def resume_command(args: argparse.Namespace) -> int:
     """Execute the resume subcommand.
 
-    A missing event log is an error and is never created. A finished run's recorded outcome, or
-    an unknown run id, is read first, so it is reported without starting MCP servers or building
-    the provider.
+    A missing event log is an error and is never created. A finished run's recorded outcome, an
+    unknown run id, or a run paused at an interrupt nobody decided yet is read first, so it is
+    reported without starting MCP servers or building the provider.
 
     Args:
         args: Parsed arguments.
 
     Returns:
-        Process exit code: 2 also when the run is unknown or cannot be resumed.
+        Process exit code: 0 succeeded, 3 (still) awaiting approval, 75 another process is continuing the
+        run (nothing was written), 2 otherwise (also when the run is unknown or cannot be resumed).
     """
 
+    try:
+        approvals = approval_flag_values(args.require_approval)
+    except ValueError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
     config = AppConfig.from_env(
         provider=args.provider,
         event_log=args.event_log,
         max_steps=args.max_steps,
+        require_approval=approvals,
     )
     if _event_log_missing(config.event_log):
         return 2
@@ -363,6 +546,9 @@ def resume_command(args: argparse.Namespace) -> int:
     finished = _finished_run_outcome(config.event_log, args.run_id)
     if finished is not None:
         return _print_resume_result(finished, config.event_log)
+    waiting = _undecided_interrupt(config.event_log, args.run_id)
+    if waiting is not None and not config.safety.is_cancelled():
+        return _refuse_undecided(waiting, config.event_log)
     try:
         toolset = start_mcp_toolset(args.mcp_config)
     except (McpConfigError, McpStartupError) as error:
@@ -371,9 +557,14 @@ def resume_command(args: argparse.Namespace) -> int:
     with ExitStack() as cleanup:
         if toolset is not None:
             cleanup.callback(toolset.close)
+        tools, safety_policy, tool_specs = build_runtime_tools(config.safety, toolset)
+        try:
+            check_approval_policy(safety_policy, tools)
+        except ValueError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 2
         event_log = SQLiteEventLog(config.event_log)
         cleanup.callback(event_log.close)
-        tools, safety_policy, tool_specs = build_runtime_tools(config.safety, toolset)
         runner = AgentRunner(
             provider=build_llm_adapter(config.provider),
             event_log=event_log,
@@ -383,10 +574,40 @@ def resume_command(args: argparse.Namespace) -> int:
         )
         try:
             result = runner.resume(run_id=args.run_id)
-        except ResumeError as error:
+        except RunBusyError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_RUN_BUSY
+        except AwaitingApprovalError as error:
+            return _refuse_undecided(error.interrupt, config.event_log)
+        except (ApprovalError, ResumeError) as error:
             print(f"error: {error}", file=sys.stderr)
             return 2
         return _print_resume_result(result, config.event_log)
+
+
+def _undecided_interrupt(path: Path, run_id: str) -> InterruptRecord | None:
+    """Return the undecided interrupt ``run_id`` is paused at, without creating a missing log."""
+
+    if not path.exists():
+        return None
+    event_log = SQLiteEventLog(path)
+    try:
+        record = paused_interrupt(event_log.list_events(run_id))
+    finally:
+        event_log.close()
+    return record if record is not None and record.decision is None else None
+
+
+def _refuse_undecided(record: InterruptRecord, event_log_path: Path) -> int:
+    """Explain that a paused run needs a decision first, and return exit code 3."""
+
+    print(
+        f"error: run {record.run_id} is awaiting approval of interrupt {record.interrupt_id} "
+        f"({record.tool} in step {record.step}); nothing was resumed",
+        file=sys.stderr,
+    )
+    print_decision_hint(record, event_log_path)
+    return EXIT_AWAITING_APPROVAL
 
 
 def _finished_run_outcome(path: Path, run_id: str) -> RunResult | None:
@@ -468,7 +689,7 @@ def _print_resume_result(result: RunResult, event_log_path: Path) -> int:
         event_log_path: Event log path echoed in the output.
 
     Returns:
-        0 when the run succeeded, otherwise 2.
+        0 when the run succeeded, 3 when it paused again awaiting approval, otherwise 2.
     """
 
     if result.already_finished:
@@ -476,20 +697,11 @@ def _print_resume_result(result: RunResult, event_log_path: Path) -> int:
             f"note: run {result.run_id} already finished ({result.state.value}); nothing to resume",
             file=sys.stderr,
         )
-    print(
-        json.dumps(
-            {
-                "run_id": result.run_id,
-                "state": result.state.value,
-                "answer": result.answer,
-                "steps": result.steps,
-                "event_log": str(event_log_path),
-                "resumed": not result.already_finished,
-            },
-            indent=2,
-        )
-    )
-    return 0 if result.state.value == "succeeded" else 2
+    payload = result_payload(result, event_log_path)
+    payload["resumed"] = not result.already_finished
+    print(json.dumps(payload, indent=2))
+    announce_pause(result, event_log_path)
+    return exit_code_for(result)
 
 
 def format_event(event: EventRecord, output_format: str) -> str:
@@ -564,6 +776,15 @@ def format_event_text(event: EventRecord) -> str:
             f" parent={payload.get('parent_run_id')} step={payload.get('fork_step')}"
             f" inherited={payload.get('inherited_events')}"
         )
+    elif event.event_type == "interrupt":
+        payload = event.payload
+        detail = f" id={payload.get('interrupt_id')} tool={payload.get('tool')} step={payload.get('step')}"
+    elif event.event_type == "approval_decision":
+        payload = event.payload
+        detail = (
+            f" id={payload.get('interrupt_id')} decision={payload.get('decision')} by={payload.get('decided_by')}"
+            f" args_edited={str(payload.get('args_edited') is True).lower()}"
+        )
     return f"{event.seq:03d} {event.state:<10} {event.event_type}{detail}"
 
 
@@ -619,6 +840,8 @@ def build_run_report(events: list[EventRecord], forks: Iterable[EventRecord] = (
             )
         elif event.event_type == "run_completed":
             report["answer"] = event.payload.get("answer")
+    for record in collect_interrupts(events):
+        reports[record.run_id].setdefault("interrupts", []).append(record.to_dict())
     for run_id, report in reports.items():
         run_events = events_by_run[run_id]
         lineage = parse_lineage(min(run_events, key=lambda item: item.seq))
@@ -691,6 +914,8 @@ def format_history_text(history: RunHistory) -> str:
     """
 
     status = f"{history.final_state} after {_quantity(history.last_step, 'step')}"
+    if history.final_state == "awaiting_approval":
+        status = f"paused in step {history.last_step}, awaiting human approval"
     lines = [f"run {history.run_id}: {status} (provider {history.provider or 'unknown'})"]
     lineage = history.lineage
     if lineage is not None:
@@ -749,7 +974,12 @@ def fork_command(args: argparse.Namespace) -> int:
         print("error: --bot needs --bots PATH, the registry that defines the bot's tool scope", file=sys.stderr)
         return 2
     try:
-        config = AppConfig.from_env(provider=args.provider, event_log=path, max_steps=args.max_steps)
+        config = AppConfig.from_env(
+            provider=args.provider,
+            event_log=path,
+            max_steps=args.max_steps,
+            require_approval=approval_flag_values(args.require_approval),
+        )
         bots: dict[str, BotSpec] = load_bot_registry(args.bots) if args.bots is not None else {}
     except (BotRegistryError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
@@ -766,6 +996,7 @@ def fork_command(args: argparse.Namespace) -> int:
         cleanup.callback(event_log.close)
         tools, safety_policy, tool_specs = build_runtime_tools(config.safety, toolset)
         try:
+            check_approval_policy(safety_policy, tools)
             plan = plan_fork(
                 event_log,
                 args.run_id,
@@ -792,7 +1023,11 @@ def fork_command(args: argparse.Namespace) -> int:
             bots=bots,
             tool_specs=tool_specs,
         )
-        result = runner.fork(args.run_id, args.at_step, args.new_run_id, goal=args.goal, bot_id=args.bot)
+        try:
+            result = runner.fork(args.run_id, args.at_step, args.new_run_id, goal=args.goal, bot_id=args.bot)
+        except RunBusyError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return EXIT_RUN_BUSY
         overrides = plan.lineage.get("overrides", {})
         changed = f"; new {', '.join(sorted(overrides))}" if overrides else ""
         print(
@@ -800,21 +1035,201 @@ def fork_command(args: argparse.Namespace) -> int:
             f"({_quantity(len(plan.point.prefix), 'event')} inherited{changed})",
             file=sys.stderr,
         )
-        print(
-            json.dumps(
-                {
-                    "run_id": result.run_id,
-                    "parent_run_id": args.run_id,
-                    "fork_step": args.at_step,
-                    "state": result.state.value,
-                    "answer": result.answer,
-                    "steps": result.steps,
-                    "event_log": str(path),
-                },
-                indent=2,
-            )
+        payload = result_payload(result, path, parent_run_id=args.run_id, fork_step=args.at_step)
+        print(json.dumps(payload, indent=2))
+        announce_pause(result, path)
+        return exit_code_for(result)
+
+
+def approvals_command(args: argparse.Namespace) -> int:
+    """Execute ``approvals list`` and ``approvals show``: read-only views of interrupts.
+
+    Args:
+        args: Parsed arguments.
+
+    Returns:
+        0 on success, 2 for a missing or unreadable log, an unknown run, or an unknown interrupt.
+    """
+
+    path: Path = args.event_log
+    if _event_log_missing(path):
+        return 2
+    try:
+        event_log = SQLiteEventLog(path)
+        try:
+            if args.approvals_command == "show":
+                record = find_interrupt(event_log, args.interrupt_id, run_id=args.run_id)
+                print(format_interrupt(record, args.format, path))
+                return 0
+            events = event_log.list_events(run_id=args.run_id)
+        finally:
+            event_log.close()
+    except sqlite3.DatabaseError as error:
+        print(f"error: cannot read event log {path}: {error}", file=sys.stderr)
+        return 2
+    except ApprovalError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    if args.run_id is not None and not events:
+        return _report_unknown_run(path, args.run_id)
+    records = [record for record in collect_interrupts(events) if args.all or record.status == "pending"]
+    if args.format == "json":
+        print(json.dumps([record.to_dict() for record in records], indent=2))
+    elif not records:
+        print(f"no {'' if args.all else 'pending '}interrupts in {path}")
+    else:
+        print(format_interrupt_table(records))
+    return 0
+
+
+def format_interrupt_table(records: Sequence[InterruptRecord]) -> str:
+    """Format interrupts as a table, one per line."""
+
+    header = ("interrupt", "run", "step", "tool", "bot", "status", "decided by", "arguments")
+    rows = [
+        (
+            record.interrupt_id,
+            record.run_id,
+            str(record.step),
+            record.tool,
+            record.bot or "-",
+            record.status,
+            record.decision.decided_by if record.decision is not None else "-",
+            _clip(_effective_preview(record), 48),
         )
-        return 0 if result.state.value == "succeeded" else 2
+        for record in records
+    ]
+    widths = [max(len(row[column]) for row in (header, *rows)) for column in range(len(header))]
+    lines = []
+    for row in (header, *rows):
+        cells = [
+            cell.rjust(width) if column == 2 else cell.ljust(width)
+            for column, (cell, width) in enumerate(zip(row, widths, strict=True))
+        ]
+        lines.append("  ".join(cells).rstrip())
+    return "\n".join(lines)
+
+
+def format_interrupt(record: InterruptRecord, output_format: str, event_log_path: Path) -> str:
+    """Format one interrupt with its complete, redacted arguments (no length cap) and decision."""
+
+    from multi_bot_agentic.tracing.privacy import redact_value
+
+    details = record.to_dict()
+    details["arguments"] = redact_value(dict(record.arguments), limit=None)
+    if record.decision is not None and record.decision.arguments is not None:
+        details["decision"]["arguments"] = redact_value(dict(record.decision.arguments), limit=None)
+    details["explanation"] = record.explanation
+    if output_format == "json":
+        return json.dumps(details, indent=2)
+    lines = [
+        f"interrupt {record.interrupt_id}: {record.status}",
+        f"  run:        {record.run_id} (step {record.step}{', bot ' + record.bot if record.bot else ''})",
+        f"  tool:       {record.tool}",
+        f"  arguments:  {json.dumps(details['arguments'], sort_keys=True, ensure_ascii=False)}",
+        f"  requested:  {record.requested_at}",
+        f"  why:        {record.rule_id}: {record.explanation}",
+    ]
+    decision = record.decision
+    if decision is None and record.paused:
+        lines.append(
+            f"  decide:     approve {record.interrupt_id} --event-log {event_log_path} [--args JSON] | "
+            f"reject {record.interrupt_id} --event-log {event_log_path} --reason TEXT"
+        )
+    elif decision is not None:
+        lines.append(f"  decision:   {decision.decision.value} by {decision.decided_by} at {decision.decided_at}")
+        if decision.reason:
+            lines.append(f"  reason:     {decision.reason}")
+        if decision.arguments is not None:
+            edited = json.dumps(details["decision"]["arguments"], sort_keys=True, ensure_ascii=False)
+            lines.append(f"  edited to:  {edited}")
+        state = "executed" if record.executed else ("resumed" if not record.paused else "waiting for resume")
+        lines.append(f"  progress:   {state}")
+    return "\n".join(lines)
+
+
+def decide_command(args: argparse.Namespace, decision: ApprovalDecision) -> int:
+    """Execute ``approve`` or ``reject``: record a human decision on a paused run's interrupt.
+
+    Nothing runs here; ``resume`` acts on the decision.
+
+    Args:
+        args: Parsed arguments.
+        decision: ``APPROVED`` or ``REJECTED``.
+
+    Returns:
+        0 when the decision was recorded, 2 otherwise (nothing was written).
+    """
+
+    path: Path = args.event_log
+    if _event_log_missing(path):
+        return 2
+    if args.interrupt_id is None and args.run_id is None:
+        print("error: give an interrupt id, or --run-id to decide the interrupt that run is paused at", file=sys.stderr)
+        return 2
+    arguments: Any = None
+    raw_arguments = getattr(args, "args", None)
+    if raw_arguments is not None:
+        try:
+            arguments = json.loads(raw_arguments)
+        except ValueError as error:
+            print(f"error: --args is not valid JSON: {error}", file=sys.stderr)
+            return 2
+        if arguments is None:
+            # decide_interrupt reads None as "keep the arguments"; an explicit null is not an edit.
+            print("error: --args must be a JSON object, got null (omit --args to keep the arguments)", file=sys.stderr)
+            return 2
+    try:
+        event_log = SQLiteEventLog(path)
+        try:
+            record = decide_interrupt(
+                event_log,
+                args.interrupt_id,
+                decision,
+                decided_by=args.by if args.by is not None else default_approver(),
+                reason=args.reason,
+                arguments=arguments,
+                run_id=args.run_id,
+            )
+        finally:
+            event_log.close()
+    except sqlite3.DatabaseError as error:
+        print(f"error: cannot read event log {path}: {error}", file=sys.stderr)
+        return 2
+    except ApprovalError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+    print(json.dumps(record.to_dict(), indent=2))
+    print(
+        f"note: {decision.value} interrupt {record.interrupt_id}; "
+        f"continue the run with 'resume --run-id {record.run_id} --event-log {path}'",
+        file=sys.stderr,
+    )
+    return 0
+
+
+def default_approver() -> str:
+    """Return the OS user name, or ``unknown``."""
+
+    try:
+        return getpass.getuser() or "unknown"
+    except (KeyError, OSError, ImportError):
+        return "unknown"
+
+
+def _effective_preview(record: InterruptRecord) -> str:
+    """Return the preview of the arguments an approved call runs with, marking edits."""
+
+    decision = record.decision
+    if decision is not None and decision.arguments_preview is not None:
+        return f"(edited) {decision.arguments_preview}"
+    return record.arguments_preview
+
+
+def _clip(text: str, limit: int) -> str:
+    """Shorten ``text`` to ``limit`` characters with an ellipsis."""
+
+    return text if len(text) <= limit else text[: limit - 3] + "..."
 
 
 def eval_command(args: argparse.Namespace) -> int:

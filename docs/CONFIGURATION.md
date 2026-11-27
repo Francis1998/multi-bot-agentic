@@ -193,7 +193,23 @@ bot's tools must be in the safety policy allowlist (the built-in tools, plus the
 - `MULTIBOT_TIMEOUT_SECONDS`: per-provider timeout budget.
 - `MULTIBOT_MAX_PROMPT_CHARS`: maximum accepted goal size.
 - `MULTIBOT_EVENT_LOG`: sqlite file used for durable events.
-- `MULTIBOT_CANCEL_FILE`: optional file path; if the file exists, the next decision cancels the run.
+- `MULTIBOT_CANCEL_FILE`: optional file path; if the file exists, the next decision cancels the run. A run
+  paused awaiting approval is cancelled when it is resumed while the file exists.
+- `MULTIBOT_REQUIRE_APPROVAL`: tools whose calls pause the run until a human decides (see below).
+
+## Human-In-The-Loop Approvals
+
+`MULTIBOT_REQUIRE_APPROVAL` (or `--require-approval TOOL[,TOOL]` on `run`, `fork`, and `resume`, which replaces it)
+lists tool names or `fnmatch` patterns such as `checklist` or `mcp__*`. When the decision engine selects a matching
+tool, the run pauses before the call: state `awaiting_approval`, an `interrupt` event and checkpoint, exit code 3.
+Every entry must match a registered tool (MCP tools need `--mcp-config`), so a typo is refused instead of silently
+disabling the gate. The policy is recorded in the run: `resume` keeps it (the flag can only add tools), and `fork`
+inherits it. Decide with `approve [ID] [--args JSON] [--by NAME] [--reason TEXT]` or `reject [ID] --reason TEXT`
+(`--run-id RUN` instead of an id decides the interrupt that run is paused at), inspect with `approvals list` /
+`approvals show`, and continue with `resume`. Exit codes of `run`, `fork`, and `resume`: 0 succeeded, 2 failed,
+cancelled, or refused, 3 paused awaiting approval, 75 another process is continuing the run (nothing was written;
+retry once it has finished). See the
+[Human-in-the-Loop Interrupts Guide](guides/HITL_INTERRUPTS_GUIDE.md).
 
 ## Notes
 
