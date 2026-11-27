@@ -881,16 +881,18 @@ class AgentRunner:
         return self._run_loop(run_id, snapshot.goal, observations, state_machine, start_step=snapshot.step + 1)
 
     def _with_merged_policy(self, snapshot: CheckpointSnapshot) -> CheckpointSnapshot | None:
-        """Return ``snapshot`` restated with this resume's approval policy, or ``None`` if it did not grow.
+        """Return ``snapshot`` restated with this resume's approval policy and usage limits, or ``None``.
 
-        A resume records the restated checkpoint before it advances (inside the claim at an interrupt),
-        so ``require_approval`` entries it added survive a crash before its next checkpoint.
+        ``None`` means neither changed. A resume records the restated checkpoint before it advances
+        (inside the claim at an interrupt), so ``require_approval`` entries it added and usage limits it
+        set or reset survive a crash before its next checkpoint.
         """
 
         merged = tuple(sorted(self.safety_policy.require_approval))
-        if set(merged) == set(snapshot.require_approval):
+        limits = self.safety_policy.usage_limits
+        if set(merged) == set(snapshot.require_approval) and limits == snapshot.usage_limits:
             return None
-        return replace(snapshot, require_approval=merged)
+        return replace(snapshot, require_approval=merged, usage_limits=limits)
 
     def _next_checkpoint(
         self,

@@ -157,7 +157,9 @@ stateDiagram-v2
 
 - Limits are recorded in `run_created` and in every checkpoint, so they stay in force: `resume` without flags keeps
   the run's recorded limits, and every `--max-*` flag replaces the recorded value of that limit (raise it, or lower
-  it). `--reset-usage-limits` drops the recorded limits, so only the command's own flags apply.
+  it). `--reset-usage-limits` drops the recorded limits, so only the command's own flags apply. A resume that
+  changes the limits records them in a checkpoint before it advances, so a crash before its next step cannot bring
+  the old budget back.
 - While the limit that stopped the run still holds, `resume` returns the stop again, writes nothing, and exits 5
   (`"resumed": false`). Once the limit is raised, it continues from the stop.
 - `fork --at-step N` starts from the totals at step `N` and inherits the limits recorded at step `N`, so a fork

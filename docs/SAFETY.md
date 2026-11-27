@@ -228,7 +228,9 @@ Set `MULTIBOT_CANCEL_FILE=/path/to/cancel`. If that file exists before the next 
 - A stop is resumable, not a crash: the output of a call that crossed a limit is kept, so `resume` with a higher
   limit never pays for it twice. While the run is still over its limit, `resume` writes nothing and exits 5 again.
 - Limits are recorded in `run_created` and every checkpoint, so `resume` and `fork` keep them unless a `--max-*` flag
-  replaces one or `--reset-usage-limits` drops them; a fork counts the usage it inherited.
+  replaces one or `--reset-usage-limits` drops them; a fork counts the usage it inherited. A resume that changes them
+  records the new limits before it advances, and a stop is written in one transaction, so a process that dies at any
+  point never leaves a run that resumes with a looser budget than it had.
 - One call can still overshoot a limit (the after-call check stops the run once it has), and costs are list-price
   estimates (Claude Code's are its own client-side estimate). Keep provider-side output caps
   (`OPENAI_MAX_COMPLETION_TOKENS`, `KIMI_MAX_COMPLETION_TOKENS`) and the provider's own spending limits as the outer
