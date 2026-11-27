@@ -191,6 +191,27 @@ Set `MULTIBOT_CANCEL_FILE=/path/to/cancel`. If that file exists before the next 
   event log if approvals must be attributable. See the
   [Human-in-the-Loop Interrupts Guide](guides/HITL_INTERRUPTS_GUIDE.md#safety).
 
+## Structured Output Schemas
+
+- An output schema (`--output-schema`) is data: nothing in it is executed, imported, or fetched. `$ref` resolves
+  only inside the schema (`#/$defs/...`), and remote or `$id`-based references are refused.
+- Every keyword is checked when the schema is loaded; an unsupported keyword (such as `format`, `not`, or `if`) is an
+  error, so the run never reports an answer as valid while silently ignoring one of its constraints.
+- Schemas are bounded: at most 256 KiB on disk and 64 KiB of compact JSON, 32 levels of nesting, 2,000 subschemas,
+  and no `$ref`/`allOf` cycle that never reaches a property or item.
+- `pattern` uses Python's `re`, which backtracks and has no timeout. Patterns are capped at 256 characters,
+  backreferences and repeated groups whose content can vary in length (`(a+)+`, `(a|ab)*`) are refused, and strings
+  longer than 4,096 characters are not matched (they are reported as invalid). Several adjacent overlapping
+  quantifiers (`a*a*a*b`) can still be slow on long strings: treat schemas as trusted operator input and never load
+  one from an untrusted source.
+- Model answers are parsed as strict JSON (no `NaN`, no duplicate keys), bounded to 64 KiB of compact JSON and 64
+  levels of nesting before they are validated or recorded. Correction rounds send only the (bounded) validation
+  errors back to the model, at most 20 per answer.
+- Validation errors quote short previews of the answer, so they are content: `trace` exports them only with
+  `--include-content` (redacted), and the `run_failed` reason of an `output_invalid` run never quotes the answer.
+  `--output-file` writes atomically (temporary file plus rename) and only for a validated output. See the
+  [Structured Output Guide](guides/STRUCTURED_OUTPUT_GUIDE.md#safety).
+
 ## Provider Credentials
 
 Credentials are read from environment variables and are never written to the event log. Event payloads store normalized provider output text and metadata, not secret values.

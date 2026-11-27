@@ -207,9 +207,25 @@ disabling the gate. The policy is recorded in the run: `resume` keeps it (the fl
 inherits it. Decide with `approve [ID] [--args JSON] [--by NAME] [--reason TEXT]` or `reject [ID] --reason TEXT`
 (`--run-id RUN` instead of an id decides the interrupt that run is paused at), inspect with `approvals list` /
 `approvals show`, and continue with `resume`. Exit codes of `run`, `fork`, and `resume`: 0 succeeded, 2 failed,
-cancelled, or refused, 3 paused awaiting approval, 75 another process is continuing the run (nothing was written;
-retry once it has finished). See the
+cancelled, or refused, 3 paused awaiting approval, 4 final answer invalid (see below), 75 another process is
+continuing the run (nothing was written; retry once it has finished). See the
 [Human-in-the-Loop Interrupts Guide](guides/HITL_INTERRUPTS_GUIDE.md).
+
+## Structured Output
+
+Structured output is configured per run with flags (no environment variables):
+
+| Flag | Commands | Default | Meaning |
+| --- | --- | --- | --- |
+| `--output-schema PATH` | `run`, `fork` | none | JSON Schema the final answer must validate against. `fork` keeps the source run's schema unless given |
+| `--output-retries N` | `run`, `fork` | `2` (`fork`: the source's) | Correction rounds after an invalid answer, `0`-`10` |
+| `--output-file PATH` | `run`, `resume`, `fork` | none | Write the validated output there (indented JSON, sorted keys, atomic) |
+
+The schema and its SHA-256 are recorded in the run, so `resume` always enforces the same contract. A correction
+round uses two steps of `--max-steps` (the model's corrected answer and the check), and runs with a schema let the
+provider answer with up to 16,000 characters (2,000 otherwise). Exit codes of `run`, `fork`, and `resume`: 0
+succeeded, 2 failed, cancelled, or refused, 3 awaiting approval, 4 `output_invalid`, 75 another process is
+continuing the run. Supported keywords and limits: [Structured Output Guide](guides/STRUCTURED_OUTPUT_GUIDE.md).
 
 ## Notes
 

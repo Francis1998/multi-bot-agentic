@@ -162,11 +162,11 @@ restores the stricter policy even without the flag.
 
 ### Exit codes
 
-| Command | 0 | 2 | 3 | 75 |
-| --- | --- | --- | --- | --- |
-| `run`, `fork`, `resume` | the run succeeded | failed, cancelled, or a usage error | **the run is paused awaiting approval** (or `resume` was refused because nobody decided yet) | another process is continuing this run; nothing was written, retry once it has finished |
-| `approve`, `reject` | decision recorded | refused; nothing was written | - | - |
-| `approvals list`, `approvals show` | printed | missing/unreadable log, unknown run or interrupt | - | - |
+| Command | 0 | 2 | 3 | 4 | 75 |
+| --- | --- | --- | --- | --- | --- |
+| `run`, `fork`, `resume` | the run succeeded | failed, cancelled, or a usage error | **the run is paused awaiting approval** (or `resume` was refused because nobody decided yet) | the final answer never validated against `--output-schema` ([structured output](STRUCTURED_OUTPUT_GUIDE.md)) | another process is continuing this run; nothing was written, retry once it has finished |
+| `approve`, `reject` | decision recorded | refused; nothing was written | - | - | - |
+| `approvals list`, `approvals show` | printed | missing/unreadable log, unknown run or interrupt | - | - | - |
 
 ### `--require-approval TOOL[,TOOL]` (on `run`, `fork`, `resume`)
 
