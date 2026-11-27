@@ -6,6 +6,11 @@
 
 - **Bounded scope**: prompts are capped by `max_prompt_chars`.
 - **Bounded runtime**: runs stop at `max_steps`.
+- **Bounded spend (fail closed)**: `--max-requests`, `--max-input-tokens`, `--max-output-tokens`,
+  `--max-total-tokens`, and `--max-cost-usd` are checked before every model call against the run's running totals
+  and after it against the call's actual usage. A breach stops the run in `usage_limit_exceeded` with a checkpoint
+  (exit code 5); a limit the run cannot measure (no tokens reported, unpriced model) counts as breached. See
+  [Usage Limits](#usage-limits).
 - **Timeouts**: each provider call has a timeout.
 - **Cancellation**: a cancellation file can stop a run before the next action.
 - **Tool allowlist**: tools must be registered and allowed by policy.
@@ -215,6 +220,21 @@ Set `MULTIBOT_CANCEL_FILE=/path/to/cancel`. If that file exists before the next 
   the run's end, and `resume` verifies a finished run's recorded output (digests and schema) before publishing it.
   See the
   [Structured Output Guide](guides/STRUCTURED_OUTPUT_GUIDE.md#safety).
+
+## Usage Limits
+
+- Limits gate model calls only, so they never re-run or skip a tool: a call approved at a human-approval interrupt
+  runs exactly once even if a limit stops the run right after it, and the stop's checkpoint keeps its result.
+- A stop is resumable, not a crash: the output of a call that crossed a limit is kept, so `resume` with a higher
+  limit never pays for it twice. While the run is still over its limit, `resume` writes nothing and exits 5 again.
+- Limits are recorded in `run_created` and every checkpoint, so `resume` and `fork` keep them unless a `--max-*` flag
+  replaces one or `--reset-usage-limits` drops them; a fork counts the usage it inherited.
+- One call can still overshoot a limit (the after-call check stops the run once it has), and costs are list-price
+  estimates (Claude Code's are its own client-side estimate). Keep provider-side output caps
+  (`OPENAI_MAX_COMPLETION_TOKENS`, `KIMI_MAX_COMPLETION_TOKENS`) and the provider's own spending limits as the outer
+  bound.
+- `llm_usage` events hold token counts, model ids, and prices only: no prompts, outputs, or credentials. See the
+  [Usage Limits Guide](guides/USAGE_LIMITS_GUIDE.md#safety-and-limitations).
 
 ## Provider Credentials
 

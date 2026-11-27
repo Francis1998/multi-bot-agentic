@@ -28,6 +28,29 @@
   numbers and unpaired surrogates are invalid answers, each check is recorded atomically with its checkpoint or
   the run's end, `resume` verifies a recorded output before publishing it, and `report`/`trace` count only checks
   against the run's own schema.
+- Token usage and cost accounting with hard usage limits (`docs/guides/USAGE_LIMITS_GUIDE.md`, demo
+  `assets/demo/usage-limits.gif`). Every adapter now parses its provider's usage into a normalized `Usage`
+  (requests, input, output, cached input, reasoning, and total tokens; unknown counters stay `null`): OpenAI and Kimi
+  `usage` (Chat Completions and Responses shapes), Gemini `usageMetadata` (thinking tokens count as output), Claude
+  Code `--output-format json` results (`modelUsage`/`usage` and its own `total_cost_usd`), and deterministic usage
+  from the fake and scripted providers. Each model call is priced (provider-reported cost first, else a dated price
+  table for `gpt-6.2-sol`, `gpt-6.2-astra`, `gemini-4-neon`, `gemini-4-hydrogen`, `gemini-4-carbon` (effective-dated
+  2026-12-01 price change), and `kimi-k3.1-pro`; unpriced models get a `null` cost and a note; `MULTIBOT_PRICES_FILE`
+  adds or replaces prices) and recorded as an `llm_usage` event. `run`, `resume`, and `fork` accept
+  `--max-requests`, `--max-input-tokens`, `--max-output-tokens`, `--max-total-tokens`, and `--max-cost-usd`
+  (`SafetyPolicy.usage_limits` in the Python API): checked before every model call and after it, a breach moves the
+  run to the new resumable `usage_limit_exceeded` state, appends a `usage_limit_exceeded` event naming the limit,
+  value, and cap, checkpoints, and exits with code 5. Limits are recorded in `run_created` and checkpoints, so
+  `resume` keeps them (a flag replaces one, `--reset-usage-limits` drops them) and writes nothing while the run is
+  still over its limit; `resume` with a higher limit continues without repeating the call that crossed it. Totals are
+  the sum of a run's `llm_usage` events, so `resume` continues them and a fork starts from the totals at its fork
+  point. `report` adds `usage` per run (by bot and by model, a fork's inherited calls separately) and `usage_totals`;
+  `replay --format text` and `history` show calls and stops; `trace` adds `gen_ai.usage.input_tokens`,
+  `gen_ai.usage.output_tokens`, cache and reasoning token attributes, and `multi_bot_agentic.usage.cost_usd` to
+  model-call spans, a span event per stop, and usage notes to Mermaid diagrams; eval fixtures accept
+  `max_total_tokens`, `max_cost_usd`, and `model`, and the eval summary reports usage. `MULTIBOT_FAKE_MODEL` prices
+  the fake provider's usage as a real model to rehearse cost limits offline. `scripts/check.sh` smokes a limit stop
+  and a resume with a higher limit.
 - Human-in-the-loop interrupts: a run pauses durably when the decision engine selects a tool that needs approval,
   and a human approves, edits, or rejects the call from the CLI before the run resumes exactly where it stopped
   (`docs/guides/HITL_INTERRUPTS_GUIDE.md`, demo `assets/demo/hitl-interrupts.gif`). `run`, `fork`, and `resume`

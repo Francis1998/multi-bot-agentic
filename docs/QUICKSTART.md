@@ -114,6 +114,25 @@ multi-bot-agentic run --goal "Plan the agent launch" --provider fake --event-log
 
 See the [Structured Output Guide](guides/STRUCTURED_OUTPUT_GUIDE.md).
 
+## Cap Tokens And Cost
+
+```bash
+# The run stops in usage_limit_exceeded once its tokens exceed the cap, and exits with code 5
+multi-bot-agentic run --goal "Create a launch checklist" --provider fake --event-log data/runs.sqlite \
+  --run-id budget --max-total-tokens 150
+
+# What each model call used and cost, then continue with a higher limit
+multi-bot-agentic replay --event-log data/runs.sqlite --run-id budget --event-type llm_usage --format text
+multi-bot-agentic resume --run-id budget --event-log data/runs.sqlite --max-total-tokens 1000
+
+# Rehearse a dollar cap offline: price the fake provider's usage as GPT-6.2 Sol
+MULTIBOT_FAKE_MODEL=gpt-6.2-sol multi-bot-agentic run --goal "Create a launch checklist" --provider fake \
+  --event-log data/runs.sqlite --run-id priced --max-cost-usd 0.0003
+multi-bot-agentic report --event-log data/runs.sqlite --run-id priced
+```
+
+See the [Usage Limits Guide](guides/USAGE_LIMITS_GUIDE.md).
+
 ## Run The Scripted Demo
 
 ```bash

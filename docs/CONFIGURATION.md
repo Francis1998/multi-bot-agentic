@@ -151,6 +151,8 @@ through `env`. Full reference: [MCP Tool Bridge Guide](guides/MCP_TOOLS_GUIDE.md
 
 - `MULTIBOT_FAKE_TOOL`: tool the fake provider requests on its first turn (default `checklist`). Set it to an
   MCP tool such as `mcp__notes__search_notes` for offline MCP demos.
+- `MULTIBOT_FAKE_MODEL`: model id the fake provider's deterministic usage is priced as (default `fake`, $0). Set it
+  to a priced id such as `gpt-6.2-sol` to rehearse cost limits offline (see [Usage Limits](#usage-limits)).
 
 ## Trace Export
 
@@ -196,6 +198,8 @@ bot's tools must be in the safety policy allowlist (the built-in tools, plus the
 - `MULTIBOT_CANCEL_FILE`: optional file path; if the file exists, the next decision cancels the run. A run
   paused awaiting approval is cancelled when it is resumed while the file exists.
 - `MULTIBOT_REQUIRE_APPROVAL`: tools whose calls pause the run until a human decides (see below).
+- `MULTIBOT_PRICES_FILE`: optional JSON price file that adds models to the built-in price table or replaces their
+  prices (see [Usage Limits](#usage-limits)).
 
 ## Human-In-The-Loop Approvals
 
@@ -207,8 +211,8 @@ disabling the gate. The policy is recorded in the run: `resume` keeps it (the fl
 inherits it. Decide with `approve [ID] [--args JSON] [--by NAME] [--reason TEXT]` or `reject [ID] --reason TEXT`
 (`--run-id RUN` instead of an id decides the interrupt that run is paused at), inspect with `approvals list` /
 `approvals show`, and continue with `resume`. Exit codes of `run`, `fork`, and `resume`: 0 succeeded, 2 failed,
-cancelled, or refused, 3 paused awaiting approval, 4 final answer invalid (see below), 75 another process is
-continuing the run (nothing was written; retry once it has finished). See the
+cancelled, or refused, 3 paused awaiting approval, 4 final answer invalid (see below), 5 stopped at a usage limit
+(see below), 75 another process is continuing the run (nothing was written; retry once it has finished). See the
 [Human-in-the-Loop Interrupts Guide](guides/HITL_INTERRUPTS_GUIDE.md).
 
 ## Structured Output
@@ -224,8 +228,38 @@ Structured output is configured per run with flags (no environment variables):
 The schema and its SHA-256 are recorded in the run, so `resume` always enforces the same contract. A correction
 round uses two steps of `--max-steps` (the model's corrected answer and the check), and runs with a schema let the
 provider answer with up to 16,000 characters (2,000 otherwise). Exit codes of `run`, `fork`, and `resume`: 0
-succeeded, 2 failed, cancelled, or refused, 3 awaiting approval, 4 `output_invalid`, 75 another process is
-continuing the run. Supported keywords and limits: [Structured Output Guide](guides/STRUCTURED_OUTPUT_GUIDE.md).
+succeeded, 2 failed, cancelled, or refused, 3 awaiting approval, 4 `output_invalid`, 5 `usage_limit_exceeded`, 75
+another process is continuing the run. Supported keywords and limits: [Structured Output Guide](guides/STRUCTURED_OUTPUT_GUIDE.md).
+
+## Usage Limits
+
+Every model call records its provider-reported token usage and its cost as an `llm_usage` event. These flags of
+`run`, `resume`, and `fork` bound a run's model usage; each is unlimited by default:
+
+| Flag | Caps |
+| --- | --- |
+| `--max-requests N` | Model calls |
+| `--max-input-tokens N` | Input tokens, cached tokens included |
+| `--max-output-tokens N` | Output tokens, reasoning tokens included |
+| `--max-total-tokens N` | Total tokens |
+| `--max-cost-usd USD` | Cost in USD (every call must be priced) |
+
+A limit is checked before each model call and after it; a breach stops the run in `usage_limit_exceeded` with a
+checkpoint (exit code 5). The limits are recorded in the run: `resume` and `fork` keep them, a `--max-*` flag replaces
+one, and `--reset-usage-limits` drops them. `resume` with a higher limit continues where the run stopped.
+
+Costs come from a built-in price table (USD per 1M tokens, Standard tier, verified 2026-11-26): `gpt-6.2-sol` $2 /
+$0.10 cached / $10, `gpt-6.2-astra` $8 / $0.40 / $40 (both 2x input and 1.5x output above 272K input tokens),
+`gemini-4-neon` $3 / $0.15 / $15, `gemini-4-hydrogen` $1.50 / $7.50, `gemini-4-carbon` $2 / $10 through 2026-11-30
+and $4 / $20 from 2026-12-01, and `kimi-k3.1-pro` $2 / $10. Claude Code reports its own cost with
+`--output-format json` (add it to `CLAUDE_CODE_COMMAND`; plain-text output reports no usage). Other models, including
+the Gemini default `gemini-3.8-flash`, are unpriced until `MULTIBOT_PRICES_FILE` adds them:
+
+```json
+{"models": {"gemini-3.8-flash": {"input": 0.5, "output": 3.0, "cached_input": 0.05, "source": "example: negotiated rate"}}}
+```
+
+See the [Usage Limits Guide](guides/USAGE_LIMITS_GUIDE.md).
 
 ## Notes
 
