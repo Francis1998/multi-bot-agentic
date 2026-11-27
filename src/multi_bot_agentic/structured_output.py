@@ -1040,18 +1040,64 @@ def failed_attempts(events: Sequence[Any], schema_sha256: str) -> int:
     )
 
 
-def recorded_output(events: Sequence[Any]) -> tuple[FinalOutput | None, tuple[str, ...]]:
-    """Return a run's latest ``final_output`` and the errors of its latest failed attempt."""
+def recorded_output(
+    events: Sequence[Any], *, schema_sha256: str | None = None
+) -> tuple[FinalOutput | None, tuple[str, ...]]:
+    """Return a run's latest ``final_output`` and the errors of its latest failed attempt.
+
+    Args:
+        events: Event records of one run.
+        schema_sha256: Only consider checks against the schema with this digest (a fork's
+            inherited checks against a schema it replaced are skipped).
+    """
 
     output: FinalOutput | None = None
     errors: tuple[str, ...] = ()
     for event in sorted(events, key=lambda item: item.seq):
+        if schema_sha256 is not None and event.payload.get("schema_sha256") != schema_sha256:
+            continue
         if event.event_type == FINAL_OUTPUT:
             output = FinalOutput.from_payload(event.payload)
         elif event.event_type == OUTPUT_VALIDATION_FAILED:
             raw = event.payload.get("errors")
             errors = tuple(str(item) for item in raw) if isinstance(raw, list) else ()
     return output, errors
+
+
+def verified_output(events: Sequence[Any]) -> FinalOutput | None:
+    """Return a run's recorded final output after checking that nobody changed it since it validated.
+
+    The run's contract must still match its digest, the latest ``final_output`` under that contract
+    must still match its ``output_sha256``, and the document must still validate against the schema.
+
+    Args:
+        events: Event records of one run.
+
+    Returns:
+        The final output, or ``None`` when the run has no contract or no recorded output.
+
+    Raises:
+        SchemaError: If the contract or the output was changed after the run recorded them.
+    """
+
+    contract = recorded_contract(events)
+    if contract is None:
+        return None
+    output, _ = recorded_output(events, schema_sha256=contract.schema.sha256)
+    if output is None:
+        return None
+    try:
+        digest = sha256_of(output.value)
+    except (TypeError, ValueError) as error:
+        raise SchemaError(f"the recorded final output is not JSON: {error}") from error
+    if digest != output.output_sha256:
+        raise SchemaError(
+            "the recorded final output does not match its sha256 digest; it was changed after it was validated"
+        )
+    errors = contract.schema.validate(output.value)
+    if errors:
+        raise SchemaError(f"the recorded final output no longer validates against the run's schema: {errors[0]}")
+    return output
 
 
 def correction_text(errors: Sequence[str], *, attempt: int, contract: OutputContract) -> str:

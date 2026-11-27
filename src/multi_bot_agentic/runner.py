@@ -54,6 +54,7 @@ from multi_bot_agentic.structured_output import (
     recorded_contract,
     recorded_output,
     sha256_of,
+    verified_output,
 )
 from multi_bot_agentic.tools.base import ToolAdapter
 
@@ -140,7 +141,12 @@ def recorded_outcome(event_log: SQLiteEventLog, run_id: str) -> RunResult | None
 
     Returns:
         The outcome stored by the run's latest terminal event (``already_finished=True``),
-        or ``None`` when the run has not finished.
+        or ``None`` when the run has not finished. A run with an output contract also gets its
+        final output (verified: see :func:`verified_output`) or its last validation errors.
+
+    Raises:
+        ResumeError: If the run's recorded output contract or final output was changed after the
+            run recorded it.
     """
 
     events = event_log.list_events(run_id)
@@ -153,15 +159,22 @@ def recorded_outcome(event_log: SQLiteEventLog, run_id: str) -> RunResult | None
     state = terminal_state(terminal)
     answer = terminal.payload.get("answer" if state is RunState.SUCCEEDED else "reason", "")
     steps = terminal.payload.get("steps")
-    output, errors = recorded_output(events)
+    try:
+        contract = recorded_contract(events)
+        output = verified_output(events) if state is RunState.SUCCEEDED else None
+    except SchemaError as error:
+        raise ResumeError(f"cannot use the recorded outcome of run {run_id}: {error}") from error
+    errors: tuple[str, ...] = ()
+    if state is RunState.OUTPUT_INVALID and contract is not None:
+        _, errors = recorded_output(events, schema_sha256=contract.schema.sha256)
     return RunResult(
         run_id=run_id,
         state=state,
         answer=str(answer),
         steps=steps if isinstance(steps, int) else 0,
         already_finished=True,
-        output=output if state is RunState.SUCCEEDED else None,
-        output_errors=errors if state is RunState.OUTPUT_INVALID else (),
+        output=output,
+        output_errors=errors,
     )
 
 

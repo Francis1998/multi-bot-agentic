@@ -696,7 +696,11 @@ def resume_command(args: argparse.Namespace) -> int:
     if args.output_file is not None and not _has_output_contract(config.event_log, args.run_id):
         print(f"error: run {args.run_id} has no output schema, so --output-file has nothing to write", file=sys.stderr)
         return 2
-    finished = _finished_run_outcome(config.event_log, args.run_id)
+    try:
+        finished = _finished_run_outcome(config.event_log, args.run_id)
+    except ResumeError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
     if finished is not None:
         return _print_resume_result(finished, config.event_log, args.output_file)
     waiting = _undecided_interrupt(config.event_log, args.run_id)
